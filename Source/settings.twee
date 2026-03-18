@@ -1,0 +1,46 @@
+:: Setting DolOptimization [widget]
+
+<<widget "doloptimizationModTab">>
+	<<button 原版优化>>
+		<<toggleTab>>
+		<<replace #customOverlayContent>><<doloptimizationModSetting>><</replace>>
+	<</button>>
+<</widget>>
+
+<<widget "doloptimizationModSetting">>
+	<div class="p-2 text-align-center">
+		<h3>原版优化 <<print window.modSC2DataManager?.getModLoader()?.getModZip("原版优化")?.modInfo?.version ?? "未知版本">></h3>
+		<div class="m-2">
+			<span class="gold">开发者：</span>
+			<span>ANLIN.STUDIO</span>
+		</div>
+		<!-- <div class="m-2">
+			<p class="gold m-0">Github发布页</p>
+			<a target="_blank" class="link-external" href="https://github.com/ANLINSTUDIO/Degrees-of-Lewdity-DolDynamicest" tabindex="0">Github /ANLINSTUDIO/Degrees-of-Lewdity-DolDynamicest</a>
+		</div>
+		<div class="m-2">
+			<p class="gold m-0">最新版本下载链接</p>
+			<a target="_blank" class="link-external" href="https://sb.alseece.top/2/?=DoL-Dynamicest" tabindex="0" 
+			data-remote="https://sb.alseece.top/2/value.php?key=DoL-Dynamicest-LastestVersion"
+			data-replace="true">正在获取最新版本……</a>
+			<div style="text-align: start;" 
+			data-remote="https://sb.alseece.top/2/value.php?key=DoL-Dynamicest-Notice"
+			data-replace="true">正在获取公告</div>
+			<<run Dynamicest.loadRemote()>>
+		</div> -->
+		<div class="m-2">
+			<p class="gold m-0">百度贴吧发布帖</p>
+			<a target="_blank" class="link-external" href="https://tieba.baidu.com/p/10567790315?fr=personpage" tabindex="0">原版优化 |关于原版的小优化</a>
+		</div>
+	</div>
+	<div class="settingsGrid">
+		<div class="settingsToggleItem">
+			<label>
+				<<checkbox "$DolOptimization.Settings.HideUiBarToggle" false true autocheck>>
+				隐藏“打开/关闭导航栏”的黑块箭头 <a class="gold" target="_blank" class="link-external" href='https://tieba.baidu.com/home/main?id=tb.1.b040b4ea.W-Ia-FiFJRnpGK2yEvLkxg%3Ft%3D1773825545&fr=pb' tabindex="0">「離地三尺一條河」</a>
+			</label>
+			<!-- <span class="tooltip-anchor linkBlue" tooltip="勾选后将在界面上额外显示可拖动的人物的图像。">(?)</span> -->
+		</div>
+	</div>
+	<span>如果你也有一些很小的<span class="def">关于原版小优化</span>的建议，可以在<a target="_blank" class="link-external" href="" tabindex="0">发布贴</a>下面留言。</span>
+<</widget>>

@@ -1,0 +1,29 @@
+{
+    "name": "原版优化",
+    "version": "1.0.0",
+    "styleFileList": ["dol-optimization.css"],
+    "scriptFileList": ["dol-optimization.js"],
+    "tweeFileList": ["settings.twee"],
+    "imgFileList": [],
+    "addonPlugin": [
+        {
+            "modName": "TweeReplacer",
+            "addonName": "TweeReplacerAddon",
+            "modVersion": "^1.0.0",
+            "params": [
+                {
+                    "passage": "overlayReplace",
+                    "findRegex": "<<optionsinformation>><<\\/replace>>[\\s\\S]*?<<\\/button>>", 
+                    "regexFlag": "g",  
+                    "replace": "<<optionsinformation>><</replace>>\n\t\t<</button>><<doloptimizationModTab>>"
+                }
+            ]
+        }
+    ],
+    "dependenceInfo": [
+        {
+            "modName": "TweeReplacer",
+            "version": "^1.0.0"
+        }
+    ]
+}
