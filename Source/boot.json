@@ -1,6 +1,6 @@
 {
     "name": "原版优化",
-    "version": "1.0.1",
+    "version": "1.0.2",
     "styleFileList": ["dol-optimization.css"],
     "scriptFileList": ["dol-optimization.js"],
     "tweeFileList": ["settings.twee"],

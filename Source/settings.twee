@@ -8,6 +8,7 @@
 <</widget>>
 
 <<widget "doloptimizationModSetting">>
+	<<setupOptions>>
 	<div class="p-2 text-align-center">
 		<h3>原版优化 <<print window.modSC2DataManager?.getModLoader()?.getModZip("原版优化")?.modInfo?.version ?? "未知版本">></h3>
 		<div class="m-2">
@@ -36,17 +37,28 @@
 	<div class="settingsGrid">
 		<div class="settingsToggleItemWide">
 			<label>
-				<<checkbox "$DolOptimization.Settings.HideUiBarToggle" false true autocheck>>
+				<<checkbox "$options.DolOptimization.HideUiBarToggle" false true autocheck>>
 				隐藏“打开/关闭导航栏”的黑块箭头 <a class="gold" target="_blank" class="link-external" href='https://tieba.baidu.com/home/main?id=tb.1.b040b4ea.W-Ia-FiFJRnpGK2yEvLkxg%3Ft%3D1773825545&fr=pb' tabindex="0">「離地三尺一條河」</a>
 			</label>
 			<!-- <span class="tooltip-anchor linkBlue" tooltip="勾选后将在界面上额外显示可拖动的人物的图像。">(?)</span> -->
 		</div>
 		<div class="settingsToggleItemWide">
-			<div id="custom-font-text" style="word-break: break-all;"><<print V.DolOptimization?.Settings?.OptimizationCustomFont?.fileName ?? "自定义字体">></div>
+			<div id="custom-font-text" style="word-break: break-all;"><<print DolOptimization.Current_Font ?? "自定义字体">></div>
 			<input type="file" id="custom-font" name="custom-font" onchange="DolOptimization.loadCustomFont()" style="width: stretch;">
-			<br><input type="button" value="取消设置" onclick='DolOptimization.unsetCustomFont()'><a class="gold" target="_blank" class="link-external" href='https://tieba.baidu.com/home/main?id=tb.1.f77fed2a.NDdy5-IAKW62SdnYGmq04g%3Ft%3D1773829759&fr=pb' tabindex="0">「尼落·忍者」</a>
+			<br>
+			<input type="button" value="取消设置" onclick='DolOptimization.unsetCustomFont()'>
+			<label>
+				<<if $passage is "Start">>
+					<<print '<input type="checkbox" tabindex="0" id="checkbox-optimizationcustomfontglobal" class="macro-checkbox" checked disabled>'>>
+				<<else>>
+					<<print '<input type="checkbox" tabindex="0" id="checkbox-optimizationcustomfontglobal" class="macro-checkbox" onchange="DolOptimization.checkOptimizationCustomFontGlobal(this.checked)"'+(V.options.DolOptimization?.OptimizationCustomFontGlobal? " checked": "")+'>'>>
+				<</if>>
+				应用到全局
+			</label>
+			<a class="gold" target="_blank" class="link-external" href='https://tieba.baidu.com/home/main?id=tb.1.f77fed2a.NDdy5-IAKW62SdnYGmq04g%3Ft%3D1773829759&fr=pb' tabindex="0">「尼落·忍者」</a>
 			<!-- <span class="tooltip-anchor linkBlue" tooltip="勾选后将在界面上额外显示可拖动的人物的图像。">(?)</span> -->
 		</div>
 	</div>
 	<span>如果你也有一些很小的<span class="def">关于原版小优化</span>的建议，可以在<a target="_blank" class="link-external" href="https://tieba.baidu.com/p/10567790315?fr=personpage" tabindex="0">发布贴</a>下面留言。</span>
+	<br><br>
 <</widget>>
