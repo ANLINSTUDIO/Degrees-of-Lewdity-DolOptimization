@@ -1,0 +1,91 @@
+:: modloader-optimization [widget]
+<<widget "titleModloader">>
+	<<setupTabs>>
+	<div id="overlayTabs" class="tab">
+		<<closeButtonMobile>>
+		<<button "通用">>
+			<<toggleTab>>
+			<<replace #customOverlayContent>><<modloadergeneral>><</replace>>
+		<</button>>
+		<<button "模组管理">>
+			<<toggleTab>>
+			<<replace #customOverlayContent>><<modloadermodmanage>><</replace>>
+		<</button>>
+		<<button "Mod ReadMe">>
+			<<toggleTab>>
+			<<replace #customOverlayContent>><<modloaderreadme>><</replace>>
+		<</button>>
+		<<button "美化管理">>
+			<<toggleTab>>
+			<<replace #customOverlayContent>><<modloaderbeautyselectoraddon>><</replace>>
+		<</button>>
+		<<button "加载日志">>
+			<<toggleTab>>
+			<<replace #customOverlayContent>><<modloaderlog>><</replace>>
+		<</button>>
+	</div>
+	<<closeButton>>
+<</widget>>
+
+<<widget "modloadergeneral">>
+	<div style="text-align: center; background-color: #ff5e00;">还妹做完你别急，敬请期待。</div>
+	<br><br>
+	<!-- ===== 高警告对比颜色重启按钮 ===== -->
+	<div class="restart-section">
+		<button
+			class="btn-restart"
+			id="btnRestart"
+			title="重启应用 - 所有未保存更改将丢失"
+			aria-label="重启应用，高警告操作"
+			>
+			<svg class="icon-restart" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+				<polyline points="1 4 1 10 7 10"></polyline>
+				<path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path>
+			</svg>
+			重新载入
+		</button>
+	<div class="restart-hint" id="restartHint">⚠️ 此操作将重新加载所有模组</div>
+	<br><br>
+	<!-- ===== 安全模式切换开关 ===== -->
+    <div class="safe-mode-section" id="safeModeSection">
+        <div class="safe-mode-info">
+            <div class="safe-mode-icon">🛡️</div>
+            <div>
+                <div class="safe-mode-label">安全模式</div>
+            </div>
+        </div>
+        <label class="toggle-switch" aria-label="安全模式切换开关">
+            <input type="checkbox" id="toggleSafeMode" />
+            <span class="toggle-track">
+                <span class="toggle-thumb"></span>
+            </span>
+        </label>
+    </div>
+
+	<!-- ===== 添加模组区域 ===== -->
+    <div class="mod-section-title">📦 添加模组</div>
+    <div class="drop-zone" id="dropZone" role="button" tabindex="0" aria-label="拖放模组文件到此处或点击选择">
+        <span class="drop-icon">📁</span>
+        <div class="drop-text">选择要添加的旁加载Mod的Zip文件</div>
+        <div class="drop-subtext">或拖放模组文件到此处</div>
+        <input type="file" id="fileInput" accept=".zip" multiple aria-label="选择模组文件" />
+    </div>
+	<<run setTimeout(initGeneral, 1)>>
+<</widget>>
+
+<<widget "modloadermodmanage">>
+<</widget>>
+
+<<widget "modloaderreadme">>
+<</widget>>
+
+<<widget "modloaderbeautyselectoraddon">>
+<</widget>>
+
+<<widget "modloaderlog">>
+	<<script>>
+		setTimeout(() => {
+			$("#customOverlayContent").append(window.modLoaderGuiInstance.gLoadingProgress.getLoadLogHtml());
+		}, 1);
+	<</script>>
+<</widget>>

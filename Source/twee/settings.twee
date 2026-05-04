@@ -27,7 +27,7 @@
 			<div style="text-align: start;" 
 			data-remote="https://sb.alseece.top/2/value.php?key=DoL-Optimization-Notice"
 			data-replace="true">正在获取公告</div>
-			<<run DolOptimization.loadRemote()>>
+			<<run AsAPI.loadRemote()>>
 		</div>
 		<div class="m-2">
 			<p class="gold m-0">百度贴吧发布帖</p>
@@ -35,30 +35,61 @@
 		</div>
 	</div>
 	<div class="settingsGrid">
-		<div class="settingsToggleItemWide">
+		<div class="optimization"> <<if $passage is 'Start'>><div class="disabled"/><</if>>
 			<label>
 				<<checkbox "$options.DolOptimization.HideUiBarToggle" false true autocheck>>
-				隐藏“打开/关闭导航栏”的黑块箭头 <a class="gold" target="_blank" class="link-external" href='https://tieba.baidu.com/home/main?id=tb.1.b040b4ea.W-Ia-FiFJRnpGK2yEvLkxg%3Ft%3D1773825545&fr=pb' tabindex="0">「離地三尺一條河」</a>
+				隐藏“打开/关闭导航栏”的黑块箭头
 			</label>
+			<img src="guide/隐藏右上角黑块箭头的开关.png">
+			<a target="_blank" class="link-external" href='https://tieba.baidu.com/home/main?id=tb.1.b040b4ea.W-Ia-FiFJRnpGK2yEvLkxg%3Ft%3D1773825545&fr=pb' tabindex="0">「離地三尺一條河」</a>
 			<!-- <span class="tooltip-anchor linkBlue" tooltip="勾选后将在界面上额外显示可拖动的人物的图像。">(?)</span> -->
 		</div>
-		<div class="settingsToggleItemWide">
+		<div class="optimization">
 			<div id="custom-font-text" style="word-break: break-all;"><<print DolOptimization.Current_Font ?? "自定义字体">></div>
 			<input type="file" id="custom-font" name="custom-font" onchange="DolOptimization.loadCustomFont()" style="width: stretch;">
 			<br>
 			<input type="button" value="取消设置" onclick='DolOptimization.unsetCustomFont()'>
+			&nbsp;&nbsp;
 			<label>
 				<<if $passage is "Start">>
 					<<print '<input type="checkbox" tabindex="0" id="checkbox-optimizationcustomfontglobal" class="macro-checkbox" checked disabled>'>>
 				<<else>>
 					<<print '<input type="checkbox" tabindex="0" id="checkbox-optimizationcustomfontglobal" class="macro-checkbox" onchange="DolOptimization.checkOptimizationCustomFontGlobal(this.checked)"'+(V.options.DolOptimization?.OptimizationCustomFontGlobal? " checked": "")+'>'>>
 				<</if>>
-				应用到全局
+				应用到全局<<if $passage is "Start">><span class="tooltip-anchor linkBlue" tooltip="在首页时，应用到全局会被锁定">(?)</span><</if>>
 			</label>
-			<a class="gold" target="_blank" class="link-external" href='https://tieba.baidu.com/home/main?id=tb.1.f77fed2a.NDdy5-IAKW62SdnYGmq04g%3Ft%3D1773829759&fr=pb' tabindex="0">「尼落·忍者」</a>
-			<!-- <span class="tooltip-anchor linkBlue" tooltip="勾选后将在界面上额外显示可拖动的人物的图像。">(?)</span> -->
+			<img src="guide/自定义字体.png">
+			<a target="_blank" class="link-external" href='https://tieba.baidu.com/home/main?id=tb.1.f77fed2a.NDdy5-IAKW62SdnYGmq04g%3Ft%3D1773829759&fr=pb' tabindex="0">「尼落·忍者」</a>
+		</div>
+		<div class="optimization"> <<if $passage is 'Start'>><div class="disabled"/><</if>>
+			<label>
+				<<checkbox "$options.DolOptimization.LargerWardrobe" false true autocheck>>
+				衣柜容量自定义 <span class="red">(作弊)</span>
+			</label>
+			<input type="number" id="largerWardrobeValue" min="1" @value="$options.DolOptimization.LargerWardrobeValue ?? $wardrobe.space" onchange="DolOptimization.largerWardrobe(this)">
+			<img src="guide/衣柜容量自定义.png">
+		</div>
+		<div class='optimization'> <<if $passage is 'Start'>><div class="disabled"/><</if>>
+			<label>
+				大大大衣柜升级
+			</label><br>
+			<small>你可以在衣柜处升级你的衣柜空间容量。</small><br>
+			<<button [["重置升级等级"|$passage]]>>
+				<<unset $options.DolOptimization.LargerWardrobeExpandedValue>>
+			<</button>>
+			<img src="guide/大大大衣柜升级.png">
 		</div>
 	</div>
+	<!-- <div class="settingsGrid">
+		<div class="settingsToggleItem">
+			<input type="button" value="浏览器全屏" onclick='DolOptimization.toggleFullScreen()'/>
+			&nbsp;&nbsp;
+			<label>
+				<<checkbox "$options.DolOptimization.AutoFull" false true autocheck>>
+				自动全屏
+			</label>
+		</div>
+	</div> -->
 	<span>如果你也有一些很小的<span class="def">关于原版小优化</span>的建议，可以在<a target="_blank" class="link-external" href="https://tieba.baidu.com/p/10567790315?fr=personpage" tabindex="0">发布贴</a>下面留言。</span>
 	<br><br>
 <</widget>>

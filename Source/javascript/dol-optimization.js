@@ -11,6 +11,24 @@ DolOptimization.onPassageRender = function (ev) {
 
     // 自定义字体 「尼落·忍者」
     DolOptimization.loadSavedFont();
+
+    // 【1.0.3】衣柜容量自定义 大大大衣柜升级
+    if (V.options.DolOptimization.LargerWardrobe !== undefined) {
+        if (V.options.DolOptimization.LargerWardrobe) {
+            if (V.options.DolOptimization.LargerWardrobeValue) {
+                V.wardrobe.space = V.options.DolOptimization.LargerWardrobeValue;
+            }
+            if (V.wardrobe.space === undefined) {
+                Furniture.wardrobeUpdate();
+            }
+        } else {
+            Furniture.wardrobeUpdate();
+            delete V.options.DolOptimization.LargerWardrobe;
+        }
+    } else if (V.options.DolOptimization.LargerWardrobeExpandedValue) {
+        Furniture.wardrobeUpdate();
+        V.wardrobe.space += V.options.DolOptimization.LargerWardrobeExpandedValue;
+    }
 };
 
 // 模组工具
@@ -18,28 +36,6 @@ DolOptimization = { ...DolOptimization,
     cv: function(value, default_ = false) {
         V.options.DolOptimization[value] = V.options.DolOptimization[value] ?? default_
         return V.options.DolOptimization[value]
-    },
-    loadRemote: function() {
-        queueMicrotask(() => { 
-            document.querySelectorAll('[data-remote]').forEach(async element => {
-                try {
-                const response = await fetch(element.dataset.remote, {
-                    mode: 'cors',
-                    credentials: 'omit'
-                });
-                const data = await response.json();
-                if (!data.error) {
-                    let content = data.value;
-                    if (element.dataset.replace === 'true') {
-                    content = content.replaceAll('\n', '<br>');
-                    }
-                    element.innerHTML = content;
-                }
-                } catch (error) {
-                element.innerHTML = element.dataset.error || '加载失败';
-                }
-            });
-        });
     }
 }
 
@@ -192,9 +188,9 @@ DolOptimization = { ...DolOptimization,
             await this.saveCustomFonts(fontData);
             
             this.updateFontDisplayName(fontData.fileName);
-            console.log('字体应用成功！');
+            AsAPI.log("原版优化", `已应用字体: ${fontData.fileName}`);
         } catch (error) {
-            console.error('字体加载失败:', error);
+            AsAPI.error("原版优化", `字体加载失败: ${error}`);
             this.handleFontLoadError(error);
         }
     },
@@ -216,12 +212,12 @@ DolOptimization = { ...DolOptimization,
             if (V.options.DolOptimization?.OptimizationCustomFont) {
                 delete V.options.DolOptimization.OptimizationCustomFont;
             }
-            console.log('字体已保存到全局（IndexedDB）');
+            AsAPI.log("原版优化", `字体已保存到全局（IndexedDB）`);
         } else {
             // 存档字体保持不变
             V.options.DolOptimization.OptimizationCustomFont = fontData;
             await this.removeFontFromIndexedDB();
-            console.log('字体已保存到存档');
+            AsAPI.log("原版优化", `字体已保存到存档`);
         }
     },
     
@@ -231,15 +227,15 @@ DolOptimization = { ...DolOptimization,
         const savedFont = V?.options?.DolOptimization?.OptimizationCustomFont;
         
         if (savedFont && savedFont.data) {
-            console.log('发现存档字体，正在加载...');
+            AsAPI.log("原版优化", '发现存档字体，正在加载...');
             const success = await this.applyFontFromData(savedFont);
             if (success) {
-                console.log('已加载存档字体:', savedFont.fileName);
+                AsAPI.log("原版优化", '已加载存档字体:'+savedFont.fileName);
                 this.updateFontDisplayName(savedFont.fileName);
                 if (V.options.DolOptimization?.OptimizationCustomFontGlobal) await DolOptimization.saveCustomFonts(savedFont);  // 点击了应用到全局但是没有选择字体
                 return true;
             } else {
-                console.log('存档字体已损坏，自动清除');
+               AsAPI.error("原版优化", '存档字体已损坏，自动清除');
                 this.unsetCustomFont();
             }
         }
@@ -248,22 +244,20 @@ DolOptimization = { ...DolOptimization,
         const globalFont = await this.loadFontFromIndexedDB();
         
         if (globalFont && globalFont.data) {
-            console.log('发现全局字体，正在加载...');
             const success = await this.applyFontFromData(globalFont);
             if (success) {
                 if (V.options.DolOptimization) {
                     V.options.DolOptimization.OptimizationCustomFontGlobal = true;
                 }
-                console.log('已加载全局字体:', globalFont.fileName);
+                AsAPI.log("原版优化", '已加载全局字体:', globalFont.fileName);
                 this.updateFontDisplayName(globalFont.fileName);
                 return true;
             } else {
-                console.log('全局字体已损坏，自动清除');
+                AsAPI.error("原版优化", '全局字体已损坏，自动清除');
                 await this.removeFontFromIndexedDB();
             }
         }
         
-        console.log('没有找到可用的字体');
         this.updateFontDisplayName(null);
         document.documentElement.style.fontFamily = "";
         return false;
@@ -283,7 +277,7 @@ DolOptimization = { ...DolOptimization,
             V.options.DolOptimization.OptimizationCustomFontGlobal = false;
         }
         
-        console.log('字体设置已清除');
+        AsAPI.log("原版优化", '字体设置已清除');
         this.updateFontDisplayName(null);
     },
     
@@ -351,3 +345,36 @@ DolOptimization = { ...DolOptimization,
         }
     }
 };
+
+// 【1.0.3】衣柜容量自定义
+DolOptimization = { ...DolOptimization, 
+    largerWardrobe: function(target) {
+        V.options.DolOptimization.LargerWardrobeValue = parseInt(target.value) || 1;
+    }
+}
+
+// // 【1.0.3】全屏 「尼落·忍者」
+// DolOptimization = { ...DolOptimization,
+//     toggleFullScreen: function () {
+//         if (!document.fullscreenElement) {
+//             // 进入全屏
+//             const elem = document.documentElement; // 整个页面
+//             if (elem.requestFullscreen) {
+//                 elem.requestFullscreen();
+//             } else if (elem.webkitRequestFullscreen) { /* Safari 旧版 */
+//                 elem.webkitRequestFullscreen();
+//             } else if (elem.msRequestFullscreen) { /* IE/Edge */
+//                 elem.msRequestFullscreen();
+//             }
+//         } else {
+//             // 退出全屏
+//             if (document.exitFullscreen) {
+//                 document.exitFullscreen();
+//             } else if (document.webkitExitFullscreen) {
+//                 document.webkitExitFullscreen();
+//             } else if (document.msExitFullscreen) {
+//                 document.msExitFullscreen();
+//             }
+//         }
+//     }
+// };

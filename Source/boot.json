@@ -1,10 +1,26 @@
 {
     "name": "原版优化",
-    "version": "1.0.2",
-    "styleFileList": ["dol-optimization.css"],
-    "scriptFileList": ["dol-optimization.js"],
-    "tweeFileList": ["settings.twee"],
-    "imgFileList": [],
+    "version": "1.0.3",
+    "styleFileList": [
+        "stylesheet/dol-optimization.css",
+        "stylesheet/modloader-optimization.css"
+    ],
+    "scriptFileList": [
+        "javascript/AsAPI.js", 
+        "javascript/dol-optimization.js",
+        "javascript/modloader-optimization.js"
+    ],
+    "tweeFileList": [
+        "twee/settings.twee",
+        "twee/game.twee",
+        "twee/modloader/modloader.twee"
+    ],
+    "imgFileList": [
+        "guide/隐藏右上角黑块箭头的开关.png",
+        "guide/自定义字体.png",
+        "guide/衣柜容量自定义.png",
+        "guide/大大大衣柜升级.png"
+    ],
     "addonPlugin": [
         {
             "modName": "TweeReplacer",
@@ -12,18 +28,47 @@
             "modVersion": "^1.0.0",
             "params": [
                 {
+                    "tip": "【1.0.3】模组加载器美化",
                     "passage": "overlayReplace",
                     "findRegex": "<<optionsinformation>><<\\/replace>>[\\s\\S]*?<<\\/button>>", 
                     "regexFlag": "g",  
                     "replace": "<<optionsinformation>><</replace>>\n\t\t<</button>><<doloptimizationModTab>>"
+                },
+                {
+                    "tip": "【1.0.3】模组加载器美化",
+                    "passage": "overlayReplace",
+                    "findString": "<<case \"characteristics\">>",  
+                    "replaceFile": "twee/modloader/modloader-patch-base.twee"
+                },
+                {
+                    "tip": "【1.0.3】模组加载器美化",
+                    "passage": "Widgets Clothing Caption",
+                    "findString": "\t\t\t<<overlayReplace \"startFeats\">>\n\t\t<</button>>\n\t</div>",  
+                    "replaceFile": "twee/modloader/modloader-patch-caption.twee"
+                },
+                {
+                    "tip": "【1.0.3】大大大衣柜升级",
+                    "passage": "Widgets Wardrobe",
+                    "findString": "__ <i>_selectedWardrobe[_wardrobe_list].length / _selectedWardrobe.space</i>",  
+                    "replaceFile": "twee/replace/大大大衣柜升级.twee"
                 }
             ]
+        },
+        {
+            "modName": "ModLoader DoL ImageLoaderHook",
+            "addonName": "ImageLoaderAddon",
+            "modVersion": "^2.3.0",
+            "params": []
         }
     ],
     "dependenceInfo": [
         {
             "modName": "TweeReplacer",
             "version": "^1.0.0"
+        },
+        {
+            "modName": "ModLoader DoL ImageLoaderHook",
+            "version": "^2.3.0"
         }
     ]
 }

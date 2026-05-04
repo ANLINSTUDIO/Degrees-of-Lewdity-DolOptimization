@@ -1,0 +1,74 @@
+/* 社交声誉优化：让警察局不超出避免挤开 */
+#faction-reputations {
+    grid-template-columns: unset !important
+}
+
+/* 1.0.3 选项高度优化 */
+#customOverlay[data-overlay=options] > #customOverlayContent {
+    height: calc(95% - 60px) !important;
+}
+
+/* 1.0.3 存档按钮优化：删除不挤压 */
+.deleteButton {
+    text-wrap-mode: nowrap !important;
+}
+
+/* 1.0.3 Mod管理器美化 */
+#MyConfig {
+    inset: 5% auto auto 5% !important;
+    width: 90% !important;
+    height: 90% !important;
+    border-radius: 4px;
+}
+
+/* 1.0.3 设置优化 */
+.optimization {
+    /* display: flex;
+    flex-wrap: unset;
+    justify-content: space-between;
+    align-items: anchor-center; */
+
+    position: relative;
+    border: 1px solid var(--700);
+    padding: 8px;
+}
+.optimization > img {
+    border: 2px solid var(--gold);
+    border-radius: 10px;
+    display: block;
+    max-width: 100%;
+    margin-top: 8px;
+}
+.optimization > a {
+    font-size: xx-small;
+    white-space: nowrap;
+    position: absolute;
+    transform: translateY(-50%);
+    top: 0;
+    right: 0;
+    color: gold !important;
+    pointer-events: all !important;
+}
+.optimization:has(> .disabled),
+.optimization:has(> .disabled) * {
+    color: var(--750);
+    pointer-events: none;
+}
+
+/* 1.0.3 衣柜容量自定义 */
+#largerWardrobeValue {
+    background-color: #3e3e3e;
+    color: #aaa;
+    border-color: #585858;
+    pointer-events: none;
+    cursor: not-allowed;
+    transition: all 0.2s;
+}
+/* 复选框勾选时，启用输入框 */
+label:has(> input.macro-checkbox:checked) + #largerWardrobeValue {
+    background-color: transparent;
+    color: var(--100);
+    border-color: var(--750);
+    pointer-events: auto;
+    cursor: text;
+}

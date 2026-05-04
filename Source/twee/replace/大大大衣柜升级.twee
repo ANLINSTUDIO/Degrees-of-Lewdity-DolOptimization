@@ -1,0 +1,13 @@
+<<if !V.options.DolOptimization.LargerWardrobe>><<run Furniture.wardrobeUpdate()>><</if>><!-- 此处断隔源代码，可能造成冲突问题 -->
+__ <i>_selectedWardrobe[_wardrobe_list].length / _selectedWardrobe.space</i><<if !V.options.DolOptimization.LargerWardrobe>><<if $options.DolOptimization.LargerWardrobeExpandedValue>><<set $wardrobe.space += $options.DolOptimization.LargerWardrobeExpandedValue>><i class="gold">+$options.DolOptimization.LargerWardrobeExpandedValue</i><</if>>
+(<<link [["扩建20个空间"|Wardrobe]]>>
+    <<money -50000>>
+    <<if $options.DolOptimization.LargerWardrobeExpandedValue is undefined>>
+        <<set $options.DolOptimization.LargerWardrobeExpandedValue to 0>>
+    <</if>>
+    <<set $options.DolOptimization.LargerWardrobeExpandedValue += 20>>
+<</link>>
+<span class='gold'>£500</span>)
+<<else>>
+    <span class="red">(已通过作弊自定义衣柜容量)</span>
+<</if>>

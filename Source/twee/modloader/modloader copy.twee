@@ -1,0 +1,43 @@
+:: modloader-optimization [widget]
+<<widget "titleModloader">>
+	<<setupTabs>>
+	<div id="overlayTabs" class="tab">
+		<<closeButtonMobile>>
+		<<button "通用">>
+			<<toggleTab>>
+			<<replace #customOverlayContent>><<modloadergeneral>><</replace>>
+		<</button>>
+		<<button "模组管理">>
+			<<toggleTab>>
+			<<replace #customOverlayContent>><<modloadermodmanage>><</replace>>
+		<</button>>
+		<<button "Mod ReadMe">>
+			<<toggleTab>>
+			<<replace #customOverlayContent>><<modloaderreadme>><</replace>>
+		<</button>>
+		<<button "美化管理">>
+			<<toggleTab>>
+			<<replace #customOverlayContent>><<modloaderbeautyselectoraddon>><</replace>>
+		<</button>>
+		<<button "加载日志">>
+			<<toggleTab>>
+			<<replace #customOverlayContent>><<modloaderlog>><</replace>>
+		<</button>>
+	</div>
+	<<closeButton>>
+<</widget>>
+
+<<widget "modloadergeneral">>
+<</widget>>
+
+<<widget "modloadermodmanage">>
+<</widget>>
+
+<<widget "modloaderreadme">>
+<</widget>>
+
+<<widget "modloaderbeautyselectoraddon">>
+<</widget>>
+
+<<widget "modloaderlog">>
+<</widget>>
