@@ -1,6 +1,6 @@
 {
     "name": "原版优化",
-    "version": "1.0.3",
+    "version": "1.0.4",
     "styleFileList": [
         "stylesheet/dol-optimization.css",
         "stylesheet/modloader-optimization.css"
@@ -19,7 +19,8 @@
         "guide/隐藏右上角黑块箭头的开关.png",
         "guide/自定义字体.png",
         "guide/衣柜容量自定义.png",
-        "guide/大大大衣柜升级.png"
+        "guide/大大大衣柜升级.png",
+        "guide/处女膜修复.png"
     ],
     "addonPlugin": [
         {
@@ -51,6 +52,24 @@
                     "passage": "Widgets Wardrobe",
                     "findString": "__ <i>_selectedWardrobe[_wardrobe_list].length / _selectedWardrobe.space</i>",  
                     "replaceFile": "twee/replace/大大大衣柜升级.twee"
+                },
+                {
+                    "tip": "【1.0.4】处女膜修复",
+                    "passage": "Hospital Foyer",
+                    "findString": "\t\t<<set _aPregnancy to $sexStats.anus.pregnancy>>\n\t\t<<set _vPregnancy to $sexStats.vagina.pregnancy>>",  
+                    "replaceFile": "twee/replace/医院处女膜修复.twee"
+                },
+                {
+                    "tip": "【1.0.4】处女膜修复 剧烈运动破坏",
+                    "passage": "Widgets",
+                    "findString": "\t<<set $physique = Math.clamp($physique, 0, $physiquesize)>>\n\t<<set Weather.BodyTemperature.addActivity(\"physique\")>>",  
+                    "replaceFile": "twee/replace/医院处女膜修复剧烈运动破坏.twee"
+                },
+                {
+                    "tip": "【1.0.4】处女膜修复 剧烈运动破坏 日志时效性",
+                    "passage": "Widgets Journal",
+                    "findString": "\t\t\t<<if $avery_mansion>>/* Is Avery paying for the PC? */",  
+                    "replaceFile": "twee/replace/医院处女膜修复剧烈运动破坏日志时效性.twee"
                 }
             ]
         },

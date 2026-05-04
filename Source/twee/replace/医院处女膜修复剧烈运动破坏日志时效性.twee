@@ -1,0 +1,4 @@
+			<<if $player.vaginaExist and $player.virginity.vaginal is true and $hymenreconstructioncount>>
+				<li>你最近在医院修复过处女膜，医生提醒你<span class="red">$hymenreconstructioncount</span>天内不要进行剧烈运动。</li>
+			<</if>>
+			<<if $avery_mansion>>/* Is Avery paying for the PC? */

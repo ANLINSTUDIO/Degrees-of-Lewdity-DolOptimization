@@ -1,1 +1,78 @@
-:: 大大大衣柜升级扩建
+:: Hospital Hymen Reconstruction
+<<set $outside to 0>><<set $location to "hospital">><<effects>>
+<<generate1>><<person1>>
+接待员在电脑上敲了几下，指示你在等候室里坐下。
+<br><br>
+<<endevent>>
+
+<<harper_intro>>
+
+"这是一个简单的手术。" <<He>>从桌子上拿出一本手册。 "处女膜修复术主要针对破裂后的处女膜，通过缝合或重建恢复其形态。"
+<<He>>指向你的<<pussy>>。
+<br><br>
+
+"修复你不小心丢掉的童贞需要£1000，不算特别贵，但是我们的手术很正规。"
+<br><br>
+
+<span class="icon-container"><img src="img/ui/tf_angel.png"></span> <<link [[修复处女膜|Hospital Hymen Reconstruction 2]]>><</link>>
+<br>
+<<getouticon>><<link [[离开|Hospital Foyer]]>><<endevent>><</link>>
+
+:: Hospital Hymen Reconstruction 2
+"这将花费<span class="gold">£1000</span>，"<<he>>说，"手术全程一个小时，手术过后一周内不能剧烈运动，否则仍然会自己破裂，这样引起的修复失败我们概不负责，请你注意。"
+<br><br>
+
+<<if $money gte 100000>>
+	<<ind>><<link [[接受 (1:00)|Hospital Hymen Reconstruction 3]]>><<pass 1 hours>><</link>>
+	<br>
+<<else>>
+	你的钱不够。
+	<br><br>
+<</if>>
+
+<<getouticon>><<link [[离开|Hospital Foyer]]>><<endevent>><</link>>
+
+:: Hospital Hymen Reconstruction 3
+<<money -100000 "hospitalHymenReconstruction">>
+
+<<upperstrip>>
+<<lowerstrip>>
+<<underlowerstrip>>
+<<underupperstrip>>
+你向哈珀付了款。"请脱衣服，"<<he>>起身离开房间。
+你脱掉衣服，站在原地等待——暴露的感觉很微妙。
+<<if playerChastity()>>你移除不了你的$worn.genitals.cn_name_cap，希望这不成问题。<</if>>
+<<He>>很快就带着一件手术服回来了。
+<br><br>
+
+"穿上这个，"<<he>>指了指衣服，你把手术服穿上。"好了，如果你愿意和我一起来，门就在前面。"
+<br><br>
+
+<<He>>带你走到另一个房间，里面有一张小床。"请躺下。我会给你麻醉，然后将你移到手术室。"你照做躺下。
+<<He>>将一个面罩压在你的脸上，你感到意识开始涣散。当你失去知觉时，<<He>>从口袋里拿出一个相机。
+<br><br>
+
+<<fameexhibitionism 10 "pic">>
+
+<<link [[继续|Hospital Hymen Reconstruction Done]]>><</link>>
+<br>
+
+:: Hospital Hymen Reconstruction Done
+<<set $player.virginity.vaginal to true>>
+<<if $player.virginity.temple isnot false>><<set $player.virginity.temple to true>><</if>>
+<<unset $player.virginityDetails.vaginal>>
+<<set $hymenreconstructioncount to 7>>
+
+你从昏迷中苏醒过来，周遭还是原来的房间。一切都似乎没有什么两样，除了你感觉你的<<pussy>>稍微有点疼痛。哈珀进入了房间。
+<br><br>
+
+"手术很成功，" <<he>>看着你的私处。
+"你现在又是一名处女了，希望她能够一直保持下来。再次提醒你，<span class="red">之后一周内不能跑步、锻炼，或者进行任何的剧烈运动</span>，否则你身体里的那层薄膜仍然会自己破裂，这样引起的修复失败我们概不负责。"
+<br><br>
+
+<<He>>捻着写字板上的纸页。"你现在就可以走了……保重。"<<He>>留你一人穿好衣服。
+<br><br>
+
+<<endevent>>
+
+<<link [[继续|Hospital Foyer]]>><<clotheson>><</link>>

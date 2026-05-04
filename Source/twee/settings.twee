@@ -79,6 +79,13 @@
 			<</button>>
 			<img src="guide/大大大衣柜升级.png">
 		</div>
+		<div class='optimization'>
+			<label>
+				处女膜修复
+			</label><br>
+			<small>你可以在医院处修复处女膜。</small><br>
+			<img src="guide/处女膜修复.png">
+		</div>
 	</div>
 	<!-- <div class="settingsGrid">
 		<div class="settingsToggleItem">

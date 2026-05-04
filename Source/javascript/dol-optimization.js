@@ -30,6 +30,18 @@ DolOptimization.onPassageRender = function (ev) {
         V.wardrobe.space += V.options.DolOptimization.LargerWardrobeExpandedValue;
     }
 };
+// === 原版函数注入 ==============================
+dayPassed = new Proxy(dayPassed, {
+    apply: function(target, thisArg, argumentsList) {
+        DolOptimization.dayPassed()
+        return target.apply(thisArg, argumentsList);
+    }
+});
+DolOptimization.dayPassed = function() {
+    if (!V.player.vaginaExist || V.player.virginity.vaginal !== true) delete V.hymenreconstructioncount;
+    if (V.hymenreconstructioncount) V.hymenreconstructioncount--;
+    if (V.hymenreconstructioncount <= 0) delete V.hymenreconstructioncount;
+}
 
 // 模组工具
 DolOptimization = { ...DolOptimization, 

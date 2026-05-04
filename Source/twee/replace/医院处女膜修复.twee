@@ -1,0 +1,6 @@
+        <<if $player.vaginaExist and $player.virginity.vaginal isnot true>>
+			<span class="icon-container"><img src="img/ui/tf_angel.png"></span> <<link [[咨询处女膜修复 (0:10)|Hospital Hymen Reconstruction]]>><<pass 10>><</link>>
+			<br>
+		<</if>>
+		<<set _aPregnancy to $sexStats.anus.pregnancy>>
+		<<set _vPregnancy to $sexStats.vagina.pregnancy>>

@@ -1,0 +1,12 @@
+	<<set $physique = Math.clamp($physique, 0, $physiquesize)>>
+	<<set Weather.BodyTemperature.addActivity("physique")>>
+	<<if $player.vaginaExist and $player.virginity.vaginal is true and $hymenreconstructioncount>>
+		<span class="red">你突然感觉阴道内剧痛，随后开始有鲜血从你的私处流出，你意识到你刚修复的处女膜破损了。</span> <<gggpain>><<pain 12>>
+		<<set $player.virginity.vaginal to "剧烈运动">>
+		<<set $player.virginityDetails.vaginal to {
+			passage: $passage,
+			taker: "剧烈运动",
+			timestamp: Time.date.timeStamp
+		}>>
+		<<unset $hymenreconstructioncount>>
+	<</if>>
