@@ -1,0 +1,95 @@
+		<<if $wornStacking[_wardrobe_list] is undefined>>
+			<<set $wornStacking[_wardrobe_list] to []>>
+		<</if>>
+		叠加装备: <br>
+		<<set _allowStacking to !(["upper", "under_upper", "hands", "handheld"].includes(_wardrobe_list))>>
+		<<if $options.DolOptimization.WornStacking>>
+			<<if $wornStacking[_wardrobe_list].length > 0>>
+				<<for _i to 0; _i < $wornStacking[_wardrobe_list].length; _i++>>
+					<<set _item to $wornStacking[_wardrobe_list][_i]>>
+					<<set _itemData to setup.clothes[_wardrobe_list][clothesIndex(_wardrobe_list,_item)]>>
+					<<if _item.outfitSecondary isnot undefined>>
+						<<if _item.outfitSecondary[1] isnot "broken" and _item.outfitSecondary[1] isnot "split">>
+							<<continue>>
+						<</if>>
+					<</if>>
+					<div class="wardrobeItem wardrobe-action no-numberify">
+						<<clothingicon _item _wardrobe_list>>
+
+						<<capture _item>>
+							<<set _name to _itemData.cn_name_cap??_itemData.name_cap>>
+							<<link _name>>
+								<<run DolOptimization.wornStackingRemove(_item.index)>>
+								<<updatewardrobe undefined undefined>>
+							<</link>>
+						<</capture>>
+
+						<<if _item.gender is "m">>
+							<span class="blue">♂</span>
+						<<elseif _item.gender is "f">>
+							<span class="pink">♀</span>
+						<<else>>
+
+						<</if>>
+						<<if _item.colour and _item.colour isnot 0>>
+							<span @class="_item.colour?.replace(' ','-')">
+								<<if _item.pattern and ![0, "plain"].includes(_item.pattern) and _itemData.pattern_options?.length > 1>>
+									(_item.colour _item.pattern)
+								<<else>>
+									(_item.colour)
+								<</if>>
+							</span>
+						<<elseif _item.pattern and _item.pattern isnot 0 and _itemData.pattern_options?.length > 1>>
+							<span @class="_item.pattern?.replace(' ','-')">(_item.pattern)</span>
+						<</if>>
+						<<if _item.outfitPrimary isnot undefined>>
+							<<set _keys to Object.keys(_item.outfitPrimary)>>
+							<<set _broken to 0>>
+							<<for _j to 0; _j < _keys.length; _j++>>
+								<<if _item.outfitPrimary[_keys[_j]] is "broken">>
+									<<set _broken++>>
+								<</if>>
+							<</for>>
+							<<if _broken is 0>>
+								<span class="gold">(Outfit)</span>
+							<<elseif _broken < _keys.length>>
+								<span class="red">(Partly Broken)</span>
+							<<else>>
+								<span class="red">(Broken)</span>
+							<</if>>
+							<<if _item.one_piece is "split">>
+								<span class="separated-indicator">(Separated)</span>
+							<</if>>
+						<</if>>
+						<<if _item.outfitSecondary isnot undefined>>
+							<<if _item.one_piece is "split">>
+								<span class="separated-indicator">(Separated)</span>
+							<<else>>
+								<span class="red">(Broken)</span>
+							<</if>>
+						<</if>>
+						<<wardrobeintegrity _item _wardrobe_list>>
+						<<reveal _item.reveal>>
+						| <span class="cold-resist-icon noDivider"><<print getTrueWarmth(_item)>></span>
+						<<if $wardrobeDefaults.showTraits>>
+							| <span class="wardrobe-traits noDivider"><<for _n, _trait range _item.type>>
+								<<clothingtrait _trait>>
+							<</for>></span>
+						<</if>>
+					</div>
+				<</for>><br>
+				<<if _allowStacking>>单击上方服装以<span class="red">卸下叠加服装</span>。<</if>>
+			<<else>>
+				<<if _allowStacking>>未装备叠加服装部件。<br><</if>>
+			<</if>>
+			<<if _allowStacking>>
+				单击下方服装以作为<<if $worn[_wardrobe_list].index is 0>><span class="green">主要装备</span><<else>><span class="purple">叠加</span>装备，要装备主要服装请点击"脱掉"按钮<</if>>。叠加服装部件不会叠加属性。
+			<<else>>
+				<span class="red">此服装部位暂不支持叠加，敬请期待后续更新。</span>
+			<</if>>
+		<<else>>
+			<span class="red">未启用，若需要开启请前往 选项>原版优化 。</span>
+		<</if>>
+		<br><br><br>
+
+		<<if $worn[_wardrobe_list].name isnot "naked">>

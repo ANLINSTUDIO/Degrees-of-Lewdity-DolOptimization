@@ -14,7 +14,8 @@
 "修复你不小心丢掉的童贞需要£1000，不算特别贵，但是我们的手术很正规。"
 <br><br>
 
-<span class="icon-container"><img src="img/ui/tf_angel.png"></span> <<link [[修复处女膜|Hospital Hymen Reconstruction 2]]>><</link>>
+<span style="filter: hue-rotate(30.00085deg) saturate(0.15) brightness(4.30);"><img class="icon" src="img/misc/icon/shave_clean_f.png"></span>
+<<link [[修复处女膜|Hospital Hymen Reconstruction 2]]>><</link>>
 <br>
 <<getouticon>><<link [[离开|Hospital Foyer]]>><<endevent>><</link>>
 

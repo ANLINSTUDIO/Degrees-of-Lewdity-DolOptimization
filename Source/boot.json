@@ -1,6 +1,6 @@
 {
     "name": "原版优化",
-    "version": "1.0.4",
+    "version": "1.0.5",
     "styleFileList": [
         "stylesheet/dol-optimization.css",
         "stylesheet/modloader-optimization.css"
@@ -16,11 +16,12 @@
         "twee/modloader/modloader.twee"
     ],
     "imgFileList": [
-        "guide/隐藏右上角黑块箭头的开关.png",
+        "guide/“打开关闭导航栏”的黑块箭头.png",
         "guide/自定义字体.png",
         "guide/衣柜容量自定义.png",
         "guide/大大大衣柜升级.png",
-        "guide/处女膜修复.png"
+        "guide/处女膜修复.png",
+        "guide/叠加服装部件.png"
     ],
     "addonPlugin": [
         {
@@ -29,7 +30,7 @@
             "modVersion": "^1.0.0",
             "params": [
                 {
-                    "tip": "【1.0.3】模组加载器美化",
+                    "tip": "设置",
                     "passage": "overlayReplace",
                     "findRegex": "<<optionsinformation>><<\\/replace>>[\\s\\S]*?<<\\/button>>", 
                     "regexFlag": "g",  
@@ -70,6 +71,18 @@
                     "passage": "Widgets Journal",
                     "findString": "\t\t\t<<if $avery_mansion>>/* Is Avery paying for the PC? */",  
                     "replaceFile": "twee/replace/医院处女膜修复剧烈运动破坏日志时效性.twee"
+                },
+                {
+                    "tip": "【1.0.5】叠加服装部件 衣柜",
+                    "passage": "Widgets Wardrobe",
+                    "findString": "\t\t<<if $worn[_wardrobe_list].name isnot \"naked\">>",  
+                    "replaceFile": "twee/replace/叠加服装部件衣柜.twee"
+                },
+                {
+                    "tip": "【1.0.5】叠加服装部件 衣柜链接",
+                    "passage": "Widgets Wardrobe",
+                    "findString": "\t\t\t\t<<set V[_wear] = _args[1]>>",  
+                    "replaceFile": "twee/replace/叠加服装部件衣柜链接.twee"
                 }
             ]
         },

@@ -34,15 +34,22 @@
 			<a target="_blank" class="link-external" href="https://tieba.baidu.com/p/10567790315?fr=personpage" tabindex="0">原版优化 |关于原版的小优化</a>
 		</div>
 	</div>
+	<<run DolOptimization.rv()>>
 	<div class="settingsGrid">
-		<div class="optimization"> <<if $passage is 'Start'>><div class="disabled"/><</if>>
-			<label>
-				<<checkbox "$options.DolOptimization.HideUiBarToggle" false true autocheck>>
-				隐藏“打开/关闭导航栏”的黑块箭头
-			</label>
-			<img src="guide/隐藏右上角黑块箭头的开关.png">
-			<a target="_blank" class="link-external" href='https://tieba.baidu.com/home/main?id=tb.1.b040b4ea.W-Ia-FiFJRnpGK2yEvLkxg%3Ft%3D1773825545&fr=pb' tabindex="0">「離地三尺一條河」</a>
-			<!-- <span class="tooltip-anchor linkBlue" tooltip="勾选后将在界面上额外显示可拖动的人物的图像。">(?)</span> -->
+		<div class="optimization">
+			“打开/关闭导航栏”的黑块箭头: 
+			<br>
+			<label><<radiovar "$options.opt.UiBarToggle" "default">><<run DolOptimization.applySettings()>><</radiovar>> 默认</label> |
+			<label><<radiovar "$options.opt.UiBarToggle" "back">><<run DolOptimization.applySettings()>><</radiovar>> 回溯</label> |
+			<label><<radiovar "$options.opt.UiBarToggle" "hide">><<run DolOptimization.applySettings()>><</radiovar>> 隐藏</label>
+
+			<img src="guide/“打开关闭导航栏”的黑块箭头.png">
+			<div class="alist">
+				<a target="_blank" class="link-external" href='https://tieba.baidu.com/home/main?id=tb.1.b040b4ea.W-Ia-FiFJRnpGK2yEvLkxg%3Ft%3D1773825545&fr=pb' tabindex="0">「離地三尺一條河」</a>
+				<a target="_blank" class="link-external" href='https://tieba.baidu.com/home/main?id=tb.1.4515509a.HMRwrMmE3gOEM7NFLLQNbg%3Ft%3D1778597577&fr=pb' tabindex="0">「◆冬至蝉鸣◆」</a>
+			</div>
+			<br>
+			<span class="red">注意，这在PC端上尤其要小心开启：PC上无法通过向右滑动来展开侧边栏！必要时你可以通过本模组定义的<span class="purple">鼠标滚轮中键</span>来切换侧边栏。</span>
 		</div>
 		<div class="optimization">
 			<div id="custom-font-text" style="word-break: break-all;"><<print DolOptimization.Current_Font ?? "自定义字体">></div>
@@ -86,6 +93,18 @@
 			<small>你可以在医院处修复处女膜。</small><br>
 			<img src="guide/处女膜修复.png">
 		</div>
+		<div class="optimization"> <<if $passage is 'Start'>><div class="disabled"/><</if>>
+			<label>
+				<<checkbox "$options.DolOptimization.WornStacking" false true autocheck>>
+				叠加服装部件
+			</label><br>
+			<span class="red">注意: 功能是实验性。大部分的衣物可能不太支持，目前所知内衣、上装、手饰、手持物品均无法进行叠加。可能造成面板报错，谨慎开启。</span>
+			<img src="guide/叠加服装部件.png">
+			<div class="alist">
+				<a target="_blank" class="link-external" href='https://tieba.baidu.com/home/main?id=tb.1.cd3433f7.YrE8v7vAxsuld1PmIu9_Ww%3Ft%3D1778860911&fr=pb' tabindex="0">「兄弟我仨人」</a>
+				<a target="_blank" class="link-external" href='https://tieba.baidu.com/home/main?id=tb.1.c5ee8bec.KPmrsbwyRq56_tdZjH_9Nw%3Ft%3D1778860919&fr=pb' tabindex="0">「小鼹鼠.」</a>
+			</div>
+		</div>
 	</div>
 	<!-- <div class="settingsGrid">
 		<div class="settingsToggleItem">
@@ -97,6 +116,6 @@
 			</label>
 		</div>
 	</div> -->
-	<span>如果你也有一些很小的<span class="def">关于原版小优化</span>的建议，可以在<a target="_blank" class="link-external" href="https://tieba.baidu.com/p/10567790315?fr=personpage" tabindex="0">发布贴</a>下面留言。</span>
+	<div style="text-align: center; width: 100%;">如果你也有一些很小的<span class="def">关于原版小优化</span>的建议，可以在<a target="_blank" class="link-external" href="https://tieba.baidu.com/p/10567790315?fr=personpage" tabindex="0">发布贴</a>下面留言。</div>
 	<br><br>
 <</widget>>

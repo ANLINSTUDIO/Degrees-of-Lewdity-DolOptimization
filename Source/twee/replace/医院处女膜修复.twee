@@ -1,5 +1,6 @@
         <<if $player.vaginaExist and $player.virginity.vaginal isnot true>>
-			<span class="icon-container"><img src="img/ui/tf_angel.png"></span> <<link [[咨询处女膜修复 (0:10)|Hospital Hymen Reconstruction]]>><<pass 10>><</link>>
+			<span style="filter: hue-rotate(30.00085deg) saturate(0.15) brightness(4.30);"><img class="icon" src="img/misc/icon/shave_clean_f.png"></span>
+			<<link [[咨询处女膜修复 (0:10)|Hospital Hymen Reconstruction]]>><<pass 10>><</link>>
 			<br>
 		<</if>>
 		<<set _aPregnancy to $sexStats.anus.pregnancy>>

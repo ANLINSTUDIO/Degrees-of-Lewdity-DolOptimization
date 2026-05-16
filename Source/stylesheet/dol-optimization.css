@@ -49,6 +49,18 @@
     color: gold !important;
     pointer-events: all !important;
 }
+.optimization > .alist {
+    font-size: xx-small;
+    white-space: nowrap;
+    position: absolute;
+    transform: translateY(-50%);
+    top: 0;
+    right: 0;
+}
+.optimization > .alist > a {
+    color: gold !important;
+    pointer-events: all !important;
+}
 .optimization:has(> .disabled),
 .optimization:has(> .disabled) * {
     color: var(--750);
@@ -57,6 +69,7 @@
 
 /* 1.0.3 衣柜容量自定义 */
 #largerWardrobeValue {
+    width: calc(100% - 16px);
     background-color: #3e3e3e;
     color: #aaa;
     border-color: #585858;
@@ -71,4 +84,17 @@ label:has(> input.macro-checkbox:checked) + #largerWardrobeValue {
     border-color: var(--750);
     pointer-events: auto;
     cursor: text;
+}
+
+/* 1.0.5 将“打开/关闭导航栏”的黑块箭头修改为回溯 */
+#ui-bar #ui-bar-toggle.opt {
+    background-color: white;
+}
+#ui-bar #ui-bar-toggle.opt:before {
+    content: "\e81d";
+    color: var(--600);
+}
+#ui-bar.stowed #ui-bar-toggle.opt:before {
+    position: relative;
+    left: -3px;
 }

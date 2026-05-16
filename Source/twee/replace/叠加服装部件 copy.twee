@@ -1,0 +1,773 @@
+找到 composeProcessedLayer(layer, targetCanvas, layerRects);
+
+renderResult函数就是逐个渲染layers。
+layer存放有image和cachedImage，cachedImage就是直接投放到主canvas上的画布。
+
+image = processLayer(layer, layerRects, listener);
+就是处理layer图像缓存的地方，
+
+function loadLayerImage(layer)
+就是处理新图像的地方
+
+=================================
+
+<<modelprepare-player-clothes>>
+(
+	Object.assign(T.modeloptions, getClothingOptions());
+	const overrides = V.modeloptionsOverride;
+	if (Object.keys(overrides).length > 0) {
+		for (const [key, value] of Object.entries(overrides)) {
+			T.modeloptions[key] = value;
+		}
+	}
+)
+
+↓ T.modeloptions (T.modeloptions.worn)
+
+<<widget "animatemodel">>
+	T.modelclass.animate(canvas, T.modeloptions, Renderer.defaultListener);
+<</widget>>
+
+↓ T.modeloptions → this.options
+
+animate(canvas, options, listener) {
+	return Renderer.animateLayers(this.canvas, this.compile(this.options), this.listener, true);
+}
+
+↓ this.compile(this.options) → layerSpecs
+
+function animateLayers(targetCanvas, layerSpecs, listener, autoStop = true) {
+	composeLayers(targetCanvas, layerSpecs, 1, myListener);
+}
+
+↓ layerSpecs
+
+function composeLayers(targetCanvas, layerSpecs, frameCount, listener) {
+	const layers = layerSpecs……
+}
+
+↓ layers
+
+=====================
+
+V.wornStacking.face = [V.worn.face]
+
+T.modelclass.compile
+T.modelclass.animate
+
+options.worn.face2 = 
+
+temp2.filter(a => a.name==="skulduggery mask")
+temp2.filter(a => a.name==="surgical mask")
+
+=====================
+
+就三个：
+1、 preprocess：让更多衣服不被筛选
+2、 this.layerList 要保证叠加衣服的层级存在
+
+=====================
+
+const clothingObject = this.defaultOptions().worn;
+for (const slot of setup.clothes_all_slots) {
+	const index = options.worn[slot]?.index ?? -1;
+	if (index <= -1) continue;
+	// Merge with default options
+	clothingObject[slot].deepMerge(options.worn[slot]);
+
+	let setupObj = clothingObject[slot].setup;
+	if (!setupObj.variable) {
+		setupObj = setup.clothes[slot][index];
+		clothingObject[slot].setup = setupObj
+	}
+
+	setClothingFilter(options, slot, clothingObject[slot], setupObj, '', 'colour_sidebar', 'colour');
+	setClothingFilter(options, slot, clothingObject[slot], setupObj, '_acc', 'accessory_colour_sidebar', 'accColour');
+}
+options.worn = clothingObject;
+
+
+{
+    "index": 0,
+    "setup": {
+        "index": 0,
+        "slot": "head",
+        "name": "naked",
+        "name_cap": "Naked",
+        "cn_name_cap": "赤裸",
+        "variable": "naked",
+        "state": 0,
+        "state_base": 0,
+        "integrity": 0,
+        "integrity_max": 0,
+        "fabric_strength": 0,
+        "reveal": 1,
+        "word": "n",
+        "plural": 0,
+        "colour": 0,
+        "colour_options": [],
+        "type": [
+            "naked"
+        ],
+        "gender": "n",
+        "warmth": 0,
+        "cost": 0,
+        "description": "一丝不挂",
+        "shop": [],
+        "accessory": 0,
+        "accessory_colour": 0,
+        "accessory_colour_options": [],
+        "back_img": 0,
+        "cursed": 0,
+        "location": 0,
+        "iconFile": 0,
+        "accIcon": 0,
+        "mainImage": 0
+    },
+    "integrity": "full",
+    "colour": 0,
+    "alt": [
+        "(revive:eval)",
+        "undefined"
+    ],
+    "pattern": [
+        "(revive:eval)",
+        "undefined"
+    ],
+    "pattern_layer": [
+        "(revive:eval)",
+        "undefined"
+    ],
+    "alpha": 1,
+    "accColour": 0
+}
+
+
+function(add) {
+	let option = T.modelclass.defaultOptions();
+	const naked = {
+		"index": 0,
+		"setup": {
+			"index": 0,
+			"slot": "head",
+			"name": "naked",
+			"name_cap": "Naked",
+			"cn_name_cap": "赤裸",
+			"variable": "naked",
+			"state": 0,
+			"state_base": 0,
+			"integrity": 0,
+			"integrity_max": 0,
+			"fabric_strength": 0,
+			"reveal": 1,
+			"word": "n",
+			"plural": 0,
+			"colour": 0,
+			"colour_options": [],
+			"type": [
+				"naked"
+			],
+			"gender": "n",
+			"warmth": 0,
+			"cost": 0,
+			"description": "一丝不挂",
+			"shop": [],
+			"accessory": 0,
+			"accessory_colour": 0,
+			"accessory_colour_options": [],
+			"back_img": 0,
+			"cursed": 0,
+			"location": 0,
+			"iconFile": 0,
+			"accIcon": 0,
+			"mainImage": 0
+		},
+		"integrity": "full",
+		"colour": 0,
+		"alt": [
+			"(revive:eval)",
+			"undefined"
+		],
+		"pattern": [
+			"(revive:eval)",
+			"undefined"
+		],
+		"pattern_layer": [
+			"(revive:eval)",
+			"undefined"
+		],
+		"alpha": 1,
+		"accColour": 0
+	}
+	option.worn = {
+		face: add.face ?? naked,
+		feet: add.feet ?? naked,
+		genitals: add.genitals ?? naked,
+		handheld: add.handheld ?? naked,
+		hands: add.hands ?? naked,
+		head: add.head ?? naked,
+		legs: add.legs ?? naked,
+		lower: add.lower ?? naked,
+		neck: add.neck ?? naked,
+		over_head: add.over_head ?? naked,
+		over_lower: add.over_lower ?? naked,
+		over_upper: add.over_upper ?? naked,
+		under_lower: add.under_lower ?? naked,
+		under_upper: add.under_upper ?? naked,
+		upper: add.upper ?? naked,
+	}
+	T.modelclass.preprocess(option)
+	return option
+}
+
+
+function(add){
+	let options = T.modelclass.defaultOptions();
+	const naked = {
+		"index": 0,
+		"setup": {
+			"index": 0,
+			"slot": "head",
+			"name": "naked",
+			"name_cap": "Naked",
+			"cn_name_cap": "赤裸",
+			"variable": "naked",
+			"state": 0,
+			"state_base": 0,
+			"integrity": 0,
+			"integrity_max": 0,
+			"fabric_strength": 0,
+			"reveal": 1,
+			"word": "n",
+			"plural": 0,
+			"colour": 0,
+			"colour_options": [],
+			"type": [
+				"naked"
+			],
+			"gender": "n",
+			"warmth": 0,
+			"cost": 0,
+			"description": "一丝不挂",
+			"shop": [],
+			"accessory": 0,
+			"accessory_colour": 0,
+			"accessory_colour_options": [],
+			"back_img": 0,
+			"cursed": 0,
+			"location": 0,
+			"iconFile": 0,
+			"accIcon": 0,
+			"mainImage": 0
+		},
+		"integrity": "full",
+		"colour": 0,
+		"alt": [
+			"(revive:eval)",
+			"undefined"
+		],
+		"pattern": [
+			"(revive:eval)",
+			"undefined"
+		],
+		"pattern_layer": [
+			"(revive:eval)",
+			"undefined"
+		],
+		"alpha": 1,
+		"accColour": 0
+	}
+	options.worn = {
+		face: add.face ?? naked,
+		feet: add.feet ?? naked,
+		genitals: add.genitals ?? naked,
+		handheld: add.handheld ?? naked,
+		hands: add.hands ?? naked,
+		head: add.head ?? naked,
+		legs: add.legs ?? naked,
+		lower: add.lower ?? naked,
+		neck: add.neck ?? naked,
+		over_head: add.over_head ?? naked,
+		over_lower: add.over_lower ?? naked,
+		over_upper: add.over_upper ?? naked,
+		under_lower: add.under_lower ?? naked,
+		under_upper: add.under_upper ?? naked,
+		upper: add.upper ?? naked,
+	}
+	let optionsc = T.modelclass.compile(options)
+	console.log(optionsc)
+	Renderer.composeLayers(T.modelclass.canvas, optionsc, 1, T.modelclass.listener);
+}
+
+
+=====================
+
+preprocess(options) {
+	// Generate base skin tones
+	options.filters.body = setup.colours.getSkinFilter(options.skin_type, 0);
+	if (options.skin_type !== "custom") {
+		options.filters.tan = setup.colours.getSkinFilter(options.skin_type, options.skin_tone);
+	}
+
+	const blink = options.trauma ? "blink-trauma" : "blink";
+	options.blink_animation = options.blink ? blink : "";
+	options.handheld_animation = V.worn.handheld.name === "heart hand warmer" ? "handWarmer" : "idle";
+
+	options.filters.left_eye = lookupColour(options, setup.colours.eyes_map, options.left_eye, "eyes", "eyes_custom", "eyes");
+	options.filters.right_eye = lookupColour(options, setup.colours.eyes_map, options.right_eye, "eyes", "eyes_custom", "eyes");
+
+	if (options.hair_colour_style === "gradient") {
+		options.filters.hair = createHairColourGradient(
+			"sides",
+			options.hair_colour_gradient,
+			options.hair_sides_type,
+			hairLengthStringToNumber(options.hair_sides_length),
+			"hair"
+		);
+	}
+	if (options.hair_colour_style === "simple") {
+		options.filters.hair = lookupColour(
+			options,
+			setup.colours.hair_map,
+			options.hair_colour,
+			"hair",
+			"hair_custom",
+			"hair"
+		);
+	}
+	if (options.hair_fringe_colour_style === "gradient") {
+		options.filters.hair_fringe = createHairColourGradient(
+			"fringe",
+			options.hair_fringe_colour_gradient || options.hair_colour_gradient,
+			options.hair_fringe_type,
+			hairLengthStringToNumber(options.hair_sides_length),
+			"hair_fringe"
+		);
+	}
+	if (options.hair_fringe_colour_style === "simple") {
+		options.filters.hair_fringe = lookupColour(
+			options,
+			setup.colours.hair_map,
+			options.hair_fringe_colour || options.hair_colour,
+			"hair_fringe",
+			"hair_fringe_custom",
+			"hair_fringe"
+		);
+	}
+
+	const empty = Renderer.emptyLayerFilter();
+	options.filters.brows = lookupColour(options, setup.colours.hair_map, options.brows_colour || options.hair_colour, "brows", "brows_custom", "brows");
+	options.filters.pbhair = lookupColour(options, setup.colours.hair_map, options.pbhair_colour || options.hair_colour, "pbhair", "pbhair_custom", "pbhair");
+	options.filters.lipstick = (options.lipstick_colour) ? lookupColour(
+		options, setup.colours.lipstick_map, options.lipstick_colour, "lipstick", "lipstick_custom", "lipstick"
+	) : empty;
+	options.filters.eyeshadow = (options.eyeshadow_colour) ? lookupColour(
+		options, setup.colours.eyeshadow_map, options.eyeshadow_colour, "eyeshadow", "eyeshadow_custom", "eyeshadow"
+	) : empty;
+	options.filters.mascara = (options.mascara_colour) ? lookupColour(
+		options, setup.colours.mascara_map, options.mascara_colour, "mascara", "mascara_custom", "mascara"
+	) : empty;
+
+	if (options.condom_colour) options.filters.condom = lookupColour(options, setup.colours.condom_map, options.condom_colour, "condom", "condom_custom", "condom");
+
+	if (options.breasts_parasite === "parasite") {
+		options.filters.breasts_parasite = lookupColour(options, setup.colours.clothes_map, "red", "breasts_parasite");
+	}
+	if (["parasite", "parasitem"].includes(options.clit_parasite)) {
+		options.filters.clit_parasite = lookupColour(options, setup.colours.clothes_map, "red", "clit_parasite");
+	}
+	if (options.penis_parasite === "parasite") {
+		options.filters.penis_parasite = lookupColour(options, setup.colours.clothes_map, "red", "penis_parasite");
+	}
+	if (options.prop?.colour && options.prop?.colour !== "hair") {
+		options.filters.prop = lookupColour(options, setup.colours.clothes_map, options.prop.colour, "prop");
+	}
+	if (options.prop?.accColour && options.prop?.accColour !== "hair") {
+		options.filters.prop_acc = lookupColour(options, setup.colours.clothes_map, options.prop.accColour, "prop");
+	}
+	// Calculate blend pattern for demon TF
+	const filterBase = {
+		blendMode: "hard-light",
+		brightness: 0,
+		contrast: 1,
+		desaturate: false,
+	};
+	// eslint-disable-next-line no-undef
+	const demonHsl = ColourUtils.toHslString(Transformations.defaults.demon.colour);
+	options.filters.demon_wings = { ...filterBase, blend: ColourUtils.toHslString(V.transformationParts.demon.wings_colour, demonHsl) };
+	options.filters.demon_tail = { ...filterBase, blend: ColourUtils.toHslString(V.transformationParts.demon.tail_colour, demonHsl) };
+	options.filters.demon_horns = { ...filterBase, blend: ColourUtils.toHslString(V.transformationParts.demon.horns_colour, demonHsl) };
+
+	// Clothing filters and options
+	const clothingObject = this.defaultOptions().worn;
+	for (const slot of setup.clothes_all_slots) {
+		const index = options.worn[slot]?.index ?? -1;
+		if (index <= -1) continue;
+		// Merge with default options
+		clothingObject[slot].deepMerge(options.worn[slot]);
+
+		let setupObj = clothingObject[slot].setup;
+		if (!setupObj.variable) {
+			setupObj = setup.clothes[slot][index];
+			clothingObject[slot].setup = setupObj
+		}
+
+		setClothingFilter(options, slot, clothingObject[slot], setupObj, '', 'colour_sidebar', 'colour');
+		setClothingFilter(options, slot, clothingObject[slot], setupObj, '_acc', 'accessory_colour_sidebar', 'accColour');
+	}
+	options.worn = clothingObject;
+
+	// Show arm and hand just below outermost clothes layer to fully show its main/breasts layer and hide others
+	// -0.1 is to move arms behind sleeves; to display gloves above sleeves they get +0.2 in hand layer decls
+
+	if (options.worn.over_upper.index) {
+		options.zarms = ZIndices.over_upper_arms - 0.1;
+	} else if (options.worn.upper.index) {
+		if (options.arm_left === "cover") {
+			if (options.upper_tucked) {
+				options.zarms = ZIndices.upper_arms_tucked - 0.1;
+			} else {
+				options.zarms = ZIndices.upper_arms - 0.1;
+			}
+		} else {
+			options.zarms = ZIndices.under_upper_arms - 0.1;
+		}
+	} else if (options.worn.under_upper.index) {
+		options.zarms = ZIndices.under_upper_arms - 0.1;
+	} else {
+		options.zarms = ZIndices.armsidle
+	}
+
+
+	// Do not put skin above sleeves
+	if (options.worn.under_upper.setup.sleeve_img === 1) {
+		options.zarms = ZIndices.under_upper_arms - 0.1;
+	} else if (options.worn.upper.setup.sleeve_img === 1) {
+		if (options.arm_left === "cover") {
+			if (options.upper_tucked) {
+				options.zarms = ZIndices.upper_arms_tucked - 0.1;
+			} else {
+				options.zarms = ZIndices.upper_arms - 0.1;
+			}
+		} else {
+			options.zarms = ZIndices.under_upper_arms - 0.1;
+		}
+	}
+
+	options.hideAll = false;
+	if (options.worn.upper.setup.name === "cocoon") options.hideAll = true;
+
+	options.zupper = (options.upper_tucked) ? ZIndices.upper_tucked : ZIndices.upper;
+	options.zupperleft = (options.upper_tucked) ? ZIndices.upper_arms_tucked : ZIndices.upper_arms;
+	options.zupperright = (options.upper_tucked) ? ZIndices.upper_arms_tucked : ZIndices.upper_arms;
+
+	if (options.arm_right === "cover" || options.arm_right === "hold") options.zupperright = ZIndices.right_cover_arm + 1;
+	if (options.arm_left === "cover") options.zupperleft = ZIndices.left_cover_arm + 1;
+	if (options.worn.head.setup.name === "sage witch hat") {
+		const ears = isPartEnabled(options.fox_ears_type) || isPartEnabled(options.wolf_ears_type) || isPartEnabled(options.cat_ears_type)
+		if (ears) options.hideHeadAcc = true;
+	}
+	if (options.worn.neck.setup.name === "familiar collar") {
+		if (T.magicLeash) {
+			// For debug purposes to determine leash escapes
+			V.magicLeashPassage = V.passage;
+			V.magicLeashPassagePrev = V.passagePrev;
+		} else if (!V.worn.neck.type.includes("leash")) {
+			options.hideLeash = true;
+		}
+	}
+
+	// Generate mask images
+	options.lowerMask = [];
+	options.lowerBellyMask = [];
+	options.lowerShadowMask = [];
+	options.underLowerMask = [];
+	options.underLowerShadowMask = [];
+	options.underUpperMask = [];
+	options.upperMask = [];
+	options.legsMask = [];
+	if (options.worn.lower.setup.mask_img === 1) {
+		options.lowerMask.push(
+			gray_suffix(
+				`img/clothes/lower/${options.worn.lower.setup.variable}/${options.worn.lower.integrity}.png`,
+				options.filters['worn_lower']
+			))
+	}
+	if (options.worn.upper.setup.mask_img === 1) {
+		options.upperMask.push(
+			gray_suffix(
+				`img/clothes/upper/${options.worn.upper.setup.variable}/${options.worn.upper.integrity}.png`,
+				options.filters['worn_upper']
+			))
+	}
+
+	const hairTails = ["curly pigtails", "fluffy ponytail", "thick sidetail", "thick twintails", "ribbon tail", "thick sidetail", "thick ponytail", "half-up"];
+	const thickTails = ["scorpion tails", "thick pigtails", "thick twintails"];
+	const furCap = ["furcap f", "furcap m"];
+	if (options.worn.upper.setup.mask_img === 1 && options.worn.upper.setup.name === "cocoon") {
+		options.head_mask_src = "img/clothes/upper/cocoon/mask.png";
+	} else if (
+		options.worn.over_head.setup.mask_img === 1
+		&& !(options.hood_down && options.worn.over_head.setup.hood && options.worn.over_head.setup.outfitSecondary !== undefined)
+	) {
+		options.head_mask_src = `img/clothes/head/${options.worn.over_head.setup.variable}/mask.png`;
+	} else if (
+		options.worn.head.setup.mask_img === 1
+		&& !(options.hood_down && options.worn.head.setup.hood && options.worn.head.setup.outfitSecondary !== undefined)
+	) {
+		if (
+			options.worn.head.setup.mask_img_ponytail === 1
+			&& hairTails.includes(options.hair_sides_type)
+			|| thickTails.includes(options.hair_sides_type)
+			&& furCap.includes(options.worn.head.setup.variable)
+		) {
+			options.head_mask_src = `img/clothes/head/${options.worn.head.setup.variable}/mask_ponytail.png`;
+		} else {
+			options.head_mask_src = `img/clothes/head/${options.worn.head.setup.variable}/mask.png`;
+		}
+	} else {
+		options.head_mask_src = null;
+	}
+
+	if (["fro", "afro pouf", "afro puffs"].includes(options.hair_sides_type) && options.hair_fringe_type === "fro") {
+		options.fringe_mask_src = `img/hair/fringe/${options.hair_fringe_type}/mask.png`;
+	} else {
+		options.fringe_mask_src = null;
+	}
+
+	if (
+		options.worn.upper.setup.type.includes("bellyHide")
+		|| options.worn.lower.setup.type.includes("bellyHide")
+		|| !V.worn.over_upper.type.includes("naked")
+	) {
+		options.belly -= 3;
+	}
+
+	const bellyDir = "img/clothes/belly"
+	if (between(options.belly, 8, 24)) {
+		options.belly_mask_lower_shadow_src = `${bellyDir}/shadow_${options.belly}.png`;
+		options.lowerShadowMask.push(options.belly_mask_lower_shadow_src);
+		options.underLowerShadowMask.push(options.belly_mask_lower_shadow_src);
+		options.belly_mask_upper_shadow_src = `${bellyDir}/shadow_${options.belly}.png`;
+	}
+
+	if (between(options.belly, 15, 24)) {
+		options.belly_mask_src = options.worn.upper.setup.pregType == "min" ?
+			`${bellyDir}/mask_min_${options.belly}.png` : `${bellyDir}/mask_${options.belly}.png`;
+		options.lowerBellyMask.push(options.belly_mask_src);
+
+		if (V.worn.upper.outfitPrimary == undefined && options.worn.lower.setup.pregType !== "cover") {
+			if (options.belly >= 19) {
+				options.belly_hides_lower = true;
+				options.belly_mask_clip_src = `${bellyDir}/mask_clip_${options.belly}.png`;
+				options.lowerMask.push(options.belly_mask_clip_src);
+				options.legsMask.push(options.belly_mask_clip_src);
+
+				const check = options.worn.upper.setup.pregType == "split";
+				const suffix = options.belly >= 22 ? "_big.png" : ".png";
+				options.shirt_mask_clip_src = check ? `${bellyDir}/mask_shirt_clip${suffix}` : null;
+				options.shirt_move_left_src = check ? `${bellyDir}/mask_shirt_left${suffix}` : null;
+				options.shirt_move_left2_src = check ? `${bellyDir}/mask_shirt_left2.png` : null;
+				options.shirt_move_right_src = check ? `${bellyDir}/mask_shirt_right.png` : null;
+				options.shirt_move_right2_src = check ? `${bellyDir}/mask_shirt_right2.png` : null;
+				options.shirt_move_right3_src = check ? `${bellyDir}/mask_shirt_right3.png` : null;
+
+				if (check) options.shirt_mask_breasts_src = `${bellyDir}/mask_shirt_breasts.png`;
+			} else {
+				options.belly_mask_clip_src = null;
+			}
+		}
+
+		if (V.worn.under_upper.outfitPrimary == undefined) {
+			options.belly_hides_under_lower = true;
+			options.underLowerMask.push(`${bellyDir}/mask_clip_${options.belly}.png`);
+			options.underLowerShadowMask.push(`${bellyDir}/mask_clip_${options.belly}.png`);
+		}
+	}
+
+	const notMasc = ["curvy", "slender"].includes(options.body_type);
+	const soft = options.body_type === "soft" && !(between(options.belly, 8, 24));
+	if (notMasc && options.breasts === "cleavage") {
+		const suffix = between(options.breast_size, 3, 4) ? "-mid.png" : ".png";
+		options.breasts_mask_src = `img/body/breasts/breasts-${options.body_type}${suffix}`
+	} else {
+		options.breasts_mask_src = null;
+	}
+
+	if (
+		options.worn.neck.setup.name === "suspenders"
+		&& options.worn.neck.setup.altposition != "alt"
+		&& ["retro shorts", "retro trousers", "baseball shorts", "wide leg trousers"].includes(options.worn.lower.setup.name)
+	) {
+		options.high_waist_suspenders = true;
+	} else {
+		options.high_waist_suspenders = null;
+	}
+
+	if (notMasc) {
+		["upper", "under_upper"].forEach(slot => {
+			const isFormfitting = options.worn[slot].setup.formfitting;
+			options[`${slot}_fitted_clip_src`] = isFormfitting ? `img/clothes/masks/formfitting_${options.body_type}.png` : null;
+			options[`${slot}_fitted_right_move_src`] = isFormfitting ? "img/clothes/masks/formfitting_right_move.png" : null;
+			options[`${slot}_fitted_left_move_src`] = isFormfitting ? "img/clothes/masks/formfitting_left_move.png" : null;
+		});
+	} else if (soft) {
+		const upperCheck = !(options.worn.lower.setup.outfitSecondary && options.worn.lower.setup.outfitSecondary[1] === options.worn.upper.setup.name) && !options.worn.lower.setup.type.includes("covered") && !options.high_waist_suspenders && !options.belly_mask_clip_src;
+		const underUpperCheck = !(options.worn.under_lower.setup.outfitSecondary && options.worn.under_lower.setup.outfitSecondary[1] === options.worn.under_upper.setup.name) && !options.belly_mask_clip_src;
+		["upper", "under_upper"].forEach(slot => {
+			options[`${slot}_fitted_right_move_src`] = "img/clothes/masks/soft_right_move.png";
+			options[`${slot}_fitted_left_move_src`]  = "img/clothes/masks/soft_left_move.png";
+		});
+		options.lowerMask.push(upperCheck && !options.belly_tucked ? "img/clothes/masks/soft_lower_clip.png" : null);
+		options.legsMask.push(upperCheck && !options.belly_tucked ? "img/clothes/masks/soft_lower_clip.png" : null);
+		options.lowerShadowMask.push(upperCheck ? "img/clothes/masks/soft_shadow.png" : null);
+		options.underLowerShadowMask.push(underUpperCheck ? "img/clothes/masks/soft_shadow.png" : null);
+		options.underLowerMask.push(underUpperCheck? "img/clothes/masks/soft_lower_clip.png" : null);
+	}
+
+	if (options.lower_tucked && !options.worn.lower.setup.notuck && !options.worn.feet.setup.notuck) {
+		options.feet_clip_src = `img/clothes/feet/${options.worn.feet.setup.variable}/mask.png`;
+		options.lowerMask.push(options.feet_clip_src);
+		options.legsMask.push(options.feet_clip_src);
+		options.lowerBellyMask.push(options.feet_clip_src);
+	} else if (!options.worn.feet.setup.notuck) {
+		options.legsMask.push(`img/clothes/feet/${options.worn.feet.setup.variable}/mask.png`)
+	} else {
+		options.feet_clip_src = null;
+	}
+
+	options.genitals_chastity = options.worn.genitals.setup.type.includes("chastity");
+
+	if (options.worn.handheld.setup.zIndex === "over_head" ) {
+		options.handheld_overhead = true;
+		options.angel_halo_lower = options.arm_right !== "cover";
+	} else {
+		options.handheld_overhead = null;
+		options.angel_halo_lower = false;
+	}
+
+	if (options.arm_right === "hold") {
+		options.handheld_position = 'hold';
+	} else if (["right_cover"].includes(options.worn.handheld.setup.holdPosition)) {
+		options.handheld_position = 'right_cover';
+	} else {
+		options.handheld_position = null;
+	}
+
+	options.genitals_chastity = options.worn.genitals.setup.type.includes("chastity");
+
+	if (
+		options.worn.head.setup.mask_img === 1
+		&& !(options.hood_down && options.worn.head.setup.hood && options.worn.head.setup.outfitSecondary !== undefined)
+	) {
+		options.hood_mask = true;
+	} else {
+		options.hood_mask = null;
+	}
+
+	if (options.shirt_mask_clip_src) {
+		options.underUpperMask.push(options.shirt_mask_clip_src)
+		options.upperMask.push(options.shirt_mask_clip_src)
+	} else {
+		options.underUpperMask.push(options.upper_fitted_clip_src)
+		options.upperMask.push(options.upper_fitted_clip_src)
+	};
+
+
+	/*clothes whose sleeves cannot be rolled up*/
+	if (options.worn.upper.setup.variable === "schoolcardigan" && options.worn.upper.alt !== "alt") {
+		options.alt_sleeve_state = null;
+	} else {
+		options.alt_sleeve_state = true;
+	}
+	T.canvasOptions = options;
+}
+
+
+
+
+======================
+
+请你给出一个最简单的模组实现方案：
+在composeLayers渲染的时候，在原本worn的基础上，将V.wornStacking数组中的同键的值一起显示出来。
+
+以下为示例格式，真实数据依游戏内而定。但是它们的键已经确定为V.worn的键，不多也不少。
+V.worn: {
+	face: {index: 3, slot: 'face', name: 'surgical mask', cn_name_cap: '医用外科口罩', variable: 'surgicalmask', …}
+	feet: {index: 19, slot: 'feet', name: 'field boots', cn_name_cap: '马靴', variable: 'field', …}
+	genitals: {index: 0, slot: 'genitals', name: 'naked', cn_name_cap: '赤裸', variable: 'naked', …}
+	handheld: {index: 0, slot: 'handheld', name: 'naked', name_cap: 'Naked', cn_name_cap: '赤裸', …}
+	hands: {index: 2, slot: 'hands', name: 'mittens', cn_name_cap: '保暖手套', variable: 'mittens', …}
+	head: {index: 2, slot: 'head', name: 'beanie', cn_name_cap: '毛线帽', variable: 'beanie', …}
+	legs: {index: 22, slot: 'legs', name: 'rib-knit socks', cn_name_cap: '搓纹袜', variable: 'striped socks long', …}
+	lower: {index: 5, slot: 'lower', name: 'shorts', cn_name_cap: '短裤', variable: 'shorts', …}
+	neck: {index: 21, slot: 'neck', name: 'collar with leash', cn_name_cap: '带链子的项圈', variable: 'collarleash', …}
+	over_head: {index: 0, slot: 'over_head', name: 'naked', name_cap: 'Naked', cn_name_cap: '赤裸', …}
+	over_lower: {index: 0, slot: 'over_lower', name: 'naked', name_cap: 'Naked', cn_name_cap: '赤裸', …}
+	over_upper: {index: 0, slot: 'over_upper', name: 'naked', name_cap: 'Naked', cn_name_cap: '赤裸', …}
+	under_lower: {index: 0, slot: 'under_lower', name: 'naked', cn_name_cap: '赤裸', name_simple: '赤裸', …}
+	under_upper: {index: 0, slot: 'under_upper', name: 'naked', cn_name_cap: '赤裸', variable: 'naked', …}
+	upper: {index: 8, slot: 'upper', name: 'tank top', cn_name_cap: '背心', variable: 'tanktop', …}
+}
+T.modeloptions: {clothesPath: 'img/clothes/', show_face: true, show_hair: true, show_writings: true, show_tf: true, …}
+T.modeloptions.worn = V.worn
+V.wornStacking: {
+	face: [
+		{index: 1, slot: 'face', name: 'glasses', cn_name_cap: '眼镜', variable: 'glasses', …},
+		…
+	],
+	…
+}
+
+我大概了解了一下，游戏渲染的流程大概是：
+<<modelprepare-player-clothes>>
+(
+	Object.assign(T.modeloptions, getClothingOptions());
+	const overrides = V.modeloptionsOverride;
+	if (Object.keys(overrides).length > 0) {
+		for (const [key, value] of Object.entries(overrides)) {
+			T.modeloptions[key] = value;
+		}
+	}
+)
+
+↓ T.modeloptions (T.modeloptions.worn)
+
+<<widget "animatemodel">>
+	T.modelclass.animate(canvas, T.modeloptions, Renderer.defaultListener);
+<</widget>>
+
+↓ T.modeloptions → this.options
+
+animate(canvas, options, listener) {
+	return Renderer.animateLayers(this.canvas, this.compile(this.options), this.listener, true);
+}
+
+↓ this.compile(this.options) → layerSpecs
+
+function animateLayers(targetCanvas, layerSpecs, listener, autoStop = true) {
+	composeLayers(targetCanvas, layerSpecs, 1, myListener);
+}
+
+↓ layerSpecs
+
+function composeLayers(targetCanvas, layerSpecs, frameCount, listener) {
+	const layers = layerSpecs……
+}
+
+↓ layers
+
+……
+
+充分理解js文件的内容和方法，你可以通过重写原版方法来实现上述功能。使用最简单有效的方法。
+我不知道具体如何实现，但是起码要保证：
+1、 preprocess：让V.wornStacking的叠加衣服不被筛选
+2、 this.layerList 要保证叠加衣服的层级存在
+
+
+============================
+
+worn: {
+	face: {accColour : 0 alpha : 1 alt : undefined colour : "black" index : 3 integrity : "full" pattern : undefined pattern_layer : undefined setup : accIcon : 0 accessory : 0 accessory_colour : 0 accessory_colour_options : [] cn_name_cap : "医用外科口罩" colour : 0 colour_options : (12) ['black', 'blue', 'brown', 'green', 'pink', 'purple', 'red', 'tangerine', 'teal', 'white', 'yellow', 'custom'] colour_sidebar : 1 cost : 2000 cursed : 0 description : "普通的外科口罩，可以隐藏你的身份。" fabric_strength : 20 gender : "n" iconFile : "surgical_mask.png" index : 3 integrity : 20 integrity_max : 20 location : 0 name : "surgical mask" name_cap : "Surgical mask" plural : 0 reveal : 1 shop : (2) ['clothing', 'adult'] slot : "face" state : 0 state_base : 0 type : (2) ['mask', 'covered'] variable : "surgicalmask" warmth : 1 word : "a"}
+	...
+}
