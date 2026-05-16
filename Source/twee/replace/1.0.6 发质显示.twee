@@ -1,0 +1,12 @@
+<<characteristic-text _hairTextConfig>>
+<br><br>
+<<if $hairtexture is undefined>><<set $hairtexture to 50>><</if>>
+你的头发
+<<if $hairtexture > 99>>触感顺滑, 在光照下呈现均匀反光
+<<elseif $hairtexture > 75>>飘柔有光，掉发很少
+<<elseif $hairtexture > 49>>蓬松垂顺, 略有掉发
+<<elseif $hairtexture > 25>>开始有一点点黯哑，变黄，稍微会看到一些小分叉，有时掉发
+<<elseif $hairtexture > 12>>比较干枯无光，经常掉发
+<<else>>非常脆弱，明显感觉到很粗燥，发尾分叉严重，打结严重，掉发很严重
+<</if>>
+（发质：$hairtexture/100）。

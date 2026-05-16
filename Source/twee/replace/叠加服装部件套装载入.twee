@@ -1,0 +1,19 @@
+		<<set _notEquipped to {}>>
+
+		<<run DolOptimization.wornStackingRemoveAll()>>
+		<<if $outfit[$wear_outfit]["stacking"]>>
+			<<for $_slot, $_itemNames range $outfit[$wear_outfit]["stacking"]>>
+				<<for _i to 0; _i lt $_itemNames.length; _i++>>
+					<<set _itemName to $_itemNames[_i]>>
+					<<set _index to $wardrobe[$_slot].findIndex(i => i.name == _itemName)>>
+					<<if _index isnot -1>>
+						<<set $wornStacking[$_slot] to $wornStacking[$_slot] || []>>
+						<<run $wornStacking[$_slot].push(clone($wardrobe[$_slot][_index]))>>
+						<<set $wardrobe[$_slot].deleteAt(_index)>>
+					<<else>>
+						<<set _notEquipped[$_slot+_i] to {"name": setup.update_cloth_cn(_itemName), "reason": "not found"}>>
+					<</if>>
+				<</for>>
+			<</for>>
+		<</if>>
+		

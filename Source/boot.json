@@ -1,6 +1,6 @@
 {
     "name": "原版优化",
-    "version": "1.0.5",
+    "version": "1.0.6",
     "styleFileList": [
         "stylesheet/dol-optimization.css",
         "stylesheet/modloader-optimization.css"
@@ -21,7 +21,8 @@
         "guide/衣柜容量自定义.png",
         "guide/大大大衣柜升级.png",
         "guide/处女膜修复.png",
-        "guide/叠加服装部件.png"
+        "guide/叠加服装部件.png",
+        "guide/理发店售卖头发.png"
     ],
     "addonPlugin": [
         {
@@ -52,25 +53,25 @@
                     "tip": "【1.0.3】大大大衣柜升级",
                     "passage": "Widgets Wardrobe",
                     "findString": "__ <i>_selectedWardrobe[_wardrobe_list].length / _selectedWardrobe.space</i>",  
-                    "replaceFile": "twee/replace/大大大衣柜升级.twee"
+                    "replaceFile": "twee/replace/1.0.3 大大大衣柜升级.twee"
                 },
                 {
                     "tip": "【1.0.4】处女膜修复",
                     "passage": "Hospital Foyer",
                     "findString": "\t\t<<set _aPregnancy to $sexStats.anus.pregnancy>>\n\t\t<<set _vPregnancy to $sexStats.vagina.pregnancy>>",  
-                    "replaceFile": "twee/replace/医院处女膜修复.twee"
+                    "replaceFile": "twee/replace/1.0.4 医院处女膜修复.twee"
                 },
                 {
                     "tip": "【1.0.4】处女膜修复 剧烈运动破坏",
                     "passage": "Widgets",
                     "findString": "\t<<set $physique = Math.clamp($physique, 0, $physiquesize)>>\n\t<<set Weather.BodyTemperature.addActivity(\"physique\")>>",  
-                    "replaceFile": "twee/replace/医院处女膜修复剧烈运动破坏.twee"
+                    "replaceFile": "twee/replace/1.0.4 剧烈运动破坏修复处女膜.twee"
                 },
                 {
                     "tip": "【1.0.4】处女膜修复 剧烈运动破坏 日志时效性",
                     "passage": "Widgets Journal",
                     "findString": "\t\t\t<<if $avery_mansion>>/* Is Avery paying for the PC? */",  
-                    "replaceFile": "twee/replace/医院处女膜修复剧烈运动破坏日志时效性.twee"
+                    "replaceFile": "twee/replace/1.0.4 处女膜破坏日志时效性.twee"
                 },
                 {
                     "tip": "【1.0.5】叠加服装部件 衣柜",
@@ -83,8 +84,59 @@
                     "passage": "Widgets Wardrobe",
                     "findString": "\t\t\t\t<<set V[_wear] = _args[1]>>",  
                     "replaceFile": "twee/replace/叠加服装部件衣柜链接.twee"
+                },
+                {
+                    "tip": "【1.0.6】叠加服装部件 套装保存",
+                    "passage": "Widgets Wardrobe",
+                    "findString": "\t\t\t\tgenitals: clone($worn.genitals.name),",  
+                    "replaceFile": "twee/replace/叠加服装部件套装保存.twee"
+                },
+                {
+                    "tip": "【1.0.6】叠加服装部件 套装修改",
+                    "passage": "Widgets Outfits",
+                    "findString": "\t\t<<set _outfit to $outfit[$wear_outfit]>>",  
+                    "replaceFile": "twee/replace/叠加服装部件套装修改.twee"
+                },
+                {
+                    "tip": "【1.0.6】叠加服装部件 套装载入",
+                    "passage": "Widgets Outfits",
+                    "findString": "\t\t<<set _notEquipped to {}>>",  
+                    "replaceFile": "twee/replace/叠加服装部件套装载入.twee"
+                },
+                {
+                    "tip": "【1.0.6】理发店售卖头发",
+                    "passage": "Hairdressers",
+                    "findString": "|Hairdressers Seat]]>><</link>>",  
+                    "replaceFile": "twee/replace/1.0.6 理发店售卖头发.twee"
+                },
+                {
+                    "tip": "【1.0.6】发胶降低发质",
+                    "passage": "Widgets Mirror",
+                    "findString": "<<widget \"hairgelApply\">>",  
+                    "replaceFile": "twee/replace/1.0.6 发胶降低发质.twee"
+                },
+                {
+                    "tip": "【1.0.6】发质显示",
+                    "passage": "Characteristics",
+                    "findString": "<<characteristic-text _hairTextConfig>>",  
+                    "replaceFile": "twee/replace/1.0.6 发质显示.twee"
                 }
             ]
+        },
+        {
+            "modName": "ReplacePatcher",
+            "addonName": "ReplacePatcherAddon",
+            "modVersion": "1.2.0",
+            "params": {
+                "js": [          
+                    {
+                        "tip": "【1.0.6】叠加服装部件 衣柜链接",
+                        "fileName": "time.js",
+                        "from": "count += V.sexStats.pills.pills[\"Hair Growth Formula\"].doseTaken ? 1 : 0;",
+                        "to": "count += V.sexStats.pills.pills[\"Hair Growth Formula\"].doseTaken ? 1 : 0;\nV.hairtexture = Math.clamp(V.hairtexture ? V.hairtexture + 0.05 : 50 + 0.05, 0, 100)"
+                    }
+                ]
+            }
         },
         {
             "modName": "ModLoader DoL ImageLoaderHook",

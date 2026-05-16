@@ -1,0 +1,2 @@
+<<widget "hairgelApply">>
+	<<set $hairtexture to Math.clamp($hairtexture ? $hairtexture - 1 : 50 - 1, 0, 100)>>

@@ -1,4 +1,4 @@
-				<<if !$options.DolOptimization.WornStacking or ["upper", "under_upper", "hands", "handheld"].includes(_wardrobe_list) or ["strip","towel","large_towel"].includes(_args[1]) or $worn[_wardrobe_list].index is 0>>
+				<<if !$options.DolOptimization.WornStacking or ["upper", "under_upper", "hands", "handheld"].includes(_wardrobe_list) or ["strip","towel","large_towel"].includes(_args[1]) or $wardrobeOption isnot "wear" or $worn[_wardrobe_list].index is 0>>
 					<<set V[_wear] = _args[1]>>
 				<<else>>
 					<<set _item to _selectedWardrobe[_wardrobe_list][_args[1]]>>

@@ -1,3 +1,4 @@
+:: ======= 医院处女膜修复 ======
 :: Hospital Hymen Reconstruction
 <<set $outside to 0>><<set $location to "hospital">><<effects>>
 <<generate1>><<person1>>
@@ -61,7 +62,7 @@
 :: Hospital Hymen Reconstruction Done
 <<set $player.virginity.vaginal to true>>
 <<if $player.virginity.temple isnot false>><<set $player.virginity.temple to true>><</if>>
-<<unset $player.virginityDetails.vaginal>>
+<<if $player.virginityDetails.vaginal>><<unset $player.virginityDetails.vaginal>><</if>>
 <<set $hymenreconstructioncount to 7>>
 
 你从昏迷中苏醒过来，周遭还是原来的房间。一切都似乎没有什么两样，除了你感觉你的<<pussy>>稍微有点疼痛。哈珀进入了房间。
@@ -77,3 +78,100 @@
 <<endevent>>
 
 <<link [[继续|Hospital Foyer]]>><<clotheson>><</link>>
+
+
+:: ======= 理发店售卖头发 ====== [widget]
+<<widget "hairDressersSellOptions">>
+	<div id="hairDresserDiv">
+		<div id="mannequin" @class="'mannequin ' + _hiddenMannequin" style="height:unset">
+			<<mannequinHairdresser>>
+		</div>
+		<div>
+			<<if $hairlength > 100>>
+				<<set _haircutvalue to $hairlength - $hairOption>>
+				<<set $currentEarn to _haircutvalue * 10>>
+				<<if $haircolour isnot $naturalhaircolour>>
+					<<set $currentEarn *= 0.8>> <!-- 染色后的头发价格降低20% -->
+				<</if>>
+				<<if $hairtexture is undefined>><<set $hairtexture to 50>><</if>>
+				<<set $currentEarn to $currentEarn * (1 + ($hairtexture - 50) / 50 * 0.95)>>
+				<<set $currentEarn to $currentEarn.toFixed(2)>>
+
+				将你的两边剪至你的：
+				<br>
+				<<set _hairNames to ["耳朵", "下巴", "肩膀", "胸部上方", "胸部中间", "腹部上方", "肚脐", "大腿", "膝盖", "脚踝"]>>
+				<<set _hairOptions to {"不剪发":$hairlength}>>
+				<<for _i to 9; _i >= 0; _i-->>
+					<<set $_length to (_i * 100) + 100>>
+					<<if $_length + 50 < $hairlength>>
+						<<set _hairOptions[_hairNames[_i]] to $_length>>
+					<</if>>
+				<</for>>
+				<<listbox "$hairOption" autoselect>>
+					<<optionsfrom _hairOptions>>
+				<</listbox>>
+			<<else>>
+				你的头发长度不够，无法卖出。
+			<</if>><br><br>
+		</div>
+	</div>
+
+	<<if $currentEarn > 0>>
+		<<hairdressericon "chair">><<link [[确认|Hairdressers Sell Hair Session]]>><</link>>
+	<</if>>
+	<br><br>
+	<<getouticon>><<link [[离开|Hairdressers]]>><<endevent>><</link>>
+<</widget>>
+
+:: Hairdressers Sell Hair
+<<generate1>><<person1>>你坐了下来，理发师很快出现在你的身后。
+<<if $hairtexture is undefined>><<set $hairtexture to 50>><</if>>
+<<if $hairtexture > 99>>"这么柔软细腻的头发，你打算给你自己留多少？"
+<<elseif $hairtexture > 75>>"是比较飘柔的头发，你打算给你自己留多少？"
+<<elseif $hairtexture > 49>>"是蓬松垂顺的头发，你打算给你自己留多少？"
+<<elseif $hairtexture > 25>>"你的头发有点变黄分叉，但是我们还是可以收。"
+<<elseif $hairtexture > 12>>"你的头发干枯无光，但是我们还是可以低价收购。"
+<<else>>"你的头发很粗燥，分叉严重，你要硬卖给我们，我们也只能做一些很残次的产品，价格不会很高。"
+<</if>>
+<br>
+<<he>>告诉你，标准每斤是 <span class="gold">￡100</span>，但是这个价格还是具体看你的发质，并且如果是染过的头发，价格会更低。<br><br>
+<<set $hairOption to $hairlength>>
+<<set $fringeOption to $fringelength>>
+<<set $dyeOption to "noChange">>
+<<set $browsDyeOption to "noChange">>
+<<set $twoToneDyeOption1 to "noChange">>
+<<set $twoToneDyeOption2 to "noChange">>
+<<set $twoToneHairDye to false>>
+<<set $twoToneStyle to $hairColourGradient.style>>
+<div id="currentEarn" class="gold">
+	将会获得: £0
+</div>
+<div id="hairDressers">
+	<<hairDressersSellOptions>>
+</div>
+<<run $(() =>
+	$("#hairDressers").on("change", ".macro-listbox, .macro-radiobutton, .macro-checkbox", function (e) {
+		Wikifier.wikifyEval("<<replace #hairDressers>><<hairDressersSellOptions>><</replace>>");
+		Wikifier.wikifyEval('<<replace #currentEarn>>将会获得: £<<print $currentEarn / 100>><</replace>><<numberify "#passages > .passage">>');
+	})
+);>>
+
+:: Hairdressers Sell Hair Session
+在得到你肯定的答复后，<<he>>就开始做事了。
+<br><br>
+<<set _pass to 0>>
+<<if $hairOption isnot $hairlength>>
+	理发师开始剪头发，小心的一边剪下一定长度的头发一边收集，好好地保存在桌子上，并用刻度尺压着。过了会儿，<<he>>站起来，看着身旁的这些头发，点了点头。
+	<br><br>
+	<<set $hairlength to clone($hairOption)>>
+	<<set _pass += 30>>
+	<<unset $hairOption>>
+<</if>>
+<<pass _pass>>
+<<calchairlengthstage>>
+
+<<getouticon>><<link [[离开|Hairdressers]]>>
+	<<endevent>>
+	<<money $currentEarn "hairdressers">>
+	<<unset $currentEarn>>
+<</link>>

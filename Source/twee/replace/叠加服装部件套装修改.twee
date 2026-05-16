@@ -1,0 +1,2 @@
+		<<set _outfit to $outfit[$wear_outfit]>>
+		<<set _outfit.stacking to DolOptimization.getStackingOutfit()>>

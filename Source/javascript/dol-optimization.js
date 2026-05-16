@@ -3,7 +3,6 @@ window.DolOptimization = {};
 DolOptimization.STORAGE_KEY = 'opt';
 
 
-
 // === 注入 =====================================
 $(document).on(":passagerender", function (ev) {DolOptimization.onPassageRender(ev)});
 DolOptimization.onPassageRender = function (ev) {
@@ -459,13 +458,9 @@ DolOptimization = { ...DolOptimization,
         // 1. 调用原版编译，得到所有标准图层
         const layerSpecs = DolOptimization.originalCompile.call(this, options);
         if (options.lights || !V.wornStacking) return layerSpecs;
+        if (options.root == "img/sex/") return layerSpecs;
         if (!V.options.DolOptimization.WornStacking) {
-            for (const [slot, items] of Object.entries(V.wornStacking)) {
-                items.forEach((item, index) => {
-                    V.wardrobe[slot].push(item);
-                });
-            }
-            V.wornStacking = {};
+            DolOptimization.wornStackingRemoveAll(); 
             return layerSpecs
         };
 
@@ -615,6 +610,26 @@ DolOptimization = { ...DolOptimization,
             V.wardrobe[T.wardrobe_list].push(V.wornStacking[T.wardrobe_list][index]);
             V.wornStacking[T.wardrobe_list].splice(index, 1);
         }
+    },
+    wornStackingRemoveAll: function() {
+        if (!V.wornStacking) return;
+        for (const [slot, items] of Object.entries(V.wornStacking)) {
+            items.forEach((item, index) => {
+                V.wardrobe[slot].push(item);
+            });
+        }
+        V.wornStacking = {};
+    },
+    getStackingOutfit: function() {
+        const stacking = {}
+        for (const [slot, items] of Object.entries(V.wornStacking)) {
+            if (!Array.isArray(items) || items.length === 0) continue;
+            stacking[slot] = []
+            items.forEach((item, index) => {
+                stacking[slot].push(item.name)
+            })
+        }
+        return stacking
     }
 };
 (function() {
