@@ -36,6 +36,7 @@
 	</div>
 	<<run DolOptimization.rv()>>
 	<div class="settingsGrid">
+		<div class="settingsHeader options">内容设置</div>
 		<div class="optimization">
 			“打开/关闭导航栏”的黑块箭头: 
 			<br>
@@ -86,13 +87,6 @@
 			<</button>>
 			<img src="guide/大大大衣柜升级.png">
 		</div>
-		<div class='optimization'>
-			<label>
-				处女膜修复
-			</label><br>
-			<small>你可以在医院处修复处女膜。</small><br>
-			<img src="guide/处女膜修复.png">
-		</div>
 		<div class="optimization"> <<if $passage is 'Start'>><div class="disabled"/><</if>>
 			<label>
 				<<checkbox "$options.DolOptimization.WornStacking" false true autocheck>>
@@ -105,6 +99,16 @@
 				<a target="_blank" class="link-external" href='https://tieba.baidu.com/home/main?id=tb.1.c5ee8bec.KPmrsbwyRq56_tdZjH_9Nw%3Ft%3D1778860919&fr=pb' tabindex="0">「小鼹鼠.」</a>
 			</div>
 		</div>
+	</div>
+	<div class="settingsGrid">
+		<div class="settingsHeader options">内容预览</div>
+		<div class='optimization'>
+			<label>
+				处女膜修复
+			</label><br>
+			<small>你可以在医院处修复处女膜。</small><br>
+			<img src="guide/处女膜修复.png">
+		</div>
 		<div class='optimization'>
 			<label>
 				理发店售卖头发
@@ -112,6 +116,14 @@
 			<small>你可以在理发店剪下并出售你的头发。在属性栏可以看到你的发质。使用生发配方会增加发质，使用发胶会降低发质。</small><br>
 			<img src="guide/理发店售卖头发.png">
 			<a target="_blank" class="link-external" href='https://tieba.baidu.com/home/main?id=tb.1.d4b6efc.7_Xn8IJOrS0i6BeCVwXnbw%3Ft%3D1753267139&fr=pb' tabindex="0">「叶叶的柠檬精」</a>
+		</div>
+		<div class='optimization'>
+			<label>
+				园艺大师
+			</label><br>
+			<small>你可以可以在孤儿院的大厅和卧室看到花坛中是否已经浇水。花园可以查看种子生长的进度。加入了催熟肥，使用后缩短种子成熟时间并且增加少量土壤质量。加入了自动灌溉机，一次补充后可以支持20次的灌溉次数。可以在购物中心一楼农资店购买。</small><br>
+			<img src="guide/园艺大师.png">
+			<a target="_blank" class="link-external" href='https://tieba.baidu.com/home/main?id=tb.1.1003b7ad.5MZbTG9s2a-wxZyCKtsxCw%3Ft%3D1779616769&fr=pb' tabindex="0">「好雪本気」</a>
 		</div>
 	</div>
 	<!-- <div class="settingsGrid">

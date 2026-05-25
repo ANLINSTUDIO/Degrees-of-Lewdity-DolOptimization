@@ -1,0 +1,39 @@
+	<<if $automaticirrigationmachines and $automaticirrigationmachines.hasOwnProperty(_location)>>
+		<<if $automaticirrigationmachines[_location] gt 0 and Weather.precipitation isnot "rain">>
+			<<for _plantbed range $_plotsHere>>
+				<<if _plantbed.stage isnot 0 and _plantbed.stage isnot 5 and _plantbed.water is 0 and $automaticirrigationmachines[_location] gt 0>>
+					<<set $automaticirrigationmachines[_location]-->>
+					<<set _plantbed.water to 1>>
+				<</if>>
+			<</for>>
+		<</if>>
+		<<set _automaticirrigationmachine to $automaticirrigationmachines[_location]>>
+		
+		<<set _color to "gray">>
+		<<if _automaticirrigationmachine > 18>>
+			<<set _color to "green">>
+		<<elseif _automaticirrigationmachine > 10>>
+			<<set _color to "yellow">>
+		<<elseif _automaticirrigationmachine > 5>>
+			<<set _color to "purple">>
+		<<else>>
+			<<set _color to "red">>
+		<</if>>
+		<<if _automaticirrigationmachine > 0>>
+			<<icon "automaticirrigationmachine.gif">>
+		<<else>>
+			<<icon "automaticirrigationmachine.png">>
+		<</if>>
+		自动灌溉机 [<span @class=_color>_automaticirrigationmachine</span>/20]
+		<<if _automaticirrigationmachine < 20>>
+			<<set _baseTimeFert to 20 - _automaticirrigationmachine>>
+			<<set _timeString to getTimeString(_baseTimeFert)>>
+			<<link "补充水源 (_timeString)" $passage>>
+				<<pass _baseTimeFert>>
+				<<set $automaticirrigationmachines[_location] to 20>>
+			<</link>>
+		<</if>>
+		<br><br>
+	<</if>>
+
+	<<set $_i to 0>>

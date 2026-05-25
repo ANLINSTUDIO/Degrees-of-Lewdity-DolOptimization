@@ -612,13 +612,34 @@ DolOptimization = { ...DolOptimization,
         }
     },
     wornStackingRemoveAll: function() {
-        if (!V.wornStacking) return;
+        if (!validArray(V.wornStacking)) {
+            // console.log("全部叠加脱下", "[失效]", V.wornStacking);
+            return
+        };
+        // console.log("全部叠加脱下", V.wornStacking);
         for (const [slot, items] of Object.entries(V.wornStacking)) {
             items.forEach((item, index) => {
                 V.wardrobe[slot].push(item);
             });
         }
         V.wornStacking = {};
+    },
+    wornStackingStore: function(location) {
+        if (location == "wardrobe" || Object.keys(V.wardrobes).includes(location) || !validArray(V.wornStacking)) {
+            // console.log("存储叠加数据", "[失效]", location, V.wornStacking);
+            return
+        };
+        // console.log("存储叠加数据", location, V.wornStacking);
+        V.store.stacking = V.store.stacking || {};
+        V.store.stacking[location] = V.wornStacking;
+        V.wornStacking = {};
+    },
+    wornStackingRestore: function(location) {
+        // console.log("恢复叠加数据", location, V.store.stacking[location]);
+        if (V.store.stacking && V.store.stacking[location]) {
+            V.wornStacking = V.store.stacking[location];
+            delete V.store.stacking[location];
+        }
     },
     getStackingOutfit: function() {
         const stacking = {}
@@ -636,6 +657,20 @@ DolOptimization = { ...DolOptimization,
     DolOptimization.originalCompile = CanvasModel.prototype.compile;
     CanvasModel.prototype.compile = DolOptimization.wornStackingCompile;
 })();
+
+// 【1.0.7】自动灌溉机
+DolOptimization = { ...DolOptimization, 
+    autoIrrigator: function(location, plot) {
+        if (V.automaticirrigationmachines && V.automaticirrigationmachines[location]) {
+            if (V.automaticirrigationmachines[location] > 0 && plot.stage != 0 && plot.stage != 5 && plot.water == 0) {
+                V.automaticirrigationmachines[location]--;
+                plot.water = 1;
+                return true;
+            }
+        }
+        return false
+    }
+};
 
 
 

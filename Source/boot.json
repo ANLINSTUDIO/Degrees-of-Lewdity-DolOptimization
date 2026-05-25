@@ -1,6 +1,6 @@
 {
     "name": "原版优化",
-    "version": "1.0.6",
+    "version": "1.0.7",
     "styleFileList": [
         "stylesheet/dol-optimization.css",
         "stylesheet/modloader-optimization.css"
@@ -16,13 +16,19 @@
         "twee/modloader/modloader.twee"
     ],
     "imgFileList": [
+        "img/misc/icon/fertiliserripening.png",
+        "img/misc/icon/automaticirrigationmachine.png",
+        "img/misc/icon/automaticirrigationmachine.gif",
+        "img/misc/icon/seeds.png",
+
         "guide/“打开关闭导航栏”的黑块箭头.png",
         "guide/自定义字体.png",
         "guide/衣柜容量自定义.png",
         "guide/大大大衣柜升级.png",
         "guide/处女膜修复.png",
         "guide/叠加服装部件.png",
-        "guide/理发店售卖头发.png"
+        "guide/理发店售卖头发.png",
+        "guide/园艺大师.png",
     ],
     "addonPlugin": [
         {
@@ -100,8 +106,32 @@
                 {
                     "tip": "【1.0.6】叠加服装部件 套装载入",
                     "passage": "Widgets Outfits",
-                    "findString": "\t\t<<set _notEquipped to {}>>",  
+                    "findString": "\t\t<<if $outfit[$wear_outfit].hairStyle>>",  
                     "replaceFile": "twee/replace/叠加服装部件套装载入.twee"
+                },
+                {
+                    "tip": "【1.0.7】叠加服装部件 全部脱下",
+                    "passage": "Widgets Clothing",
+                    "findString": "\t<<set $_location to _args[0]>>\n\t<<for $_slot range setup.clothingLayer.all>>",  
+                    "replace": "\t<<set $_location to _args[0]>>\n\t<<for $_slot range setup.clothingLayer.all>>\n\t<<run DolOptimization?.wornStackingRemoveAll()>>"
+                },
+                {
+                    "tip": "【1.0.7】叠加服装部件 全部脱下",
+                    "passage": "Widgets Clothing",
+                    "findString": "\t<<set $_location to _args[0]>>\n\t<<for $_slot range setup.clothingLayer.all.except(_args[1])>>",  
+                    "replace": "\t<<set $_location to _args[0]>>\n\t<<for $_slot range setup.clothingLayer.all.except(_args[1])>>\n\t<<run DolOptimization?.wornStackingRemoveAll()>>"
+                },
+                {
+                    "tip": "【1.0.7】叠加服装部件 区域进入脱下",
+                    "passage": "Widgets Clothing",
+                    "findString": "\t\t<<if $_cursedPrevent isnot true and _strip_restrict isnot 1 and $worn[_undressSlot].cursed isnot 1>>",  
+                    "replace": "\t\t<<run DolOptimization?.wornStackingStore(_args[0])>>\n\t\t<<if $_cursedPrevent isnot true and _strip_restrict isnot 1 and $worn[_undressSlot].cursed isnot 1>>"
+                },
+                {
+                    "tip": "【1.0.7】叠加服装部件 区域脱离装备",
+                    "passage": "Widgets Clothing",
+                    "findString": "\t<<set _store_temp to _args[0]>>",  
+                    "replace": "\t<<run DolOptimization?.wornStackingRestore(_args[0])>>\n\t<<set _store_temp to _args[0]>>"
                 },
                 {
                     "tip": "【1.0.6】理发店售卖头发",
@@ -120,7 +150,61 @@
                     "passage": "Characteristics",
                     "findString": "<<characteristic-text _hairTextConfig>>",  
                     "replaceFile": "twee/replace/1.0.6 发质显示.twee"
-                }
+                },
+                {
+                    "tip": "【1.0.7】大厅快速查看花园浇水",
+                    "passage": "Orphanage",
+                    "findString": "|Garden]]>><<pass 1>><</link>>",  
+                    "replaceFile": "twee/replace/1.0.7 大厅快速查看花园浇水.twee"
+                },
+                {
+                    "tip": "【1.0.7】卧室快速查看花园浇水",
+                    "passage": "Bedroom",
+                    "findString": "<<print setup.WeatherDescriptions.extremeTemperature()>>",  
+                    "replaceFile": "twee/replace/1.0.7 卧室快速查看花园浇水.twee"
+                },
+                {
+                    "tip": "【1.0.7】花园查看进度",
+                    "passage": "Widgets Tending",
+                    "findString": "\t\t\t<<if _plantbed.stage gte 5>>",  
+                    "replaceFile": "twee/replace/1.0.7 花园查看生长进度.twee"
+                },
+                {
+                    "tip": "【1.0.7】花园催熟肥",
+                    "passage": "Widgets Tending",
+                    "findString": "\t\t\t<br>\n\n\t\t<</capture>>\n\t\t<<set $_i++>>",  
+                    "replaceFile": "twee/replace/1.0.7 花园催熟肥.twee"
+                },
+                {
+                    "tip": "【1.0.7】花园催熟肥存有",
+                    "passage": "Widgets Tending",
+                    "findString": "<<number $fertiliser.current>>",  
+                    "replaceFile": "twee/replace/1.0.7 花园催熟肥存有.twee"
+                },
+                {
+                    "tip": "【1.0.7】花园施肥和耕种显示土壤质量",
+                    "passage": "Widgets Tending",
+                    "findString": "\t\t\t\t\t<</if>>\n\t\t\t\t<</link>><<gtiredness>>\n\t\t\t<</capture>>",  
+                    "replaceFile": "twee/replace/1.0.7 花园施肥和耕种显示土壤质量.twee"
+                },
+                {
+                    "tip": "【1.0.7】花园自动灌溉机",
+                    "passage": "Widgets Tending",
+                    "findString": "\t<<set $_i to 0>>",  
+                    "replaceFile": "twee/replace/1.0.7 花园自动灌溉机.twee"
+                },
+                {
+                    "tip": "【1.0.7】农资店",
+                    "passage": "Shopping Centre",
+                    "findString": "|Furniture Shop]]>><<pass 1>><</link>>",  
+                    "replaceFile": "twee/replace/1.0.7 农资店.twee"
+                },
+                {
+                    "tip": "【1.0.7】农资店锁",
+                    "passage": "Shopping Centre",
+                    "findString": "|Furniture Shop Lock]]>><<pass 1>><</link>>",  
+                    "replaceFile": "twee/replace/1.0.7 农资店锁.twee"
+                },
             ]
         },
         {
@@ -130,11 +214,17 @@
             "params": {
                 "js": [          
                     {
-                        "tip": "【1.0.6】叠加服装部件 衣柜链接",
+                        "tip": "【1.0.6】生发喷雾增加发质",
                         "fileName": "time.js",
                         "from": "count += V.sexStats.pills.pills[\"Hair Growth Formula\"].doseTaken ? 1 : 0;",
                         "to": "count += V.sexStats.pills.pills[\"Hair Growth Formula\"].doseTaken ? 1 : 0;\nV.hairtexture = Math.clamp(V.hairtexture ? V.hairtexture + 0.05 : 50 + 0.05, 0, 100)"
-                    }
+                    },
+                    {
+                        "tip": "【1.0.7】每日自动灌溉",
+                        "fileName": "ingame.js",
+                        "from": "\t\t\tif (plot.stage >= 1 && (plot.water === 1 || plot.bed === \"water\")) {",
+                        "to": "\t\t\tif (plot.stage >= 1 && (plot.water === 1 || plot.bed === \"water\" || DolOptimization?.autoIrrigator(location, plot))) {"
+                    },
                 ]
             }
         },

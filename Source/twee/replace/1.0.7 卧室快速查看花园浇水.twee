@@ -1,0 +1,2 @@
+<<print setup.WeatherDescriptions.extremeTemperature()>>
+<br><<checkgardenwatered>>

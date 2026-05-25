@@ -1,0 +1,5 @@
+            <<if _plantbed.plant isnot 'none'>>
+                <<set _need_day to setup.plants[_plantbed.plant].days>>
+                [_plantbed.days/_need_day]
+            <</if>>
+			<<if _plantbed.stage gte 5>>

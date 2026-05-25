@@ -175,3 +175,113 @@
 	<<money $currentEarn "hairdressers">>
 	<<unset $currentEarn>>
 <</link>>
+
+
+:: ======= 快速查看花园浇水 ====== [widget]
+<<widget "checkgardenwatered">>
+	<<set _water_needed to 0>>
+	<<set _plotsHere to $plots["garden"]>>
+	<<for _plantbed range _plotsHere>>
+		<<if Weather.precipitation is "rain">>
+			<<set _plantbed.water to 1>>    <!-- 下雨时自动淋湿 -->
+			<<set _water_needed to 2>>
+		<<elseif DolOptimization?.autoIrrigator("garden", _plantbed)>>
+		<<elseif _plantbed.stage isnot 0 and _plantbed.water isnot 1>>
+			<<set _water_needed to 1>>
+			<<break>>
+		<</if>>
+	<</for>>
+	<<switch _water_needed>>
+	<<case 0>><<gardenicon "flower">><span class="green">全部植圃都已经浇完水了。</span>
+	<<case 1>><<gardenicon "water">><span class="purple">有植圃正处于干燥。</span>
+	<<case 2>><<gardenicon "flower">><span class="green">植圃都被雨水淋湿了。</span>
+	<</switch>>
+<</widget>>
+
+:: Agricultural Supplies Shop
+你在农资店中。肥料的酸味和腥味扑面而来。
+<br><br>
+
+种子区: <br>
+<<icon "seeds.png">>
+<<link [[购买种子|Agricultural Supplies Shop Buyseeds]]>>
+<</link>><br>
+<br>
+
+机器区: <br>
+<<icon "automaticirrigationmachine.png">>
+<<link [[购买自动灌溉机|Agricultural Supplies Shop Automaticirrigationmachine]]>>
+<</link>> | <span class="gold">￡500</span><br>
+<br>
+
+肥料区: <br>
+<<if $fertiliserripening is undefined>><<set $fertiliserripening to {current: 0, used: 0}>><</if>>
+<<icon "fertiliser.png">>
+<<if $money > 10000>>
+	<<link [[购买肥料|$passage]]>>
+		<<set $fertiliser.current++>>
+		<<money -10000>>
+	<</link>> | 拥有: <span class="gold"><<number $fertiliser.current>></span> | <span class="gold">￡100</span>
+<<else>>
+	购买肥料 | 拥有: <span class="gold"><<number $fertiliser.current>></span> | <span class="red">￡100</span>
+<</if>><br>
+<<icon "fertiliserripening.png">>
+<<if $money > 15000>>
+	<<link [[购买催熟肥|$passage]]>>
+		<<set $fertiliserripening.current++>>
+		<<money -15000>>
+	<</link>> | 拥有: <span class="gold"><<number $fertiliserripening.current>></span> | <span class="gold">￡150</span>
+<<else>>
+	购买催熟肥 | 拥有: <span class="gold"><<number $fertiliserripening.current>></span> |  <span class="red">￡150</span>
+<</if>><br>
+<br>
+
+<<getouticon>><<link [[离开|Shopping Centre]]>><</link>>
+
+:: Agricultural Supplies Shop Buyseeds
+你来到种子区，看着这些琳琅满目的种子，不知从何下手。
+<br><br>
+<span class="red">种子购买敬请期待</span>
+<br><br>
+<<getouticon>><<link [[返回|Agricultural Supplies Shop]]>><</link>>
+
+:: Agricultural Supplies Shop Automaticirrigationmachine
+你看着一排排的自动灌溉机。顶部印着“不退款！”的字样。<br><br>
+<<if !$daily.shopcheckedautomaticirrigationmachine and ($arousal gte $arousalmax * 0.5 or $awareness gte 400)>>
+	你感觉这些笨重的喷水机器不如你会喷。但是你知道它们不会休息……<<ggarousal>><<arousal 500>><br><br>
+	<<set $daily.shopcheckedautomaticirrigationmachine to 1>>
+<</if>>
+<<icon "automaticirrigationmachine.png">>购买一台自动灌溉机:<br>
+<<set _hasoption to 0>>
+<<for _location, _plots range $plots>>
+	<<switch _location>>
+		<<case "garden">><<set _locationtext to "孤儿院花园">>
+		<<default>><<set _locationtext to _location.split(' ').map(word => {return word.charAt(0).toUpperCase() + word.slice(1);}).join(' ')>>
+	<</switch>>
+	<<if $automaticirrigationmachines and $automaticirrigationmachines.hasOwnProperty(_location)>>
+		<span class="green">_locationtext 处已经拥有了。</span>
+	<<else>>
+		<<set _hasoption to 1>>
+		<<capture _location>>
+			<<if $money > 50000>>
+				<<link [[放置在 _locationtext 处|$passage]]>>
+					<<money -50000>>
+					<<if !$automaticirrigationmachines>><<set $automaticirrigationmachines to {}>><</if>>
+					<<set $automaticirrigationmachines[_location] to 20>>
+				<</link>> | <span class="gold">￡500</span>
+			<<else>>
+				放置在 _locationtext 处 | <span class="red">￡500</span>
+			<</if>>
+		<</capture>>
+	<</if>><br>
+<</for>>
+<<if _hasoption is 0>>
+	你没有地方可以放下这些笨重的自动灌溉机了。<br>
+<</if>><br>
+<<getouticon>><<link [[返回|Agricultural Supplies Shop]]>><</link>>
+
+
+:: Agricultural Supplies Shop Lock
+农资店的大门紧闭，里面空无一人，没有在夜晚进去的必要。
+<br><br>
+<<getouticon>><<link [[离开|Shopping Centre]]>><</link>>
