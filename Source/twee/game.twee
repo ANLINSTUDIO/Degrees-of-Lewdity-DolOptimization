@@ -181,21 +181,23 @@
 <<widget "checkgardenwatered">>
 	<<set _water_needed to 0>>
 	<<set _plotsHere to $plots["garden"]>>
-	<<for _plantbed range _plotsHere>>
-		<<if Weather.precipitation is "rain">>
-			<<set _plantbed.water to 1>>    <!-- 下雨时自动淋湿 -->
-			<<set _water_needed to 2>>
-		<<elseif DolOptimization?.autoIrrigator("garden", _plantbed)>>
-		<<elseif _plantbed.stage isnot 0 and _plantbed.water isnot 1>>
-			<<set _water_needed to 1>>
-			<<break>>
-		<</if>>
-	<</for>>
-	<<switch _water_needed>>
-	<<case 0>><<gardenicon "flower">><span class="green">全部植圃都已经浇完水了。</span>
-	<<case 1>><<gardenicon "water">><span class="purple">有植圃正处于干燥。</span>
-	<<case 2>><<gardenicon "flower">><span class="green">植圃都被雨水淋湿了。</span>
-	<</switch>>
+	<<if _plotsHere>>
+		<<for _plantbed range _plotsHere>>
+			<<if Weather.precipitation is "rain">>
+				<<set _plantbed.water to 1>>    <!-- 下雨时自动淋湿 -->
+				<<set _water_needed to 2>>
+			<<elseif DolOptimization?.autoIrrigator("garden", _plantbed)>>
+			<<elseif _plantbed.stage isnot 0 and _plantbed.water isnot 1>>
+				<<set _water_needed to 1>>
+				<<break>>
+			<</if>>
+		<</for>>
+		<<switch _water_needed>>
+		<<case 0>><<gardenicon "flower">><span class="green">全部植圃都已经浇完水了。</span>
+		<<case 1>><<gardenicon "water">><span class="purple">有植圃正处于干燥。</span>
+		<<case 2>><<gardenicon "flower">><span class="green">植圃都被雨水淋湿了。</span>
+		<</switch>>
+	<</if>>
 <</widget>>
 
 :: Agricultural Supplies Shop

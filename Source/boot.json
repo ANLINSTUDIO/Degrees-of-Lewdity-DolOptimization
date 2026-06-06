@@ -1,6 +1,6 @@
 {
     "name": "原版优化",
-    "version": "1.0.7",
+    "version": "1.0.7a",
     "styleFileList": [
         "stylesheet/dol-optimization.css",
         "stylesheet/modloader-optimization.css"
@@ -229,10 +229,12 @@
             }
         },
         {
-            "modName": "ModLoader DoL ImageLoaderHook",
-            "addonName": "ImageLoaderAddon",
-            "modVersion": "^2.3.0",
-            "params": []
+            "modName": "BeautySelectorAddon",
+            "addonName": "BeautySelectorAddon",
+            "modVersion": "^2.0.0",
+            "params": {
+                "type": "原版优化 DolOptimization"
+            }
         }
     ],
     "dependenceInfo": [
@@ -241,8 +243,8 @@
             "version": "^1.0.0"
         },
         {
-            "modName": "ModLoader DoL ImageLoaderHook",
-            "version": "^2.3.0"
+            "modName": "BeautySelectorAddon",
+            "version": "^2.0.0"
         }
     ]
 }
