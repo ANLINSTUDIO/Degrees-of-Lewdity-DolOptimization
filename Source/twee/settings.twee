@@ -99,6 +99,18 @@
 				<a target="_blank" class="link-external" href='https://tieba.baidu.com/home/main?id=tb.1.c5ee8bec.KPmrsbwyRq56_tdZjH_9Nw%3Ft%3D1778860919&fr=pb' tabindex="0">「小鼹鼠.」</a>
 			</div>
 		</div>
+		<div class="optimization"> <<if $passage is 'Start'>><div class="disabled"/><</if>>
+			园艺大师 相关设置
+			<label>
+				<<checkbox "$options.DolOptimization.ShowWaterState" false true autocheck>>
+				显示孤儿院窗外植圃浇水状态
+			</label><br>
+			<label>
+				<<checkbox "$options.DolOptimization.ShowProcess" false true autocheck>>
+				显示植圃生长进度
+			</label><br>
+			<img src="guide/园艺大师.png">
+		</div>
 	</div>
 	<div class="settingsGrid">
 		<div class="settingsHeader options">内容预览</div>

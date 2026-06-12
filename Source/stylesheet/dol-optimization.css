@@ -3,6 +3,20 @@
     grid-template-columns: unset !important
 }
 
+/* 原版优化提供 */
+.fromopt {
+    position: fixed;
+    color: var(--600);
+    font-size: 0.6rem;
+    bottom: 1px;
+    max-width: 50%;
+}
+.fromopt-inline {
+    color: var(--600);
+    font-size: 0.6rem;
+    margin-block: 0.6rem;
+}
+
 /* 1.0.3 选项高度优化 */
 #customOverlay[data-overlay=options] > #customOverlayContent {
     height: calc(95% - 60px) !important;
@@ -97,4 +111,18 @@ label:has(> input.macro-checkbox:checked) + #largerWardrobeValue {
 #ui-bar.stowed #ui-bar-toggle.opt:before {
     position: relative;
     left: -3px;
+}
+
+/* 1.0.8 存档优化 */
+.saveTitle {
+    cursor: pointer;
+    transition: filter 0.25s ease;
+}
+.saveTitle.blurred {
+    filter: blur(3px);
+}
+.saveTitleInput {
+    padding: 0;
+    background-color: #444;
+    min-width: unset !important;
 }

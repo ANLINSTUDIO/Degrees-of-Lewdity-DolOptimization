@@ -11,3 +11,4 @@ __ <i>_selectedWardrobe[_wardrobe_list].length / _selectedWardrobe.space</i><<if
 <<else>>
     <span class="red">(已通过作弊自定义衣柜容量)</span>
 <</if>>
+<div class="fromopt">【原版优化】 提供界面部分内容 | 【Optimization】 Provide partial interface content</div>

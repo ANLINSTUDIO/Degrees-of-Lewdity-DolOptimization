@@ -60,6 +60,10 @@ DolOptimization.onPassageRender = function (ev) {
             Furniture.wardrobeUpdate();
             V.wardrobe.space += V.options.DolOptimization.LargerWardrobeExpandedValue;
         }
+
+        // 【1.0.8】初始化园艺大师变量
+        if (V.options.DolOptimization.ShowWaterState === undefined) V.options.DolOptimization.ShowWaterState = true;
+        if (V.options.DolOptimization.ShowProcess === undefined) V.options.DolOptimization.ShowProcess = true;
     };
 
     // 【1.0.5】叠加服装部件
@@ -669,6 +673,171 @@ DolOptimization = { ...DolOptimization,
             }
         }
         return false
+    }
+};
+
+// 【1.0.8】存档优化
+DolOptimization = { ...DolOptimization,
+    initsavetime: 300,
+    initsave: async function() {
+        const saveList = document.getElementById("saveList");
+        if (saveList && idb) {
+            const saveGroups = saveList.querySelectorAll(".saveGroup");
+            for (const group of saveGroups) {
+                const saveId = parseInt(group.querySelector(".saveId")?.innerText);
+                let saveItem = null
+                if (saveId) saveItem = await idb.getItem(saveId);
+                if (saveItem) {
+                    console.log(`[DolOptimization-initsave] Loaded: saveId=${saveId}`, saveItem);
+                    const title = group.querySelector(".saveDetails > span");
+                    if (title) {
+                        title.className = "saveTitle";
+                        const originalDescText = title.innerText;   // 保存原始文本
+                        title.onclick = function(e) {
+                            // 防止同一个标题被重复点击
+                            if (title._editing) return;
+                            title._editing = true;
+                            
+                            const originalText = title.innerText;   // 保存原始文本
+                            const input = document.createElement("input");
+                            input.type = "text";
+                            input.placeholder = originalDescText;
+                            input.value = title.innerText == originalDescText ? "" : title.innerText;
+                            input.className = "saveTitleInput";
+
+                            // 用 input 替换 span
+                            title.replaceWith(input);
+                            input.focus();
+
+                            // 失去焦点时处理
+                            input.addEventListener("blur", async () => {
+                                const newText = input.value.trim();
+
+                                // 如果内容改变，弹出确认对话框
+                                if (newText != (DolOptimization.data.customdesc[saveId]?.desc ?? "")) {
+                                    const V_ = saveItem.data.delta[0].variables;
+
+                                    // 对话框处理标志，确保只处理一次
+                                    let dialogResolved = false;
+                                    const resolveDialog = (save) => {
+                                        if (dialogResolved) return;
+                                        dialogResolved = true;
+
+                                        if (save) {
+                                            // 保存到 IndexedDB
+                                            if (idb && saveId) {
+                                                try {
+                                                    DolOptimization.data.customdesc = DolOptimization.data.customdesc || {};
+                                                    if (newText) {
+                                                        DolOptimization.data.customdesc[saveId] = {
+                                                            desc: newText,
+                                                            timestamp: saveItem.data.delta[0].variables.timeStamp
+                                                        };
+                                                    } else {
+                                                        delete DolOptimization.data.customdesc[saveId];
+                                                    }
+                                                    DolOptimization.saveSettings();
+                                                } catch (err) {
+                                                    console.error("保存描述失败", err);
+                                                }
+                                            }
+                                            title.innerText = newText || originalDescText;   // 新描述为空则回退原始描述
+                                        } else {
+                                            title.innerText = originalText;                  // 放弃修改
+                                        }
+
+                                        // 恢复 span
+                                        input.replaceWith(title);
+                                        title._editing = false;
+                                    };
+
+                                    // 创建并显示自定义对话框
+                                    SugarCube.Dialog.setup("修改存档描述");
+                                    SugarCube.Dialog.wiki(`
+                                        <div>你确定要修改存档描述吗？你正在修改 ID为<span class="gold">${V_.saveName}</span>[#${saveId}] 的存档自定义描述：</div>
+                                        <div class="black">${originalDescText}</div>
+                                        <div class="green">${newText || "删除自定义描述"}</div>
+                                        <ul class="buttons">
+                                            <li><button id="customdesc-ok" type="button" role="button" tabindex="0">确认</button></li>
+                                            <li><button id="customdesc-cancel" class="ui-close">取消</button></li>
+                                        </ul>
+                                        <div class="fromopt-inline">【原版优化】 提供此界面 | 【Optimization】 Provide this passage</div>
+                                    `);
+                                    SugarCube.Dialog.open();
+
+                                    // 绑定按钮事件
+                                    $('#customdesc-ok').one('click', () => {
+                                        resolveDialog(true);
+                                        SugarCube.Dialog.close();
+                                    });
+                                    $('#customdesc-cancel').one('click', () => {
+                                        resolveDialog(false);
+                                        SugarCube.Dialog.close();
+                                    });
+                                    // 点击 X 或按 ESC 关闭时，视为取消
+                                    $(document).one(':dialogclose', () => {
+                                        resolveDialog(false);
+                                    });
+                                } else {
+                                    // 没有变化
+                                    title.innerText = originalText;
+                                    input.replaceWith(title);
+                                    title._editing = false;
+                                }
+                            }, { once: true });
+                        };
+                        const customdesc = DolOptimization.data.customdesc[saveId];
+                        if (customdesc && customdesc.timestamp == saveItem.data.delta[0].variables.timeStamp) {
+                            const customText = customdesc.desc;
+                            if (customText && title.innerText !== customText) {
+                                DolOptimization.setTitleWithBlur(title, customText);
+                            }
+                        } else {
+                            delete DolOptimization.data.customdesc[saveId];
+                            DolOptimization.saveSettings();
+                        }
+                    }
+                    const datestamp = group.querySelector(".datestamp");
+                    if (datestamp) {
+                        const V_ = saveItem.data.delta[0].variables
+                        const timestamp = V_.startDate + V_.timeStamp;
+                        const date = new DateTime(timestamp);
+                        datestamp.innerHTML = `${datestamp.innerHTML} <span class="pink">(${date.year}/${date.month}/${date.day} ${("0" + getTimeString(date.hour, date.minute)).slice(-5)} ${date.weekDayName})</span>`;
+                    }
+                };
+            };
+        }
+        const pageButtons = document.getElementById("pageNum")?.parentElement?.querySelectorAll("button");
+        if (pageButtons && pageButtons.length >= 2) {
+            pageButtons[0].addEventListener("click", () => {
+                setTimeout(() => DolOptimization?.initsave(), DolOptimization.initsavetime);
+            });
+            pageButtons[1].addEventListener("click", () => {
+                setTimeout(() => DolOptimization?.initsave(), DolOptimization.initsavetime);
+            });
+        };
+    },
+    setTitleWithBlur: function(title, newText) {
+        // 如果正在动画中，先清理可能残留的监听器
+        if (title._blurHandler) {
+            title.removeEventListener('transitionend', title._blurHandler);
+        }
+
+        const handler = (e) => {
+            if (e.propertyName === 'filter') {      // 只处理 filter 过渡结束
+                title.removeEventListener('transitionend', handler);
+                title._blurHandler = null;
+
+                // 模糊到顶点 → 替换文字
+                title.textContent = newText;        // 用 textContent 更轻量
+                // 移除模糊类 → 文字从模糊变清晰
+                title.classList.remove('blurred');
+            }
+        };
+
+        title._blurHandler = handler;
+        title.addEventListener('transitionend', handler);
+        title.classList.add('blurred');            // 触发模糊动画
     }
 };
 

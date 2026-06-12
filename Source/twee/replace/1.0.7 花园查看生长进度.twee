@@ -1,4 +1,4 @@
-            <<if _plantbed.plant isnot 'none'>>
+            <<if $options.DolOptimization.ShowProcess and _plantbed.plant isnot 'none'>>
                 <<set _need_day to setup.plants[_plantbed.plant].days>>
                 [_plantbed.days/_need_day]
             <</if>>

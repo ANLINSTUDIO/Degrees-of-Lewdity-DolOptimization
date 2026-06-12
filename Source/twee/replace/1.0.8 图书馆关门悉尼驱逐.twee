@@ -1,0 +1,59 @@
+<<set _expelled to 0>>
+<<if !$daily.sydney.expelled>>
+    <<npc "Sydney">><<person1>>
+	<<run statusCheck("Sydney")>>
+    <<if _sydney_location is "library">>
+        <<if Time.weekDay is 6 and Time.hour is 15 and Time.minute gte 30>>
+            快到放学结束的时间了，你看到悉尼正把所有逗留的学生带出图书馆。<br><br>
+            不一会，悉尼来到你的跟前，对你说：“
+                <<if C.npc.Sydney.love lt 20>>同学，图书馆要清馆了，请你抓紧离开了。
+                <<elseif $adultshopgrandopening is true>>
+                    <br>
+                    关门时间到了。
+                    <<if _sydneyStatus.includes("corrupt") or _sydneyStatus.includes("corruptLust")>>快来，我们可不能错过商店的开业典礼！
+                    <<elseif _sydneyStatus.includes("pure") or _sydneyStatus.includes("pureLust")>>我要去成人用品店的开业典礼帮忙。你愿意陪我吗？有你我就不会那么尴尬了。
+                    <<else>>我要去参加成人用品店的开业典礼了。想一起去吗？可能会很有趣。
+                    <</if>>”<br><br>
+                    <<set $adultshopopeningsydney to true>>
+                    <<elkicon>><<link [[与悉尼一起去 (1:00)|Adult Shop Opening Walk]]>><<pass 60>><<handheldon 1>><</link>>
+                <<elseif $sydneySeen.includes("shop")>>
+                    <<if Object.values($loveInterest).includes("Sydney")>>亲爱的，我要去<<sydneymum>>的商店了。如果你愿意，你也可以来，要不要一起呀？
+                    <<else>>喔，很高兴见到你，关门时间到了，你还要继续呆在这里吗？我要去<<sydneymum>>的商店了。如果你愿意，你也可以来，要一起吗？
+                    <</if>>”<br><br>
+                    <<elkicon>><<link [[跟悉尼一起去 (0:30)|Elk Sydney Walk]]>><<pass 30>><<npcincr Sydney love 1>><<stress -3>><<trauma -3>><</link>><<lstress>><<ltrauma>><<glove>>
+                <<else>>
+                    <<if Object.values($loveInterest).includes("Sydney")>>亲爱的，你还要继续呆在这里吗？我得去忙一些事情了，你别待太晚，小心大门会锁了的。
+                    <<elseif C.npc.Sydney.love gt 80>>喔，是你！在这里学习也要注意时间哦！那……那个关门时间到了，你还要继续呆在这里吗？不过我得去忙一些事情。
+                    <<else>>喔，很高兴见到你，关门时间到了，你还要继续呆在这里吗？我得去忙一些事情。
+                    <</if>>”<br>
+                <</if>>
+            <<set _expelled to 1>>
+        <<elseif Time.hour is 16 and !$daily.sydney.expelled>>
+            已经到了放学结束时间，大门就要被锁了，悉尼正在通知图书馆里的同学，希望他们不要在放学结束后继续逗留。<br><br>
+            悉尼来到你的跟前，生怕打扰到你的学习，对你轻轻地说：“
+                <<if C.npc.Sydney.love lt 20>>
+                    <<if $temple_rank is "initiate">>喔，另一位见习修士！见到你还在学习，我真高兴，不过现在的时间已经到清馆时间了，<<if $pronoun is "m">>兄弟<<else>>姐妹<</if>>。
+                    <<else>>同学，图书馆要清馆了，请你抓紧离开了。
+                    <</if>>
+                <<elseif Object.values($loveInterest).includes("Sydney")>>亲爱的，你还要继续呆在这里吗？
+                <<elseif C.npc.Sydney.love gt 80>>那……那个……在这里学习也要注意时间哦，不要待太晚，再不走你待会可就出不去了。
+                <<elseif C.npc.Sydney.lust gt 20 and C.npc.Sydney.purity lt 80>>你还要继续呆在这里吗？你不要趁着没人在晚上的图书馆偷偷做什么哦……
+                <<else>>
+                    <<if $temple_rank is "initiate">>喔，<<if $pronoun is "m">>兄弟<<else>>姐妹<</if>>，真是刻苦的学习，但是我们该离开了哦，时间已经差不多了。
+                    <<else>>喔，很高兴见到你，我得回家了，你呢？还要继续呆在这里吗？
+                    <</if>>
+                <</if>>
+            ”
+            <<set _expelled to 1>><br>
+        <</if>>
+        <<if _expelled is 1>>
+            <br>
+            <div class="fromopt">【原版优化】 提供此界面 | 【Optimization】 Provide this passage | 感谢【@戛訴】</div>
+            <<set $daily.sydney.expelled to 1>>
+            <<schoolicon "library">><<link [[继续呆在图书馆|"School Library"]]>><</link>><br>
+            <<getouticon>><<link [[离开(0:03)|"School Front Courtyard"]]>><<pass 3>><</link>><br>
+        <</if>>
+    <</if>>
+<</if>>
+<<if _expelled is 0>>
+<<if Time.schoolDay>>

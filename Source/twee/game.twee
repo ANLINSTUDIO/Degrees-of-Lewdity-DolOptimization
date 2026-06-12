@@ -1,5 +1,6 @@
 :: ======= 医院处女膜修复 ======
 :: Hospital Hymen Reconstruction
+<div class="fromopt">【原版优化】 提供此界面 | 【Optimization】 Provide this passage</div>
 <<set $outside to 0>><<set $location to "hospital">><<effects>>
 <<generate1>><<person1>>
 接待员在电脑上敲了几下，指示你在等候室里坐下。
@@ -21,6 +22,7 @@
 <<getouticon>><<link [[离开|Hospital Foyer]]>><<endevent>><</link>>
 
 :: Hospital Hymen Reconstruction 2
+<div class="fromopt">【原版优化】 提供此界面 | 【Optimization】 Provide this passage</div>
 "这将花费<span class="gold">£1000</span>，"<<he>>说，"手术全程一个小时，手术过后一周内不能剧烈运动，否则仍然会自己破裂，这样引起的修复失败我们概不负责，请你注意。"
 <br><br>
 
@@ -35,6 +37,7 @@
 <<getouticon>><<link [[离开|Hospital Foyer]]>><<endevent>><</link>>
 
 :: Hospital Hymen Reconstruction 3
+<div class="fromopt">【原版优化】 提供此界面 | 【Optimization】 Provide this passage</div>
 <<money -100000 "hospitalHymenReconstruction">>
 
 <<upperstrip>>
@@ -60,6 +63,7 @@
 <br>
 
 :: Hospital Hymen Reconstruction Done
+<div class="fromopt">【原版优化】 提供此界面 | 【Optimization】 Provide this passage</div>
 <<set $player.virginity.vaginal to true>>
 <<if $player.virginity.temple isnot false>><<set $player.virginity.temple to true>><</if>>
 <<if $player.virginityDetails.vaginal>><<unset $player.virginityDetails.vaginal>><</if>>
@@ -124,6 +128,7 @@
 <</widget>>
 
 :: Hairdressers Sell Hair
+<div class="fromopt">【原版优化】 提供此界面 | 【Optimization】 Provide this passage | 感谢【@山有木兮】</div>
 <<generate1>><<person1>>你坐了下来，理发师很快出现在你的身后。
 <<if $hairtexture is undefined>><<set $hairtexture to 50>><</if>>
 <<if $hairtexture > 99>>"这么柔软细腻的头发，你打算给你自己留多少？"
@@ -157,6 +162,7 @@
 );>>
 
 :: Hairdressers Sell Hair Session
+<div class="fromopt">【原版优化】 提供此界面 | 【Optimization】 Provide this passage | 感谢【@山有木兮】</div>
 在得到你肯定的答复后，<<he>>就开始做事了。
 <br><br>
 <<set _pass to 0>>
@@ -179,28 +185,33 @@
 
 :: ======= 快速查看花园浇水 ====== [widget]
 <<widget "checkgardenwatered">>
-	<<set _water_needed to 0>>
-	<<set _plotsHere to $plots["garden"]>>
-	<<if _plotsHere>>
-		<<for _plantbed range _plotsHere>>
-			<<if Weather.precipitation is "rain">>
-				<<set _plantbed.water to 1>>    <!-- 下雨时自动淋湿 -->
-				<<set _water_needed to 2>>
-			<<elseif DolOptimization?.autoIrrigator("garden", _plantbed)>>
-			<<elseif _plantbed.stage isnot 0 and _plantbed.water isnot 1>>
-				<<set _water_needed to 1>>
-				<<break>>
-			<</if>>
-		<</for>>
-		<<switch _water_needed>>
-		<<case 0>><<gardenicon "flower">><span class="green">全部植圃都已经浇完水了。</span>
-		<<case 1>><<gardenicon "water">><span class="purple">有植圃正处于干燥。</span>
-		<<case 2>><<gardenicon "flower">><span class="green">植圃都被雨水淋湿了。</span>
-		<</switch>>
+	<br>
+	<<if $options.DolOptimization.ShowWaterState>>
+		<div class="fromopt">【原版优化】 提供界面部分内容 | 【Optimization】 Provide partial interface content</div>
+		<<set _water_needed to 0>>
+		<<set _plotsHere to $plots["garden"]>>
+		<<if _plotsHere>>
+			<<for _plantbed range _plotsHere>>
+				<<if Weather.precipitation is "rain">>
+					<<set _plantbed.water to 1>>    <!-- 下雨时自动淋湿 -->
+					<<set _water_needed to 2>>
+				<<elseif DolOptimization?.autoIrrigator("garden", _plantbed)>>
+				<<elseif _plantbed.stage isnot 0 and _plantbed.water isnot 1>>
+					<<set _water_needed to 1>>
+					<<break>>
+				<</if>>
+			<</for>> 
+			<<switch _water_needed>>
+			<<case 0>><<gardenicon "flower">><span class="green">全部植圃都已经浇完水了。</span>
+			<<case 1>><<gardenicon "water">><span class="purple">有植圃正处于干燥。</span>
+			<<case 2>><<gardenicon "flower">><span class="green">植圃都被雨水淋湿了。</span>
+			<</switch>>
+		<</if>>
 	<</if>>
 <</widget>>
 
 :: Agricultural Supplies Shop
+<div class="fromopt">【原版优化】 提供此界面 | 【Optimization】 Provide this passage</div>
 你在农资店中。肥料的酸味和腥味扑面而来。
 <br><br>
 
@@ -241,6 +252,7 @@
 <<getouticon>><<link [[离开|Shopping Centre]]>><</link>>
 
 :: Agricultural Supplies Shop Buyseeds
+<div class="fromopt">【原版优化】 提供此界面 | 【Optimization】 Provide this passage</div>
 你来到种子区，看着这些琳琅满目的种子，不知从何下手。
 <br><br>
 <span class="red">种子购买敬请期待</span>
@@ -248,6 +260,7 @@
 <<getouticon>><<link [[返回|Agricultural Supplies Shop]]>><</link>>
 
 :: Agricultural Supplies Shop Automaticirrigationmachine
+<div class="fromopt">【原版优化】 提供此界面 | 【Optimization】 Provide this passage</div>
 你看着一排排的自动灌溉机。顶部印着“不退款！”的字样。<br><br>
 <<if !$daily.shopcheckedautomaticirrigationmachine and ($arousal gte $arousalmax * 0.5 or $awareness gte 400)>>
 	你感觉这些笨重的喷水机器不如你会喷。但是你知道它们不会休息……<<ggarousal>><<arousal 500>><br><br>
@@ -284,6 +297,7 @@
 
 
 :: Agricultural Supplies Shop Lock
+<div class="fromopt">【原版优化】 提供此界面 | 【Optimization】 Provide this passage</div>
 农资店的大门紧闭，里面空无一人，没有在夜晚进去的必要。
 <br><br>
 <<getouticon>><<link [[离开|Shopping Centre]]>><</link>>

@@ -9,4 +9,4 @@
 <<elseif $hairtexture > 12>>比较干枯无光，经常掉发
 <<else>>非常脆弱，明显感觉到很粗燥，发尾分叉严重，打结严重，掉发很严重
 <</if>>
-（发质：$hairtexture/100）。
+（发质：<<print Math.floor($hairtexture)/100>>）。

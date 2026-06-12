@@ -1,6 +1,6 @@
 {
     "name": "原版优化",
-    "version": "1.0.7a",
+    "version": "1.0.8",
     "styleFileList": [
         "stylesheet/dol-optimization.css",
         "stylesheet/modloader-optimization.css"
@@ -204,6 +204,25 @@
                     "passage": "Shopping Centre",
                     "findString": "|Furniture Shop Lock]]>><<pass 1>><</link>>",  
                     "replaceFile": "twee/replace/1.0.7 农资店锁.twee"
+                },
+                {
+                    "tip": "【1.0.8】图书馆关门悉尼驱逐",
+                    "passage": "School Library",
+                    "findString": "<<if Time.schoolDay>>",  
+                    "replaceFile": "twee/replace/1.0.8 图书馆关门悉尼驱逐.twee"
+                },
+                {
+                    "tip": "【1.0.8】图书馆关门悉尼驱逐 反tag",
+                    "passage": "School Library",
+                    "findString": "|Hallways]]>><<pass 1>><</link>>",  
+                    "replace": "|Hallways]]>><<pass 1>><</link>><</if>>"
+                },
+                {
+                    "tip": "【1.0.8】存档优化",
+                    "passage": "overlayReplace",
+                    "findString": "<<replace #customOverlayContent>><<saves>><</replace>>",  
+                    "replace": "<<replace #customOverlayContent>><<saves>><</replace>><<run setTimeout(() => DolOptimization?.initsave(), DolOptimization.initsavetime??500)>>",
+                    "all": true
                 },
             ]
         },
