@@ -1,5 +1,5 @@
 			<<if $fertiliserripening is undefined>><<set $fertiliserripening to {current: 0, used: 0}>><</if>>
-			<<if  _plantbed.stage isnot 0 and _plantbed.water is 1 and $fertiliserripening.current gte 1 and _plantbed.days lt setup.plants[_plantbed.plant].days and currentSkillValue('tending') gte 400>>
+			<<if  _plantbed.stage isnot 0 and _plantbed.water is 1 and $fertiliserripening.current gte 1 and _plantbed.days lt setup.foodstuff||setup.plants[_plantbed.plant].days and currentSkillValue('tending') gte 400>>  <!-- 0.5.10.12 适配foodstuff -->
 				<<capture _plantbed>>
 					<<icon "fertiliserripening.png">>
 					<<link "施加催熟肥 (0:03)" $passage>>
@@ -7,7 +7,7 @@
 
 						<!-- 加生长进度 -->
 						<<set $fertiliserripening.current-->><<set $fertiliserripening.used++>>
-						<<set _plantbeddaysmax to setup.plants[_plantbed.plant].days>>
+						<<set _plantbeddaysmax to setup.foodstuff||setup.plants[_plantbed.plant].days>>  <!-- 0.5.10.12 适配foodstuff -->
 						<<for _i to 0; _i < 2; _i++>>
 							<<if _plantbed.days lt _plantbeddaysmax>>
 								<<set _plantbed.days++>>

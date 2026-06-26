@@ -126,3 +126,35 @@ label:has(> input.macro-checkbox:checked) + #largerWardrobeValue {
     background-color: #444;
     min-width: unset !important;
 }
+.saveTitle {
+    overflow-x: auto !important;
+}
+.saveTitle::-webkit-scrollbar {
+    height: 1px;
+}
+.datestamp {
+    overflow-x: auto !important;
+}
+.datestamp.has-overflow {
+    --bg-color: var(--850);   /* 这里必须设成容器真正的背景色 */
+    background:
+        /* 1. 右侧遮罩（覆盖右侧阴影） */
+        linear-gradient(to left, var(--bg-color), var(--bg-color) 100%),
+        /* 2. 右侧阴影（固定在右侧） */
+        linear-gradient(to left, rgba(255 255 255 / 50%), transparent 100%),
+        /* 3. 左侧遮罩（覆盖左侧阴影） */
+        linear-gradient(to right, var(--bg-color), var(--bg-color) 100%),
+        /* 4. 左侧阴影（固定在左侧） */
+        linear-gradient(to right, rgba(255 255 255 / 50%), transparent 100%);
+    
+    /* 宽度分别为 40px 和 14px，可根据需要调整 */
+    background-size: 40px 90%, 14px 80%, 40px 90%, 14px 80%;
+    background-repeat: no-repeat;
+    background-position: right center, right center, left center, left center;
+    
+    /* 关键：遮罩随内容滚动(local)，阴影相对容器固定(scroll) */
+    background-attachment: local, scroll, local, scroll;
+}
+.datestamp::-webkit-scrollbar {
+    height: 1px;
+}

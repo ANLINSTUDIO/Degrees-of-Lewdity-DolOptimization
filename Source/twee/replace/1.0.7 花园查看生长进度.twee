@@ -1,5 +1,5 @@
             <<if $options.DolOptimization.ShowProcess and _plantbed.plant isnot 'none'>>
-                <<set _need_day to setup.plants[_plantbed.plant].days>>
+                <<set _need_day to setup.foodstuff||setup.plants[_plantbed.plant].days>>  <!-- 0.5.10.12 适配foodstuff -->
                 [_plantbed.days/_need_day]
             <</if>>
 			<<if _plantbed.stage gte 5>>

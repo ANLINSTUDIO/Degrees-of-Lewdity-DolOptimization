@@ -803,6 +803,17 @@ DolOptimization = { ...DolOptimization,
                         const timestamp = V_.startDate + V_.timeStamp;
                         const date = new DateTime(timestamp);
                         datestamp.innerHTML = `${datestamp.innerHTML} <span class="pink">(${date.year}/${date.month}/${date.day} ${("0" + getTimeString(date.hour, date.minute)).slice(-5)} ${date.weekDayName})</span>`;
+                        if (datestamp._overflowObserver) {
+                            datestamp._overflowObserver.disconnect();
+                        }
+                        const toggleShadow = () => {
+                            const hasOverflow = datestamp.scrollWidth > datestamp.clientWidth;
+                            datestamp.classList.toggle('has-overflow', hasOverflow);
+                        };
+                        const observer = new ResizeObserver(() => toggleShadow());
+                        observer.observe(datestamp);
+                        datestamp._overflowObserver = observer;
+                        toggleShadow();
                     }
                 };
             };
