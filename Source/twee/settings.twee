@@ -1,7 +1,20 @@
 :: Setting DolOptimization [widget]
 
+<<widget fromopt>>
+	<div class="fromopt" onclick='Wikifier.wikifyEval(`<<overlayReplace "options">> <<replace #customOverlayContent>><<doloptimizationModSetting>><</replace>>`)'>
+		【原版优化】提供此界面 | 【Optimization】Provide this passage<<if _args[0]>> | 感谢【<<print _args[0]>>】<</if>>
+	</div>
+<</widget>>
+<<widget fromoptP>>
+	<div class="fromopt" onclick='Wikifier.wikifyEval(`<<overlayReplace "options">> <<replace #customOverlayContent>><<doloptimizationModSetting>><</replace>>`)'>
+		【原版优化】提供界面部分内容 | 【Optimization】Provide partial content<<if _args[0]>> | 感谢【<<print _args[0]>>】<</if>>
+	</div>
+<</widget>>
+
+
+
 <<widget "doloptimizationModTab">>
-	<<button 原版优化>>
+	<<button '<span id="doloptimizationModTab">原版优化</span>'>>
 		<<toggleTab>>
 		<<replace #customOverlayContent>><<doloptimizationModSetting>><</replace>>
 	<</button>>
@@ -38,7 +51,7 @@
 	<div class="settingsGrid">
 		<div class="settingsHeader options">内容设置</div>
 		<div class="optimization">
-			“打开/关闭导航栏”的黑块箭头: 
+			自定义PC图像按钮:
 			<br>
 			<label><<radiovar "$options.opt.UiBarToggle" "default">><<run DolOptimization.applySettings()>><</radiovar>> 默认</label> |
 			<label><<radiovar "$options.opt.UiBarToggle" "back">><<run DolOptimization.applySettings()>><</radiovar>> 回溯</label> |
@@ -50,7 +63,7 @@
 				<a target="_blank" class="link-external" href='https://tieba.baidu.com/home/main?id=tb.1.4515509a.HMRwrMmE3gOEM7NFLLQNbg%3Ft%3D1778597577&fr=pb' tabindex="0">「◆冬至蝉鸣◆」</a>
 			</div>
 			<br>
-			<span class="red">注意，这在PC端上尤其要小心开启：PC上无法通过向右滑动来展开侧边栏！必要时你可以通过本模组定义的<span class="purple">鼠标滚轮中键</span>来切换侧边栏。</span>
+			<span class="red">注意，这在电脑端上尤其要小心开启：电脑上无法通过向右滑动来展开侧边栏！必要时你可以通过本模组定义的<span class="purple">鼠标滚轮中键</span>来切换侧边栏。</span>
 		</div>
 		<div class="optimization">
 			<div id="custom-font-text" style="word-break: break-all;"><<print DolOptimization.Current_Font ?? "自定义字体">></div>
@@ -100,7 +113,7 @@
 			</div>
 		</div>
 		<div class="optimization"> <<if $passage is 'Start'>><div class="disabled"/><</if>>
-			园艺大师 相关设置
+			园艺大师 相关设置<br>
 			<label>
 				<<checkbox "$options.DolOptimization.ShowWaterState" false true autocheck>>
 				显示孤儿院窗外植圃浇水状态
@@ -148,6 +161,6 @@
 			</label>
 		</div>
 	</div> -->
-	<div style="text-align: center; width: 100%;">如果你也有一些很小的<span class="def">关于原版小优化</span>的建议，可以在<a target="_blank" class="link-external" href="https://tieba.baidu.com/p/10567790315?fr=personpage" tabindex="0">发布贴</a>下面留言。</div>
+	<div style="text-align: center; width: 100%;">如果你也有一些很小的<span class="def">关于原版小优化</span>的建议，欢迎在<a target="_blank" class="link-external" href="https://tieba.baidu.com/p/10567790315?fr=personpage" tabindex="0">发布贴</a>下面留言。</div>
 	<br><br>
 <</widget>>

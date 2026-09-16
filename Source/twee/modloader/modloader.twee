@@ -15,10 +15,6 @@
 			<<toggleTab>>
 			<<replace #customOverlayContent>><<modloaderreadme>><</replace>>
 		<</button>>
-		<<button "美化管理">>
-			<<toggleTab>>
-			<<replace #customOverlayContent>><<modloaderbeautyselectoraddon>><</replace>>
-		<</button>>
 		<<button "加载日志">>
 			<<toggleTab>>
 			<<replace #customOverlayContent>><<modloaderlog>><</replace>>
@@ -28,64 +24,92 @@
 <</widget>>
 
 <<widget "modloadergeneral">>
-	<div style="text-align: center; background-color: #ff5e00;">还妹做完你别急，敬请期待。</div>
-	<br><br>
-	<!-- ===== 高警告对比颜色重启按钮 ===== -->
-	<div class="restart-section">
-		<button
-			class="btn-restart"
-			id="btnRestart"
-			title="重启应用 - 所有未保存更改将丢失"
-			aria-label="重启应用，高警告操作"
-			>
-			<svg class="icon-restart" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-				<polyline points="1 4 1 10 7 10"></polyline>
-				<path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path>
-			</svg>
-			重新载入
-		</button>
-	<div class="restart-hint" id="restartHint">⚠️ 此操作将重新加载所有模组</div>
-	<br><br>
-	<!-- ===== 安全模式切换开关 ===== -->
-    <div class="safe-mode-section" id="safeModeSection">
-        <div class="safe-mode-info">
-            <div class="safe-mode-icon">🛡️</div>
-            <div>
-                <div class="safe-mode-label">安全模式</div>
-            </div>
-        </div>
-        <label class="toggle-switch" aria-label="安全模式切换开关">
-            <input type="checkbox" id="toggleSafeMode" />
-            <span class="toggle-track">
-                <span class="toggle-thumb"></span>
-            </span>
-        </label>
-    </div>
+	<div class="dol-opt-container">
+		<!-- ===== 环境统计卡片 ===== -->
+		<div id="dolOptEnvInfo" class="dol-opt-stats-container"></div>
 
-	<!-- ===== 添加模组区域 ===== -->
-    <div class="mod-section-title">📦 添加模组</div>
-    <div class="drop-zone" id="dropZone" role="button" tabindex="0" aria-label="拖放模组文件到此处或点击选择">
-        <span class="drop-icon">📁</span>
-        <div class="drop-text">选择要添加的旁加载Mod的Zip文件</div>
-        <div class="drop-subtext">或拖放模组文件到此处</div>
-        <input type="file" id="fileInput" accept=".zip" multiple aria-label="选择模组文件" />
-    </div>
+		<!-- ===== 高警告对比颜色重启按钮 ===== -->
+		<div class="restart-section">
+			<button
+				class="btn-restart"
+				id="btnRestart"
+				title="重新载入应用 - 使所有模组配置生效"
+				aria-label="重新载入应用"
+				>
+				<svg class="icon-restart" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+					<polyline points="23 4 23 10 17 10"></polyline>
+					<path d="M20.49 15a9 9 0 1 1-2.13-9.36L23 10"></path>
+				</svg>
+				重新载入游戏
+			</button>
+			<div class="restart-hint" id="restartHint">⚠️ 调整模组或美化排序后，需点击重新载入以完全生效</div>
+		</div>
+
+		<!-- ===== 安全模式切换开关 ===== -->
+		<div class="safe-mode-section" id="safeModeSection">
+			<div class="safe-mode-info">
+				<div class="safe-mode-icon">🛡️</div>
+				<div>
+					<div class="safe-mode-label">安全模式 (Safe Mode)</div>
+					<div class="safe-mode-desc">开启后仅加载签名模组，可用于排查异常 Mod</div>
+				</div>
+			</div>
+			<label class="toggle-switch" aria-label="安全模式切换开关">
+				<input type="checkbox" id="toggleSafeMode" />
+				<span class="toggle-track">
+					<span class="toggle-thumb"></span>
+				</span>
+			</label>
+		</div>
+
+		<!-- ===== 添加模组区域 ===== -->
+		<div class="mod-section-title">📦 添加旁加载模组</div>
+		<div class="drop-zone" id="dropZone" role="button" tabindex="0" aria-label="拖放模组文件到此处或点击选择">
+			<span class="drop-icon">📁</span>
+			<div class="drop-text">选择或拖放要添加的 Mod Zip 文件</div>
+			<div class="drop-subtext">支持单文件或多文件，导入后将保存至浏览器存储</div>
+			<input type="file" id="fileInput" accept=".zip" multiple aria-label="选择模组文件" />
+		</div>
+	</div>
 	<<run setTimeout(initGeneral, 1)>>
 <</widget>>
 
 <<widget "modloadermodmanage">>
+	<div id="dolOptModManageContainer" class="dol-opt-container"></div>
+	<<run setTimeout(initModManage, 1)>>
 <</widget>>
 
 <<widget "modloaderreadme">>
-<</widget>>
-
-<<widget "modloaderbeautyselectoraddon">>
+	<div id="dolOptReadmeContainer" class="dol-opt-container"></div>
+	<<run setTimeout(initModReadMe, 1)>>
 <</widget>>
 
 <<widget "modloaderlog">>
+	<div class="dol-opt-container">
+		<div class="dol-opt-group-header">
+			<span>📜 模组加载过程日志</span>
+			<button type="button" class="dol-opt-btn btn-success" onclick="window.dolOptCopyLoadLog()">📋 复制日志</button>
+		</div>
+		<div class="dol-opt-log-toolbar">
+			<input id="dolOptLogSearch" class="dol-opt-search-input dol-opt-log-search" type="search" placeholder="搜索日志内容……" aria-label="搜索日志内容">
+			<span id="dolOptLogSearchStatus" class="dol-opt-log-search-status">0/0</span>
+			<button type="button" class="dol-opt-btn" onclick="window.dolOptMoveLogMatch(-1)">↑ 上一处</button>
+			<button type="button" class="dol-opt-btn" onclick="window.dolOptMoveLogMatch(1)">↓ 下一处</button>
+			<button id="dolOptLogErrors" type="button" class="dol-opt-btn btn-danger" onclick="window.dolOptSetLogSearch('logError')">❌ 错误</button>
+			<button id="dolOptLogWarnings" type="button" class="dol-opt-btn btn-warn" onclick="window.dolOptSetLogSearch('logWarning')">⚠️ 警告</button>
+		</div>
+		<div id="dolOptLogContent" class="dol-opt-log-wrapper"></div>
+	</div>
 	<<script>>
 		setTimeout(() => {
-			$("#customOverlayContent").append(window.modLoaderGuiInstance.gLoadingProgress.getLoadLogHtml());
+			const gui = window.dolOptGetGui();
+			const target = $("#dolOptLogContent");
+			if (gui?.gLoadingProgress) {
+				target.html(gui.gLoadingProgress.getLoadLogHtml());
+			} else {
+				target.html('<div class="mod-empty">无法获取加载日志</div>');
+			}
+			window.dolOptInitLogTools();
 		}, 1);
 	<</script>>
 <</widget>>

@@ -553,3 +553,458 @@
         font-size: 0.82rem;
     }
 }
+
+/* =========================================================================
+ * 补全组件样式：统计卡片、模组管理、美化排序与 ReadMe 布局
+ * ========================================================================= */
+.dol-opt-container {
+    padding: 10px 4px;
+}
+
+/* 统计卡片网格 */
+.dol-opt-stats-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+    gap: 12px;
+    margin-bottom: 22px;
+}
+.dol-opt-stat-card {
+    background: #1e1e24;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 14px 12px;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    transition: all var(--transition);
+}
+.dol-opt-stat-card:hover {
+    border-color: rgba(124, 58, 237, 0.4);
+    transform: translateY(-2px);
+}
+.dol-opt-stat-num {
+    font-size: 1.4rem;
+    font-weight: 800;
+    color: #a78bfa;
+    font-family: var(--font-mono);
+    line-height: 1.2;
+}
+.dol-opt-stat-label {
+    font-size: 0.72rem;
+    color: var(--text-muted);
+}
+
+/* 提示条 */
+.dol-opt-hint-bar {
+    background: rgba(124, 58, 237, 0.1);
+    border-left: 3px solid #a78bfa;
+    padding: 10px 14px;
+    border-radius: 4px;
+    font-size: 0.78rem;
+    color: #d4d4d8;
+    margin-bottom: 16px;
+    line-height: 1.5;
+}
+
+/* 分组标题 */
+.dol-opt-group-header {
+    font-size: 0.82rem;
+    font-weight: 700;
+    color: var(--text-secondary);
+    margin-bottom: 10px;
+    padding-bottom: 6px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+.dol-opt-collapsible-section {
+    margin-top: 16px;
+}
+.dol-opt-section-summary {
+    color: var(--text-secondary);
+    cursor: pointer;
+    font-size: 0.82rem;
+    font-weight: 700;
+    padding: 0 0 8px 4px;
+    border-bottom: 1px solid var(--border);
+}
+.dol-opt-section-content {
+    padding-top: 12px;
+}
+
+/* 模组与美化列表 */
+.dol-opt-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+.dol-opt-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: #1c1c22;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 10px 14px;
+    transition: all var(--transition);
+}
+.dol-opt-item:hover {
+    border-color: rgba(124, 58, 237, 0.35);
+    background: #23232b;
+}
+.dol-opt-item.item-disabled {
+    opacity: 0.65;
+    background: #16161a;
+    border-style: dashed;
+}
+.dol-opt-item.item-readonly {
+    background: #18181e;
+}
+
+.dol-opt-order-badge {
+    font-size: 0.75rem;
+    font-family: var(--font-mono);
+    color: #a78bfa;
+    font-weight: 700;
+    min-width: 28px;
+}
+
+.dol-opt-status-badge {
+    font-size: 0.68rem;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-weight: 600;
+    white-space: nowrap;
+}
+.badge-enabled {
+    background: rgba(34, 197, 94, 0.15);
+    color: #4ade80;
+    border: 1px solid rgba(34, 197, 94, 0.3);
+}
+.badge-disabled {
+    background: rgba(113, 113, 122, 0.2);
+    color: #a1a1aa;
+    border: 1px solid rgba(113, 113, 122, 0.3);
+}
+.badge-builtin {
+    background: rgba(124, 58, 237, 0.15);
+    color: #c4b5fd;
+    border: 1px solid rgba(124, 58, 237, 0.3);
+}
+
+.dol-opt-item-main {
+    flex: 1;
+    min-width: 0;
+}
+.dol-opt-item-title {
+    font-size: 0.88rem;
+    font-weight: 600;
+    color: #e4e4e7;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.dol-opt-item-desc {
+    font-size: 0.7rem;
+    color: var(--text-muted);
+    margin-top: 2px;
+}
+
+/* 操作按钮组 */
+.dol-opt-btn-group {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-shrink: 0;
+}
+.dol-opt-btn {
+    background: #27272e;
+    border: 1px solid var(--border);
+    color: #d4d4d8;
+    padding: 4px 10px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all var(--transition);
+}
+.dol-opt-btn:hover {
+    background: #363640;
+    border-color: #52525e;
+    color: #fff;
+}
+.dol-opt-btn.btn-warn {
+    background: rgba(245, 158, 11, 0.15);
+    color: #fbbf24;
+    border-color: rgba(245, 158, 11, 0.3);
+}
+.dol-opt-btn.btn-warn:hover {
+    background: rgba(245, 158, 11, 0.3);
+    border-color: #f59e0b;
+}
+.dol-opt-btn.btn-danger {
+    background: rgba(239, 68, 68, 0.15);
+    color: #f87171;
+    border-color: rgba(239, 68, 68, 0.3);
+}
+.dol-opt-btn.btn-danger:hover {
+    background: rgba(239, 68, 68, 0.3);
+    border-color: #ef4444;
+}
+.dol-opt-btn.btn-success {
+    background: rgba(34, 197, 94, 0.15);
+    color: #4ade80;
+    border-color: rgba(34, 197, 94, 0.3);
+}
+.dol-opt-btn.btn-success:hover {
+    background: rgba(34, 197, 94, 0.3);
+    border-color: #22c55e;
+}
+
+/* ReadMe 浏览器布局 */
+.dol-opt-readme-layout {
+    display: flex;
+    gap: 16px;
+    min-height: 480px;
+}
+.dol-opt-readme-sidebar {
+    width: 220px;
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    border-right: 1px solid var(--border);
+    padding-right: 12px;
+}
+.dol-opt-search-input {
+    width: 100%;
+    background: #1a1a20;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 8px 12px;
+    color: #e4e4e7;
+    font-size: 0.8rem;
+    box-sizing: border-box;
+}
+.dol-opt-search-input:focus {
+    outline: none;
+    border-color: var(--accent);
+}
+.dol-opt-readme-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    overflow-y: auto;
+    max-height: 520px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+.dol-opt-readme-mod-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 10px;
+    border-radius: var(--radius-sm);
+    font-size: 0.78rem;
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: all var(--transition);
+    overflow: hidden;
+}
+.dol-opt-readme-mod-item:hover {
+    background: #23232b;
+    color: #fff;
+}
+.dol-opt-readme-mod-item.active {
+    background: rgba(124, 58, 237, 0.2);
+    border: 1px solid rgba(124, 58, 237, 0.4);
+    color: #c4b5fd;
+    font-weight: 600;
+}
+.dol-opt-readme-mod-item .mod-name {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.dol-opt-readme-content {
+    flex: 1;
+    min-width: 0;
+    max-height: 560px;
+    overflow-y: auto;
+    padding-right: 8px;
+}
+.dol-opt-readme-header {
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 12px;
+    margin-bottom: 16px;
+}
+.dol-opt-readme-header h2 {
+    margin: 0 0 6px 0;
+    font-size: 1.25rem;
+    color: #fff;
+}
+.dol-opt-readme-meta {
+    display: flex;
+    gap: 16px;
+    font-size: 0.75rem;
+    color: var(--text-muted);
+}
+.dol-opt-readme-meta strong {
+    color: #d4d4d8;
+}
+
+.dol-opt-markdown-view {
+    font-size: 0.84rem;
+    line-height: 1.7;
+    color: #d4d4d8;
+}
+.dol-opt-code-block {
+    background: #141418;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 12px;
+    overflow-x: auto;
+    font-family: var(--font-mono);
+    font-size: 0.78rem;
+    margin: 10px 0;
+}
+.dol-opt-inline-code {
+    background: #24242c;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-family: var(--font-mono);
+    font-size: 0.78rem;
+    color: #fca5a5;
+}
+.dol-opt-h2 {
+    font-size: 1.1rem;
+    color: #e4e4e7;
+    margin: 18px 0 8px 0;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 4px;
+}
+.dol-opt-h3 {
+    font-size: 0.95rem;
+    color: #c4b5fd;
+    margin: 14px 0 6px 0;
+}
+.dol-opt-h4 {
+    font-size: 0.88rem;
+    color: #a78bfa;
+    margin: 10px 0 4px 0;
+}
+.dol-opt-ul {
+    padding-left: 20px;
+    margin: 8px 0;
+}
+.dol-opt-li {
+    margin-bottom: 4px;
+}
+
+.dol-opt-meta-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+    margin-top: 14px;
+}
+.meta-item {
+    background: #1a1a20;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+.meta-item.full-width {
+    grid-column: span 2;
+}
+.meta-key {
+    font-size: 0.72rem;
+    color: var(--text-muted);
+}
+.meta-val {
+    font-size: 0.82rem;
+    color: #e4e4e7;
+    font-weight: 500;
+}
+.dep-tag {
+    display: inline-block;
+    background: rgba(124, 58, 237, 0.15);
+    border: 1px solid rgba(124, 58, 237, 0.3);
+    color: #c4b5fd;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 0.72rem;
+    margin: 2px 4px 2px 0;
+}
+
+/* 加载日志包裹区 */
+.dol-opt-log-toolbar {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 10px;
+}
+.dol-opt-log-search {
+    flex: 1 1 260px;
+    width: auto;
+}
+.dol-opt-log-search-status {
+    min-width: 42px;
+    color: var(--text-muted);
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    text-align: center;
+}
+.dol-opt-log-wrapper {
+    background: #141418;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 14px;
+    max-height: 520px;
+    overflow-y: auto;
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    line-height: 1.5;
+}
+.dol-opt-log-wrapper mark.dol-opt-log-match {
+    background: #facc15;
+    color: #18181b;
+    border-radius: 2px;
+    padding: 0 1px;
+}
+.dol-opt-log-wrapper mark.dol-opt-log-match.active {
+    background: #fb7185;
+    outline: 2px solid #f43f5e;
+}
+
+@media (max-width: 640px) {
+    .dol-opt-readme-layout {
+        flex-direction: column;
+    }
+    .dol-opt-readme-sidebar {
+        width: 100%;
+        border-right: none;
+        border-bottom: 1px solid var(--border);
+        padding-right: 0;
+        padding-bottom: 12px;
+    }
+    .dol-opt-readme-list {
+        max-height: 160px;
+    }
+    .dol-opt-meta-grid {
+        grid-template-columns: 1fr;
+    }
+    .meta-item.full-width {
+        grid-column: span 1;
+    }
+}

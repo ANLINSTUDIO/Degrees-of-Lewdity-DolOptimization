@@ -48,7 +48,7 @@
         <</if>>
         <<if _expelled is 1>>
             <br>
-            <div class="fromopt">【原版优化】 提供此界面 | 【Optimization】 Provide this passage | 感谢【@戛訴】</div>
+            <<fromoptP "@戛訴">>
             <<set $daily.sydney.expelled to 1>>
             <<schoolicon "library">><<link [[继续呆在图书馆|"School Library"]]>><</link>><br>
             <<getouticon>><<link [[离开(0:03)|"School Front Courtyard"]]>><<pass 3>><</link>><br>

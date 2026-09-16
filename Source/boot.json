@@ -1,6 +1,6 @@
 {
     "name": "原版优化",
-    "version": "1.0.8",
+    "version": "1.0.89",
     "styleFileList": [
         "stylesheet/dol-optimization.css",
         "stylesheet/modloader-optimization.css"
@@ -28,7 +28,7 @@
         "guide/处女膜修复.png",
         "guide/叠加服装部件.png",
         "guide/理发店售卖头发.png",
-        "guide/园艺大师.png",
+        "guide/园艺大师.png"
     ],
     "addonPlugin": [
         {
@@ -54,6 +54,13 @@
                     "passage": "Widgets Clothing Caption",
                     "findString": "\t\t\t<<overlayReplace \"startFeats\">>\n\t\t<</button>>\n\t</div>",  
                     "replaceFile": "twee/modloader/modloader-patch-caption.twee"
+                },
+                {
+                    "tip": "【1.0.84】游戏内模组管理器入口",
+                    "passage": "StoryCaption",
+                    "findRegex": "<<overlayReplace \\\"saves\\\">>\\r?\\n\\s*<</button>>\\r?\\n\\s*</div>",
+                    "regexFlag": "g",
+                    "replaceFile": "twee/modloader/modloader-patch-story-caption.twee"
                 },
                 {
                     "tip": "【1.0.3】大大大衣柜升级",
@@ -223,7 +230,7 @@
                     "findString": "<<replace #customOverlayContent>><<saves>><</replace>>",  
                     "replace": "<<replace #customOverlayContent>><<saves>><</replace>><<run setTimeout(() => DolOptimization?.initsave(), DolOptimization.initsavetime??500)>>",
                     "all": true
-                },
+                }
             ]
         },
         {
@@ -243,7 +250,7 @@
                         "fileName": "ingame.js",
                         "from": "\t\t\tif (plot.stage >= 1 && (plot.water === 1 || plot.bed === \"water\")) {",
                         "to": "\t\t\tif (plot.stage >= 1 && (plot.water === 1 || plot.bed === \"water\" || DolOptimization?.autoIrrigator(location, plot))) {"
-                    },
+                    }
                 ]
             }
         },
