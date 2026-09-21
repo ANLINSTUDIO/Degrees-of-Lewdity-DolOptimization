@@ -16,7 +16,14 @@
     const WIKI_PAGE = '模组列表';
     const WIKI_CACHE_KEY = 'dol_opt_market_wiki_v5';
     const WIKI_CACHE_TTL = 30 * 60 * 1000; // 30 分钟
-    const RELEASE_INDEX_URL = 'https://dol.alseece.top/release-index.json';
+    const PRIMARY_RELEASE_INDEX_URL = 'https://dol.alseece.top/release-index.json';
+    const BACKUP_RELEASE_INDEX_URL = 'https://dolmod-release-index.johnliao381658675.workers.dev/release-index.json';
+    const RELEASE_INDEX_URL = PRIMARY_RELEASE_INDEX_URL;
+    const RELEASE_INDEX_MIRRORS = [
+        PRIMARY_RELEASE_INDEX_URL,
+        BACKUP_RELEASE_INDEX_URL
+    ];
+    let activeReleaseWorkerBaseUrl = PRIMARY_RELEASE_INDEX_URL;
     const IDENTITY_CATALOG_URL = 'https://dolmod-catalog-pages.pages.dev/mod-identities.json';
     const IDENTITY_CACHE_KEY = 'dol_opt_market_identities_v3';
     const IDENTITY_FETCH_TIMEOUT_MS = 5000;
@@ -604,7 +611,7 @@
 
     function getReleaseWorkerUrl(path) {
         try {
-            return new URL(path, RELEASE_INDEX_URL).toString();
+            return new URL(path, activeReleaseWorkerBaseUrl || RELEASE_INDEX_URL).toString();
         } catch {
             return '';
         }
@@ -970,7 +977,7 @@
         const mirror = MIRROR_SERVERS.find(m => m.id === mirrorId) || MIRROR_SERVERS[0];
         const targetUrl = getAcceleratedUrl(url, mirrorId);
         if (!targetUrl || !mirror.useWorker) return targetUrl;
-        const proxyUrl = new URL('/download', RELEASE_INDEX_URL);
+        const proxyUrl = new URL('/download', activeReleaseWorkerBaseUrl || RELEASE_INDEX_URL);
         proxyUrl.searchParams.set('url', targetUrl);
         return proxyUrl.toString();
     }
@@ -1143,19 +1150,27 @@
     }
 
     async function fetchReleaseIndex() {
-        const controller = typeof AbortController === 'function' ? new AbortController() : null;
-        const timeoutId = controller
-            ? setTimeout(() => controller.abort(), IDENTITY_FETCH_TIMEOUT_MS)
-            : null;
-        try {
-            const res = await fetch(RELEASE_INDEX_URL, controller ? { signal: controller.signal } : undefined);
-            if (!res.ok) throw new Error(`自动版本索引返回状态码: ${res.status}`);
-            const mods = normalizeReleaseIndex(await res.json());
-            writeLocalCache(WIKI_CACHE_KEY, mods);
-            return mods;
-        } finally {
-            if (timeoutId !== null) clearTimeout(timeoutId);
+        let lastError = null;
+        for (const url of RELEASE_INDEX_MIRRORS) {
+            const controller = typeof AbortController === 'function' ? new AbortController() : null;
+            const timeoutId = controller
+                ? setTimeout(() => controller.abort(), IDENTITY_FETCH_TIMEOUT_MS)
+                : null;
+            try {
+                const res = await fetch(url, controller ? { signal: controller.signal } : undefined);
+                if (!res.ok) throw new Error(`自动版本索引返回状态码: ${res.status}`);
+                const mods = normalizeReleaseIndex(await res.json());
+                activeReleaseWorkerBaseUrl = url;
+                writeLocalCache(WIKI_CACHE_KEY, mods);
+                return mods;
+            } catch (error) {
+                lastError = error;
+                console.warn(`[DolOptimization] 自动版本索引镜像不可用 (${url})，尝试下一镜像或回退`, error);
+            } finally {
+                if (timeoutId !== null) clearTimeout(timeoutId);
+            }
         }
+        throw lastError || new Error('所有自动版本索引镜像均不可用');
     }
 
     async function loadIdentityCatalog(forceRefresh = false) {
@@ -3003,6 +3018,8 @@
         setModUpdateIgnored,
         MOD_MARKET_VERSION_RULES,
         RELEASE_INDEX_URL,
+        RELEASE_INDEX_MIRRORS,
+        getActiveReleaseWorkerBaseUrl: () => activeReleaseWorkerBaseUrl,
         IDENTITY_CATALOG_URL,
         normalizeReleaseIndex,
         fetchReleaseIndex,

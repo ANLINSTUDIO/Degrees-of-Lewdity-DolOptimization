@@ -344,7 +344,7 @@ context.dolOptOfferReload = message => (reloadOffers++, reloadMessage = message)
     assert.equal(context.dolOptGetModSubtext('UnknownMod', { bootJson: {} }, false), '');
     assert.equal(
         context.dolOptResolveImportedModName(
-            'Dol-Optimization-v1.1.0.zip',
+            'Dol-Optimization-v1.1.0.1.zip',
             ['原版优化', 'WardrobeIncrementalExpansion']
         ),
         '原版优化',
@@ -446,9 +446,9 @@ context.dolOptOfferReload = message => (reloadOffers++, reloadMessage = message)
     assert.ok(container.innerHTML.includes('智能整理将根据需要自动调整MOD的顺序'), '应包含自然流畅的模组管理提示语');
     assert.ok(css.includes('.dol-opt-sticky-toolbar'), '样式表中应包含吸顶工具栏样式');
 
-    // 5. 校验 boot.json 版本号为 1.1.0
+    // 5. 校验 boot.json 版本号为 1.1.0.1
     const bootJson = JSON.parse(fs.readFileSync(path.join(__dirname, 'boot.json'), 'utf8'));
-    assert.equal(bootJson.version, '1.1.0', 'boot.json 版本号必须为 1.1.0');
+    assert.equal(bootJson.version, '1.1.0.1', 'boot.json 版本号必须为 1.1.0.1');
     assert.ok(bootJson.scriptFileList.includes('javascript/dol-mod-market.js'), 'boot.json 必须注册 dol-mod-market.js');
 
     // 6. 验证 ModLoadController 持久化与模组禁用/删除修复
@@ -718,6 +718,8 @@ context.dolOptOfferReload = message => (reloadOffers++, reloadMessage = message)
         downloadAndInstallMod,
         loadMarketData,
         RELEASE_INDEX_URL,
+        RELEASE_INDEX_MIRRORS,
+        getActiveReleaseWorkerBaseUrl,
         IDENTITY_CATALOG_URL,
         normalizeReleaseIndex,
         applyIdentityCatalog,
@@ -1018,8 +1020,12 @@ context.dolOptOfferReload = message => (reloadOffers++, reloadMessage = message)
         [{ name: 'DOLI', version: '0.2.2' }]
     ), 'not_installed', '离线身份兜底也必须拒绝同仓库尾名的跨所有者冒充');
 
-    // 14.3.1 Cloudflare 身份字典必须能动态补充本地技术名映射
+    // 14.3.1 验证模组市场主备双轨镜像配置与动态基地址
     assert.equal(RELEASE_INDEX_URL, 'https://dol.alseece.top/release-index.json');
+    assert.ok(Array.isArray(RELEASE_INDEX_MIRRORS) && RELEASE_INDEX_MIRRORS.length >= 2, '必须配置至少两组主备镜像源');
+    assert.equal(RELEASE_INDEX_MIRRORS[0], 'https://dol.alseece.top/release-index.json');
+    assert.equal(RELEASE_INDEX_MIRRORS[1], 'https://dolmod-release-index.johnliao381658675.workers.dev/release-index.json');
+    assert.equal(getActiveReleaseWorkerBaseUrl(), 'https://dol.alseece.top/release-index.json');
     assert.equal(IDENTITY_CATALOG_URL, 'https://dolmod-catalog-pages.pages.dev/mod-identities.json');
     assert.equal(applyIdentityCatalog({
         schemaVersion: 1,
@@ -1544,7 +1550,7 @@ context.dolOptOfferReload = message => (reloadOffers++, reloadMessage = message)
         'https://gh.ddlc.top/https://github.com/test/testmod/releases/download/v1/TestMod.zip',
         '安装包请求必须使用当前所选镜像'
     );
-    assert.ok(marketScript.includes("new URL('/download', RELEASE_INDEX_URL)"), '市场必须保留自建 Worker 下载线路');
+    assert.ok(marketScript.includes("new URL('/download', activeReleaseWorkerBaseUrl || RELEASE_INDEX_URL)"), '市场必须保留自建 Worker 下载线路');
     assert.ok(marketScript.includes('getDownloadUrl(asset.downloadUrl, mirrorId)'), '浏览器下载必须让安装计划中的每个包使用当前线路');
     assert.ok(marketScript.includes('仅此文件改走'), '缺少官方摘要时必须明确仅回退当前文件，不能误报为全局切换线路');
 
@@ -2046,7 +2052,7 @@ context.dolOptOfferReload = message => (reloadOffers++, reloadMessage = message)
     assert.equal(typeof context.dolOptInitGlobalDragDrop, 'function', '必须导出 dolOptInitGlobalDragDrop 全局拖拽守护函数');
 
     // 14.13 验证 boot.json 版本号基准与脚本注册
-    assert.equal(bootJson.version, '1.1.0', 'boot.json 版本号必须为 1.1.0');
+    assert.equal(bootJson.version, '1.1.0.1', 'boot.json 版本号必须为 1.1.0.1');
     assert.ok(bootJson.scriptFileList.includes('javascript/dol-mod-market.js'), 'boot.json 必须注册 dol-mod-market.js');
 
     // 14.14 验证按钮长按手势与防二次短按误触
@@ -2125,7 +2131,7 @@ context.dolOptOfferReload = message => (reloadOffers++, reloadMessage = message)
         context.clearTimeout = savedClearTimeout;
     }
 
-    console.log('Dol-Optimization v1.1.0 all tests including Cloudflare identity catalog PASSED!');
+    console.log('Dol-Optimization v1.1.0.1 all tests including Cloudflare identity catalog PASSED!');
 })().catch(error => {
     console.error(error);
     process.exitCode = 1;
