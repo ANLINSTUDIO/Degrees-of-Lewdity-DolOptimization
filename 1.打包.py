@@ -24,24 +24,23 @@ def collect_images(photo_dir, base_dir):
     img_files.sort()
     return img_files
 
-def update_boot_json(boot_json_path, img_files):
-    """更新 boot.json 中的 imgFileList"""
-    try:
-        with open(boot_json_path, 'r', encoding='utf-8') as f:
-            config = json.load(f)
-        
-        # 替换 imgFileList
-        config['imgFileList'] = img_files
-        
-        # 写回文件，保持格式
-        with open(boot_json_path, 'w', encoding='utf-8') as f:
-            json.dump(config, f, indent=4, ensure_ascii=False)
-        
-        print(f"已更新boot.json ({boot_json_path})，共 {len(img_files)} 个图片文件")
-        return config
-    except Exception as e:
-        print(f"更新 boot.json 失败: {e}")
-        raise
+def load_and_validate_boot(boot_json_path, img_files):
+    """只校验清单，不在打包时改写受版本控制的配置。"""
+    with open(boot_json_path, 'r', encoding='utf-8') as f:
+        config = json.load(f)
+    if set(config['imgFileList']) != set(img_files):
+        raise ValueError('boot.json 的图片清单与实际文件不一致')
+    for key in ('styleFileList', 'scriptFileList', 'tweeFileList', 'imgFileList'):
+        for relative_path in config.get(key, []):
+            if not (boot_json_path.parent / relative_path).is_file():
+                raise FileNotFoundError(relative_path)
+    for addon in config.get('addonPlugin', []):
+        if isinstance(addon.get('params'), list):
+            for item in addon['params']:
+                relative_path = item.get('replaceFile')
+                if relative_path and not (boot_json_path.parent / relative_path).is_file():
+                    raise FileNotFoundError(relative_path)
+    return config
 
 def create_zip(zip_name, base_dir):
     """
@@ -63,6 +62,10 @@ def create_zip(zip_name, base_dir):
                 if file_path.is_file():
                     # 计算相对于 base_dir 的路径，并统一使用正斜杠
                     arcname = str(file_path.relative_to(base_path)).replace('\\', '/')
+                    if any(part.startswith('.') for part in file_path.relative_to(base_path).parts):
+                        continue
+                    if 'copy' in arcname.lower() or arcname == 'test-smart-sort.js':
+                        continue
                     zipf.write(file_path, arcname)
                     print(f"已添加: {arcname}")
 
@@ -81,13 +84,13 @@ def main():
     # 1. 收集图片文件（使用相对路径）
     img_files = collect_images(img_dir, base_dir) + collect_images(base_dir / "guide", base_dir)
     
-    # 2. 更新 boot.json
-    config = update_boot_json(boot_json_path, img_files)
+    # 2. 校验 boot.json，不修改源码
+    config = load_and_validate_boot(boot_json_path, img_files)
 
     print("="*50)
     # 3. 获取版本号用于 ZIP 文件名
     version = config.get('version', 'unknown')
-    zip_name = f"Optimization-{version}-DolMod.zip"
+    zip_name = Path(__file__).parent / f"Dol-Optimization-v{version}.zip"
     print("version: ", version)
     print("filenam: ", zip_name)
     print("开始打包")
@@ -95,6 +98,9 @@ def main():
 
     # 4. 打包文件
     create_zip(zip_name, base_dir)
+    with zipfile.ZipFile(zip_name) as archive:
+        if archive.testzip() is not None or 'boot.json' not in archive.namelist():
+            raise ValueError('安装包损坏或根目录缺少 boot.json')
     
     print("\n完成！")
 
@@ -105,4 +111,3 @@ if __name__ == "__main__":
         print("="*50)
         import traceback
         traceback.print_exc()
-    input()

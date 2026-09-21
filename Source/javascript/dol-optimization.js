@@ -433,13 +433,20 @@ DolOptimization = { ...DolOptimization,
     },
     
     handleFontLoadError: function(error) {
+        let msg = `字体加载失败，错误: ${error.message || error}`;
         if (error.message === "Invalid font data in ArrayBuffer.") {
-            alert(`字体加载失败: 字体不支持，请尝试换一个字体`);
-        } else if (error.message?.includes("OTS parsing error") || 
+            msg = `字体加载失败: 字体不支持，请尝试换一个字体`;
+        } else if (error.message?.includes("OTS parsing error") ||
                    error.message?.includes("Unsupported table version")) {
-            alert(`字体加载失败: 字体格式不受支持，请尝试换一个字体`);
+            msg = `字体加载失败: 字体格式不受支持，请尝试换一个字体`;
+        }
+
+        if (typeof window.dolOptAlert === 'function') {
+            window.dolOptAlert(msg, '字体设置提示');
+        } else if (typeof window.dolOptShowToast === 'function') {
+            window.dolOptShowToast(msg, 'warning');
         } else {
-            alert(`字体加载失败，错误: ${error.message || error}`);
+            console.warn('[DolOptimization]', msg);
         }
     },
     
@@ -900,7 +907,11 @@ if (window.maplebirch) {
         }
     });
 } else {
-    setTimeout(alert("【原版优化】需要秋枫白桦框架，请确保安装并将本模组置于框架下方"), 100);
+    setTimeout(() => {
+        const message = "【原版优化】需要秋枫白桦框架，请确保安装并将本模组置于框架下方";
+        if (typeof window.dolOptAlert === 'function') window.dolOptAlert(message, '依赖提示');
+        else console.error(message);
+    }, 100);
 }
 
 
@@ -934,3 +945,29 @@ if (window.maplebirch) {
 
 
 DolOptimization.loadSettings();
+
+// 启动检测：加载日志错误自动弹窗定位与旁加载美化静默同步
+if (typeof $ !== 'undefined' && $(document) && typeof $(document).one === 'function') {
+    $(document).one(":storyready :passagedisplay", function () {
+        setTimeout(async () => {
+            if (typeof window.dolOptLoadBeautyState === 'function' && window.dolOptIsAutoBeautyEnabled?.()) {
+                try {
+                    await window.dolOptLoadBeautyState();
+                } catch (_) {}
+            }
+            if (window.dolModMarket?.loadMarketData && !window._dolOptMarketChecked) {
+                window._dolOptMarketChecked = true;
+                try {
+                    await window.dolModMarket.loadMarketData(true);
+                    const updates = window.dolModMarket.getUpdatableMods?.() || [];
+                    window.dolOptNotifyUpdateState?.(updates.length, updates);
+                } catch (error) {
+                    console.warn('[DolOptimization] 启动时刷新模组市场失败，继续使用本地缓存', error);
+                }
+            }
+            if (typeof window.dolOptCheckAndAutoOpenErrorLog === 'function') {
+                window.dolOptCheckAndAutoOpenErrorLog();
+            }
+        }, 600);
+    });
+}
