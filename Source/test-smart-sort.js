@@ -954,7 +954,7 @@ context.dolOptOfferReload = message => (reloadOffers++, reloadMessage = message)
     );
     assert.equal(
         getDownloadUrl(testUrl, 'worker'),
-        `https://dolmod-release-index.johnliao381658675.workers.dev/download?url=${encodeURIComponent(testUrl)}`,
+        `https://dol.alseece.top/download?url=${encodeURIComponent(testUrl)}`,
         '自建 Worker 必须继续作为默认一键安装线路'
     );
     assert.equal(
@@ -1019,7 +1019,7 @@ context.dolOptOfferReload = message => (reloadOffers++, reloadMessage = message)
     ), 'not_installed', '离线身份兜底也必须拒绝同仓库尾名的跨所有者冒充');
 
     // 14.3.1 Cloudflare 身份字典必须能动态补充本地技术名映射
-    assert.equal(RELEASE_INDEX_URL, 'https://dolmod-release-index.johnliao381658675.workers.dev/release-index.json');
+    assert.equal(RELEASE_INDEX_URL, 'https://dol.alseece.top/release-index.json');
     assert.equal(IDENTITY_CATALOG_URL, 'https://dolmod-catalog-pages.pages.dev/mod-identities.json');
     assert.equal(applyIdentityCatalog({
         schemaVersion: 1,
@@ -1630,7 +1630,7 @@ context.dolOptOfferReload = message => (reloadOffers++, reloadMessage = message)
     assert.equal(browserDownloadStarts, 0, '缺少官方摘要的旧资源不应交给第三方镜像或浏览器下载');
     assert.equal(
         directPackageUrl,
-        'https://dolmod-release-index.johnliao381658675.workers.dev/download?url=https%3A%2F%2Fgithub.com%2Ftest%2Fdirectmod%2Freleases%2Fdownload%2Fv1%2FDirectMod.zip',
+        'https://dol.alseece.top/download?url=https%3A%2F%2Fgithub.com%2Ftest%2Fdirectmod%2Freleases%2Fdownload%2Fv1%2FDirectMod.zip',
         '缺少摘要时必须回退自建 Worker'
     );
     assert.equal(directPackageFetches, 1);

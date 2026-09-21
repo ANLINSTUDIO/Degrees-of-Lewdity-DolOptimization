@@ -16,7 +16,7 @@
     const WIKI_PAGE = '模组列表';
     const WIKI_CACHE_KEY = 'dol_opt_market_wiki_v5';
     const WIKI_CACHE_TTL = 30 * 60 * 1000; // 30 分钟
-    const RELEASE_INDEX_URL = 'https://dolmod-release-index.johnliao381658675.workers.dev/release-index.json';
+    const RELEASE_INDEX_URL = 'https://dol.alseece.top/release-index.json';
     const IDENTITY_CATALOG_URL = 'https://dolmod-catalog-pages.pages.dev/mod-identities.json';
     const IDENTITY_CACHE_KEY = 'dol_opt_market_identities_v3';
     const IDENTITY_FETCH_TIMEOUT_MS = 5000;

@@ -133,7 +133,8 @@ button.dol-opt-btn-primary:active,
 }
 
 /* ========== 3. 统计卡片网格 ========== */
-.dol-opt-stats-container {
+.dol-opt-stats-container,
+#dolOptMarketStats {
     margin-bottom: 12px;
     display: grid !important;
     grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
@@ -1350,7 +1351,8 @@ button.dol-opt-btn-primary:active,
     }
 
     /* 统计网格 2x2 对称排版 */
-    .dol-opt-stats-container {
+    .dol-opt-stats-container,
+    #dolOptMarketStats {
         grid-template-columns: repeat(2, 1fr) !important;
         gap: 6px !important;
     }
