@@ -1,1 +1,1 @@
-<<number $fertiliserripening?.current??0>>袋催熟肥 和 <<number $fertiliser.current>>
+ <<icon "fertiliserripening.png">><<number $fertiliserripening?.current??0>>袋催熟肥 和 <<icon "fertiliser.png">><<number $fertiliser.current>><<fromoptP>>

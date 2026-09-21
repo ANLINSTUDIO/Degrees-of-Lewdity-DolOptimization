@@ -1,34 +1,32 @@
 {
     "name": "原版优化",
-    "version": "1.0.8",
+    "version": "1.0.9",
     "styleFileList": [
-        "stylesheet/dol-optimization.css",
-        "stylesheet/modloader-optimization.css"
+        "stylesheet/dol-optimization.css"
     ],
     "scriptFileList": [
-        "javascript/AsAPI.js", 
-        "javascript/dol-optimization.js",
-        "javascript/modloader-optimization.js"
+        "javascript/AsAPI.js",
+        "javascript/dol-optimization.js"
     ],
     "tweeFileList": [
         "twee/settings.twee",
-        "twee/game.twee",
-        "twee/modloader/modloader.twee"
+        "twee/game.twee"
     ],
     "imgFileList": [
-        "img/misc/icon/fertiliserripening.png",
-        "img/misc/icon/automaticirrigationmachine.png",
         "img/misc/icon/automaticirrigationmachine.gif",
+        "img/misc/icon/automaticirrigationmachine.png",
+        "img/misc/icon/convenience-store.png",
+        "img/misc/icon/fertiliserripening.png",
         "img/misc/icon/seeds.png",
-
+        "guide/opt-tip.png",
         "guide/“打开关闭导航栏”的黑块箭头.png",
-        "guide/自定义字体.png",
-        "guide/衣柜容量自定义.png",
-        "guide/大大大衣柜升级.png",
-        "guide/处女膜修复.png",
         "guide/叠加服装部件.png",
-        "guide/理发店售卖头发.png",
         "guide/园艺大师.png",
+        "guide/处女膜修复.png",
+        "guide/大大大衣柜升级.png",
+        "guide/理发店售卖头发.png",
+        "guide/自定义字体.png",
+        "guide/衣柜容量自定义.png"
     ],
     "addonPlugin": [
         {
@@ -39,191 +37,186 @@
                 {
                     "tip": "设置",
                     "passage": "overlayReplace",
-                    "findRegex": "<<optionsinformation>><<\\/replace>>[\\s\\S]*?<<\\/button>>", 
-                    "regexFlag": "g",  
+                    "findRegex": "<<optionsinformation>><<\\/replace>>[\\s\\S]*?<<\\/button>>",
+                    "regexFlag": "g",
                     "replace": "<<optionsinformation>><</replace>>\n\t\t<</button>><<doloptimizationModTab>>"
-                },
-                {
-                    "tip": "【1.0.3】模组加载器美化",
-                    "passage": "overlayReplace",
-                    "findString": "<<case \"characteristics\">>",  
-                    "replaceFile": "twee/modloader/modloader-patch-base.twee"
-                },
-                {
-                    "tip": "【1.0.3】模组加载器美化",
-                    "passage": "Widgets Clothing Caption",
-                    "findString": "\t\t\t<<overlayReplace \"startFeats\">>\n\t\t<</button>>\n\t</div>",  
-                    "replaceFile": "twee/modloader/modloader-patch-caption.twee"
                 },
                 {
                     "tip": "【1.0.3】大大大衣柜升级",
                     "passage": "Widgets Wardrobe",
-                    "findString": "__ <i>_selectedWardrobe[_wardrobe_list].length / _selectedWardrobe.space</i>",  
+                    "findString": "__ <i>_selectedWardrobe[_wardrobe_list].length / _selectedWardrobe.space</i>",
                     "replaceFile": "twee/replace/1.0.3 大大大衣柜升级.twee"
                 },
                 {
                     "tip": "【1.0.4】处女膜修复",
                     "passage": "Hospital Foyer",
-                    "findString": "\t\t<<set _aPregnancy to $sexStats.anus.pregnancy>>\n\t\t<<set _vPregnancy to $sexStats.vagina.pregnancy>>",  
+                    "findString": "\t\t<<set _aPregnancy to $sexStats.anus.pregnancy>>\n\t\t<<set _vPregnancy to $sexStats.vagina.pregnancy>>",
                     "replaceFile": "twee/replace/1.0.4 医院处女膜修复.twee"
                 },
                 {
                     "tip": "【1.0.4】处女膜修复 剧烈运动破坏",
                     "passage": "Widgets",
-                    "findString": "\t<<set $physique = Math.clamp($physique, 0, $physiquesize)>>\n\t<<set Weather.BodyTemperature.addActivity(\"physique\")>>",  
+                    "findString": "\t<<set $physique = Math.clamp($physique, 0, $physiquesize)>>\n\t<<set Weather.BodyTemperature.addActivity(\"physique\")>>",
                     "replaceFile": "twee/replace/1.0.4 剧烈运动破坏修复处女膜.twee"
                 },
                 {
                     "tip": "【1.0.4】处女膜修复 剧烈运动破坏 日志时效性",
                     "passage": "Widgets Journal",
-                    "findString": "\t\t\t<<if $avery_mansion>>/* Is Avery paying for the PC? */",  
+                    "findString": "\t\t\t<<if $avery_mansion>>/* Is Avery paying for the PC? */",
                     "replaceFile": "twee/replace/1.0.4 处女膜破坏日志时效性.twee"
                 },
                 {
                     "tip": "【1.0.5】叠加服装部件 衣柜",
                     "passage": "Widgets Wardrobe",
-                    "findString": "\t\t<<if $worn[_wardrobe_list].name isnot \"naked\">>",  
+                    "findString": "\t\t<<if $worn[_wardrobe_list].name isnot \"naked\">>",
                     "replaceFile": "twee/replace/叠加服装部件衣柜.twee"
                 },
                 {
                     "tip": "【1.0.5】叠加服装部件 衣柜链接",
                     "passage": "Widgets Wardrobe",
-                    "findString": "\t\t\t\t<<set V[_wear] = _args[1]>>",  
+                    "findString": "\t\t\t\t<<set V[_wear] = _args[1]>>",
                     "replaceFile": "twee/replace/叠加服装部件衣柜链接.twee"
                 },
                 {
                     "tip": "【1.0.6】叠加服装部件 套装保存",
                     "passage": "Widgets Wardrobe",
-                    "findString": "\t\t\t\tgenitals: clone($worn.genitals.name),",  
+                    "findString": "\t\t\t\tgenitals: clone($worn.genitals.name),",
                     "replaceFile": "twee/replace/叠加服装部件套装保存.twee"
                 },
                 {
                     "tip": "【1.0.6】叠加服装部件 套装修改",
                     "passage": "Widgets Outfits",
-                    "findString": "\t\t<<set _outfit to $outfit[$wear_outfit]>>",  
+                    "findString": "\t\t<<set _outfit to $outfit[$wear_outfit]>>",
                     "replaceFile": "twee/replace/叠加服装部件套装修改.twee"
                 },
                 {
                     "tip": "【1.0.6】叠加服装部件 套装载入",
                     "passage": "Widgets Outfits",
-                    "findString": "\t\t<<if $outfit[$wear_outfit].hairStyle>>",  
+                    "findString": "\t\t<<if $outfit[$wear_outfit].hairStyle>>",
                     "replaceFile": "twee/replace/叠加服装部件套装载入.twee"
                 },
                 {
                     "tip": "【1.0.7】叠加服装部件 全部脱下",
                     "passage": "Widgets Clothing",
-                    "findString": "\t<<set $_location to _args[0]>>\n\t<<for $_slot range setup.clothingLayer.all>>",  
+                    "findString": "\t<<set $_location to _args[0]>>\n\t<<for $_slot range setup.clothingLayer.all>>",
                     "replace": "\t<<set $_location to _args[0]>>\n\t<<for $_slot range setup.clothingLayer.all>>\n\t<<run DolOptimization?.wornStackingRemoveAll()>>"
                 },
                 {
                     "tip": "【1.0.7】叠加服装部件 全部脱下",
                     "passage": "Widgets Clothing",
-                    "findString": "\t<<set $_location to _args[0]>>\n\t<<for $_slot range setup.clothingLayer.all.except(_args[1])>>",  
+                    "findString": "\t<<set $_location to _args[0]>>\n\t<<for $_slot range setup.clothingLayer.all.except(_args[1])>>",
                     "replace": "\t<<set $_location to _args[0]>>\n\t<<for $_slot range setup.clothingLayer.all.except(_args[1])>>\n\t<<run DolOptimization?.wornStackingRemoveAll()>>"
                 },
                 {
                     "tip": "【1.0.7】叠加服装部件 区域进入脱下",
                     "passage": "Widgets Clothing",
-                    "findString": "\t\t<<if $_cursedPrevent isnot true and _strip_restrict isnot 1 and $worn[_undressSlot].cursed isnot 1>>",  
+                    "findString": "\t\t<<if $_cursedPrevent isnot true and _strip_restrict isnot 1 and $worn[_undressSlot].cursed isnot 1>>",
                     "replace": "\t\t<<run DolOptimization?.wornStackingStore(_args[0])>>\n\t\t<<if $_cursedPrevent isnot true and _strip_restrict isnot 1 and $worn[_undressSlot].cursed isnot 1>>"
                 },
                 {
                     "tip": "【1.0.7】叠加服装部件 区域脱离装备",
                     "passage": "Widgets Clothing",
-                    "findString": "\t<<set _store_temp to _args[0]>>",  
+                    "findString": "\t<<set _store_temp to _args[0]>>",
                     "replace": "\t<<run DolOptimization?.wornStackingRestore(_args[0])>>\n\t<<set _store_temp to _args[0]>>"
                 },
                 {
                     "tip": "【1.0.6】理发店售卖头发",
                     "passage": "Hairdressers",
-                    "findString": "|Hairdressers Seat]]>><</link>>",  
+                    "findString": "|Hairdressers Seat]]>><</link>>",
                     "replaceFile": "twee/replace/1.0.6 理发店售卖头发.twee"
                 },
                 {
                     "tip": "【1.0.6】发胶降低发质",
                     "passage": "Widgets Mirror",
-                    "findString": "<<widget \"hairgelApply\">>",  
+                    "findString": "<<widget \"hairgelApply\">>",
                     "replaceFile": "twee/replace/1.0.6 发胶降低发质.twee"
                 },
                 {
                     "tip": "【1.0.6】发质显示",
                     "passage": "Characteristics",
-                    "findString": "<<characteristic-text _hairTextConfig>>",  
+                    "findString": "<<characteristic-text _hairTextConfig>>",
                     "replaceFile": "twee/replace/1.0.6 发质显示.twee"
                 },
                 {
                     "tip": "【1.0.7】大厅快速查看花园浇水",
                     "passage": "Orphanage",
-                    "findString": "|Garden]]>><<pass 1>><</link>>",  
+                    "findString": "|Garden]]>><<pass 1>><</link>>",
                     "replaceFile": "twee/replace/1.0.7 大厅快速查看花园浇水.twee"
                 },
                 {
                     "tip": "【1.0.7】卧室快速查看花园浇水",
                     "passage": "Bedroom",
-                    "findString": "<<print setup.WeatherDescriptions.extremeTemperature()>>",  
+                    "findString": "<<print setup.WeatherDescriptions.extremeTemperature()>>",
                     "replaceFile": "twee/replace/1.0.7 卧室快速查看花园浇水.twee"
                 },
                 {
                     "tip": "【1.0.7】花园查看进度",
                     "passage": "Widgets Tending",
-                    "findString": "\t\t\t<<if _plantbed.stage gte 5>>",  
+                    "findString": "\t\t\t<<if _plantbed.stage gte 5>>",
                     "replaceFile": "twee/replace/1.0.7 花园查看生长进度.twee"
                 },
                 {
                     "tip": "【1.0.7】花园催熟肥",
                     "passage": "Widgets Tending",
-                    "findString": "\t\t\t<br>\n\n\t\t<</capture>>\n\t\t<<set $_i++>>",  
+                    "findString": "\t\t\t<br>\n\n\t\t<</capture>>\n\t\t<<set $_i++>>",
                     "replaceFile": "twee/replace/1.0.7 花园催熟肥.twee"
                 },
                 {
                     "tip": "【1.0.7】花园催熟肥存有",
                     "passage": "Widgets Tending",
-                    "findString": "<<number $fertiliser.current>>",  
+                    "findString": "<<number $fertiliser.current>>",
                     "replaceFile": "twee/replace/1.0.7 花园催熟肥存有.twee"
                 },
                 {
                     "tip": "【1.0.7】花园施肥和耕种显示土壤质量",
                     "passage": "Widgets Tending",
-                    "findString": "\t\t\t\t\t<</if>>\n\t\t\t\t<</link>><<gtiredness>>\n\t\t\t<</capture>>",  
+                    "findString": "\t\t\t\t\t<</if>>\n\t\t\t\t<</link>><<gtiredness>>\n\t\t\t<</capture>>",
                     "replaceFile": "twee/replace/1.0.7 花园施肥和耕种显示土壤质量.twee"
                 },
                 {
                     "tip": "【1.0.7】花园自动灌溉机",
                     "passage": "Widgets Tending",
-                    "findString": "\t<<set $_i to 0>>",  
+                    "findString": "\t<<set $_i to 0>>",
                     "replaceFile": "twee/replace/1.0.7 花园自动灌溉机.twee"
                 },
                 {
                     "tip": "【1.0.7】农资店",
                     "passage": "Shopping Centre",
-                    "findString": "|Furniture Shop]]>><<pass 1>><</link>>",  
+                    "findString": "|Furniture Shop]]>><<pass 1>><</link>>",
                     "replaceFile": "twee/replace/1.0.7 农资店.twee"
                 },
                 {
                     "tip": "【1.0.7】农资店锁",
                     "passage": "Shopping Centre",
-                    "findString": "|Furniture Shop Lock]]>><<pass 1>><</link>>",  
+                    "findString": "|Furniture Shop Lock]]>><<pass 1>><</link>>",
                     "replaceFile": "twee/replace/1.0.7 农资店锁.twee"
                 },
                 {
                     "tip": "【1.0.8】图书馆关门悉尼驱逐",
                     "passage": "School Library",
-                    "findString": "<<if Time.schoolDay>>",  
+                    "findString": "<<if Time.schoolDay>>",
                     "replaceFile": "twee/replace/1.0.8 图书馆关门悉尼驱逐.twee"
                 },
                 {
                     "tip": "【1.0.8】图书馆关门悉尼驱逐 反tag",
                     "passage": "School Library",
-                    "findString": "|Hallways]]>><<pass 1>><</link>>",  
+                    "findString": "|Hallways]]>><<pass 1>><</link>>",
                     "replace": "|Hallways]]>><<pass 1>><</link>><</if>>"
                 },
                 {
                     "tip": "【1.0.8】存档优化",
                     "passage": "overlayReplace",
-                    "findString": "<<replace #customOverlayContent>><<saves>><</replace>>",  
+                    "findString": "<<replace #customOverlayContent>><<saves>><</replace>>",
                     "replace": "<<replace #customOverlayContent>><<saves>><</replace>><<run setTimeout(() => DolOptimization?.initsave(), DolOptimization.initsavetime??500)>>",
                     "all": true
                 },
+                {
+                    "tip": "【1.0.9】遇欲便利店",
+                    "passage": "Domus Street",
+                    "findString": "|Orphanage]]>><<pass 1>><</link>>",
+                    "replace": "|Orphanage]]>><<pass 1>><</link>>",
+                    "todo": "|Orphanage]]>><<pass 1>><</link>>\n\t\t\t<br>\n\t\t\t<<icon 'convenience-store.png'>><<link [[便利店 (0:01)|Conveniencestore]]>><<pass 1>><<unset $phase>><</link>>"
+                }
             ]
         },
         {
@@ -231,7 +224,7 @@
             "addonName": "ReplacePatcherAddon",
             "modVersion": "1.2.0",
             "params": {
-                "js": [          
+                "js": [
                     {
                         "tip": "【1.0.6】生发喷雾增加发质",
                         "fileName": "time.js",
@@ -243,7 +236,7 @@
                         "fileName": "ingame.js",
                         "from": "\t\t\tif (plot.stage >= 1 && (plot.water === 1 || plot.bed === \"water\")) {",
                         "to": "\t\t\tif (plot.stage >= 1 && (plot.water === 1 || plot.bed === \"water\" || DolOptimization?.autoIrrigator(location, plot))) {"
-                    },
+                    }
                 ]
             }
         },
@@ -252,7 +245,7 @@
             "addonName": "BeautySelectorAddon",
             "modVersion": "^2.0.0",
             "params": {
-                "type": "原版优化 DolOptimization"
+                "type": "(请确保启用此图像包) 原版优化 DolOptimization"
             }
         }
     ],
@@ -264,6 +257,10 @@
         {
             "modName": "BeautySelectorAddon",
             "version": "^2.0.0"
+        },
+        {
+            "modName": "maplebirch",
+            "version": ">=2.0.0"
         }
     ]
 }

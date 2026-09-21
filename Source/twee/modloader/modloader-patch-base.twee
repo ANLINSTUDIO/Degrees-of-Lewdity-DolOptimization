@@ -1,4 +1,0 @@
-<<case "modloader">>
-	<<replace #customOverlayTitle>><<titleModloader>><</replace>>
-	<<replace #customOverlayContent>><<modloadergeneral>><</replace>>
-<<case "characteristics">>

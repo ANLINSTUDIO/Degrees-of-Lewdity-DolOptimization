@@ -69,6 +69,9 @@ DolOptimization.onPassageRender = function (ev) {
     // 【1.0.5】叠加服装部件
     V.wornStacking = V.wornStacking || {};
 
+    // 【1.0.9】遇欲便利店
+    V.needmeet_romance = V.needmeet_romance ?? 0;
+
     // 保存
     DolOptimization.saveSettings();
 };
@@ -851,6 +854,54 @@ DolOptimization = { ...DolOptimization,
         title.classList.add('blurred');            // 触发模糊动画
     }
 };
+
+// 【1.0.9】遇欲便利店
+if (window.maplebirch) {
+    maplebirch.npc.add({
+        nam: "Needmeet",
+        gender: "m",
+        title: "Fledgling",
+        description: "Needmeet",
+        teen: 1,
+        insecurity: "ethics",
+        type: "human",
+
+        hairColour: "black",
+
+        love: 10,
+        dom: 0,
+        lust: 0,
+        
+        init: 0,
+    }, {
+        loveInterest: () => V.needmeet_romance >= 80,
+        romance: [
+            () => V.needmeet_romance >= 80,
+        ],
+
+        love: { maxValue: 100 },
+        loveAlias: () => {
+            return V.needmeet_romance >= 50 ? ['Trust', '信赖'] : ['Affection', '好感'];
+        },
+
+        dom: {
+            name: "害怕",
+            maxValue: 100
+        },
+        lust: { maxValue: 100 }
+    }, {
+        "Needmeet": {
+            CN: "遇欲",
+            EN: "Needmeet"
+        },
+        "Fledgling": {
+            CN: "雏鸟",
+            EN: "Fledgling"
+        }
+    });
+} else {
+    setTimeout(alert("【原版优化】需要秋枫白桦框架，请确保安装并将本模组置于框架下方"), 100);
+}
 
 
 

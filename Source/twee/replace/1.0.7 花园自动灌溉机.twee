@@ -24,6 +24,7 @@
 		<<else>>
 			<<icon "automaticirrigationmachine.png">>
 		<</if>>
+		<<fromoptP>>
 		自动灌溉机 [<span @class=_color>_automaticirrigationmachine</span>/20]
 		<<if _automaticirrigationmachine < 20>>
 			<<set _baseTimeFert to 20 - _automaticirrigationmachine>>

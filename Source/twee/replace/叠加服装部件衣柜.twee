@@ -88,7 +88,7 @@
 				<span class="red">此服装部位暂不支持叠加，敬请期待后续更新。</span>
 			<</if>>
 		<<else>>
-			<span class="red">未启用，若需要开启请前往 选项>原版优化 。</span>
+			<span class="red">未启用，若需要开启请前往 <span style="cursor: pointer; text-decoration: underline;" onclick='Wikifier.wikifyEval(`<<overlayReplace "options">> <<replace #customOverlayContent>><<doloptimizationModSetting>><</replace>>`)'>【选项】>【原版优化】</span> 。</span>
 		<</if>>
 		<br><br><br>
 
