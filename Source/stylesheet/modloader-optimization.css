@@ -968,12 +968,32 @@ button.dol-opt-btn-primary:active,
     height: 100% !important;
     max-height: 100% !important;
     overflow: hidden !important;
+    padding: 0 !important;
+    margin: 0 !important;
 }
 
-#customOverlay.dol-opt-overlay-fullscreen .dol-opt-group-header,
-#customOverlay.dol-opt-overlay-fullscreen #dolOptLogDiagnosisContainer,
+/* 全屏状态下隐藏冗长诊断卡片与大标题，把屏幕垂直空间 100% 释放给日志与搜索工具 */
+#customOverlay.dol-opt-overlay-fullscreen #dolOptLogDiagnosisContainer {
+    display: none !important;
+}
+
+#customOverlay.dol-opt-overlay-fullscreen .dol-opt-group-header > span.gold {
+    display: none !important;
+}
+
+#customOverlay.dol-opt-overlay-fullscreen .dol-opt-group-header {
+    flex-shrink: 0 !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: flex-end !important;
+    margin: 0 0 6px 0 !important;
+    padding: 0 !important;
+    gap: 6px !important;
+}
+
 #customOverlay.dol-opt-overlay-fullscreen .dol-opt-log-toolbar {
     flex-shrink: 0 !important;
+    margin-bottom: 6px !important;
 }
 
 /* 5. 日志文本区域吃满剩余全部视口垂直空间，单一内部滚动条，极致视距与截图体验 */
@@ -1565,6 +1585,52 @@ button.dol-opt-btn-primary:active,
         text-align: center !important;
         box-sizing: border-box !important;
         margin: 0 !important;
+    }
+
+    /* 移动端全屏日志专属视距与操作优化 */
+    #customOverlay.dol-opt-overlay-fullscreen #customOverlayContent {
+        margin: 0 4px 4px 4px !important;
+        padding: 6px !important;
+    }
+
+    #customOverlay.dol-opt-overlay-fullscreen .dol-opt-container {
+        padding: 0 !important;
+        margin: 0 !important;
+    }
+
+    #customOverlay.dol-opt-overlay-fullscreen .dol-opt-group-header {
+        display: flex !important;
+        flex-direction: row !important;
+        align-items: center !important;
+        justify-content: stretch !important;
+        width: 100% !important;
+        margin: 0 0 6px 0 !important;
+        padding: 0 !important;
+    }
+
+    #customOverlay.dol-opt-overlay-fullscreen .dol-opt-log-header-actions {
+        display: flex !important;
+        flex-direction: row !important;
+        width: 100% !important;
+        gap: 4px !important;
+    }
+
+    #customOverlay.dol-opt-overlay-fullscreen .dol-opt-log-header-actions button {
+        flex: 1 1 0 !important;
+        width: auto !important;
+        min-width: 0 !important;
+        height: 32px !important;
+        min-height: 32px !important;
+        padding: 2px 4px !important;
+        font-size: 0.82em !important;
+        white-space: nowrap !important;
+        text-align: center !important;
+        box-sizing: border-box !important;
+        margin: 0 !important;
+    }
+
+    #customOverlay.dol-opt-overlay-fullscreen .dol-opt-log-wrapper {
+        min-height: 240px !important;
     }
 }
 

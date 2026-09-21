@@ -3720,7 +3720,9 @@ window.dolOptToggleLogFullscreen = function(forceState = null) {
         btn.classList.toggle('dol-opt-btn-secondary', !shouldBeFull);
     }
     if (typeof forceState !== 'boolean') {
-        window.dolOptShowToast(shouldBeFull ? '已开启日志全屏模式 (按 Esc 可随时还原)' : '已退出全屏模式', 'info');
+        const isTouch = typeof window !== 'undefined' && ('ontouchstart' in window || (typeof navigator !== 'undefined' && navigator.maxTouchPoints > 0));
+        const hint = isTouch ? '点击上方“还原窗口”可随时退出' : '按 Esc 或点击“还原窗口”可随时退出';
+        window.dolOptShowToast(shouldBeFull ? `已开启日志全屏模式 (${hint})` : '已退出全屏模式', 'info');
     }
 };
 
