@@ -1339,8 +1339,8 @@ button.dol-opt-btn-primary:active,
 
     /* 移动端 Tab 按钮弹性等分自适应 */
     #customOverlay[data-overlay="modloader"] #overlayTabs button {
-        flex: 1 1 0 !important;
-        width: 0 !important;
+        /* flex: 1 1 0 !important; */
+        /* width: 0 !important; */
         max-width: none !important;
         min-width: 0 !important;
         padding: 6px 1px !important;
