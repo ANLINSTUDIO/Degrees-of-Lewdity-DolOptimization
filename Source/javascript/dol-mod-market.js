@@ -26,7 +26,7 @@
     let activeReleaseWorkerBaseUrl = PRIMARY_RELEASE_INDEX_URL;
     const IDENTITY_CATALOG_URL = 'https://dolmod-catalog-pages.pages.dev/mod-identities.json';
     const IDENTITY_CACHE_KEY = 'dol_opt_market_identities_v3';
-    const IDENTITY_FETCH_TIMEOUT_MS = 5000;
+    const IDENTITY_FETCH_TIMEOUT_MS = 8000;
     const README_FETCH_TIMEOUT_MS = 8000;
     const RELEASE_CACHE_PREFIX = 'dol_opt_market_rel_v2_';
     const RELEASE_CACHE_TTL = 6 * 60 * 60 * 1000; // 6 小时
