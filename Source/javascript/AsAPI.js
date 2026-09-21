@@ -45,14 +45,13 @@ window.AsAPI = {
                 });
                 const data = await response.json();
                 if (!data.error) {
-                    let content = data.value;
+                    element.textContent = String(data.value ?? '');
                     if (element.dataset.replace === 'true') {
-                    content = content.replaceAll('\n', '<br>');
+                        element.style.whiteSpace = 'pre-line';
                     }
-                    element.innerHTML = content;
                 }
                 } catch (error) {
-                element.innerHTML = element.dataset.error || '加载失败';
+                element.textContent = element.dataset.error || '加载失败';
                 }
             });
         });
