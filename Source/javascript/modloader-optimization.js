@@ -3696,24 +3696,51 @@ window.dolOptIsLogFullscreen = function() {
     return overlay ? overlay.classList.contains('dol-opt-overlay-fullscreen') : false;
 };
 
-window.dolOptToggleLogFullscreen = function() {
+window.dolOptToggleLogFullscreen = function(forceState = null) {
     if (typeof document === 'undefined') return;
     const overlay = document.getElementById('customOverlay') || document.querySelector('.customOverlay');
     if (!overlay) return;
+    const container = overlay.closest('.customOverlayContainer') || overlay.parentElement;
 
-    const isFull = overlay.classList.toggle('dol-opt-overlay-fullscreen');
+    const shouldBeFull = typeof forceState === 'boolean'
+        ? forceState
+        : !overlay.classList.contains('dol-opt-overlay-fullscreen');
+
+    overlay.classList.toggle('dol-opt-overlay-fullscreen', shouldBeFull);
+    if (container) {
+        container.classList.toggle('dol-opt-container-fullscreen', shouldBeFull);
+    }
+
     const btn = document.getElementById('btnToggleLogFullscreen');
     if (btn) {
-        btn.textContent = isFull ? '还原窗口' : '全屏展示';
-        btn.classList.toggle('active', isFull);
+        btn.textContent = shouldBeFull ? '还原窗口' : '全屏展示';
+        btn.title = shouldBeFull ? '退出全屏模式 (Esc)' : '展开全屏模式';
+        btn.classList.toggle('active', shouldBeFull);
+        btn.classList.toggle('dol-opt-btn-primary', shouldBeFull);
+        btn.classList.toggle('dol-opt-btn-secondary', !shouldBeFull);
     }
-    window.dolOptShowToast(isFull ? '已开启日志全屏模式 (按 Esc 可随时还原)' : '已退出全屏模式', 'info');
+    if (typeof forceState !== 'boolean') {
+        window.dolOptShowToast(shouldBeFull ? '已开启日志全屏模式 (按 Esc 可随时还原)' : '已退出全屏模式', 'info');
+    }
 };
 
 if (typeof window !== 'undefined' && typeof window.addEventListener === 'function') {
     window.addEventListener('keydown', e => {
         if (e.key === 'Escape' && window.dolOptIsLogFullscreen?.()) {
-            window.dolOptToggleLogFullscreen();
+            e.stopPropagation();
+            window.dolOptToggleLogFullscreen(false);
+        }
+    }, true);
+}
+
+if (typeof $ !== 'undefined' && typeof $(document) !== 'undefined' && typeof $(document).on === 'function') {
+    $(document).on(':oncloseoverlay', function() {
+        window.dolOptToggleLogFullscreen?.(false);
+    });
+    $(document).on('click', '#overlayTabs button, .customOverlayClose', function() {
+        const text = $(this).text() || '';
+        if (!text.includes('加载日志') && window.dolOptIsLogFullscreen?.()) {
+            window.dolOptToggleLogFullscreen?.(false);
         }
     });
 }

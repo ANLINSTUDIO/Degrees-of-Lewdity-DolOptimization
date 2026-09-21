@@ -1,6 +1,6 @@
 /**
  * Dol-Optimization - 模组市场核心服务与界面交互模块
- *
+ * 
  * 功能：
  * 1. Wiki 模组列表获取与容错解析（带本地缓存、主分类与内容标签）；
  * 2. GitHub Release 检索与国内镜像加速支持（排除源码包）；
@@ -2290,7 +2290,7 @@
                 `<span class="dol-opt-market-tag dol-opt-market-category">${escapeHtml(mod.category || '待分类')}</span>`,
                 ...(mod.tags || []).map(t => `<span class="dol-opt-market-tag">${escapeHtml(t)}</span>`)
             ].join('');
-
+            
             // 状态徽章与主操作按钮
             let badgeHtml = '';
             let actionBtnHtml = '';

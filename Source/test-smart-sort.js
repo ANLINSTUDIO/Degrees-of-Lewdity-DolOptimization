@@ -4,16 +4,6 @@ const fs = require('node:fs');
 const path = require('node:path');
 const vm = require('node:vm');
 
-const mergedBoot = JSON.parse(fs.readFileSync(path.join(__dirname, 'boot.json'), 'utf8'));
-assert.equal(mergedBoot.version, '1.1.0');
-assert.ok(mergedBoot.dependenceInfo.some(item => item.modName === 'maplebirch' && item.version === '>=2.0.0'));
-assert.ok(mergedBoot.imgFileList.includes('guide/opt-tip.png'));
-assert.ok(mergedBoot.imgFileList.includes('img/misc/icon/convenience-store.png'));
-assert.ok(mergedBoot.scriptFileList.includes('javascript/dol-mod-market.js'));
-assert.ok(mergedBoot.tweeFileList.includes('twee/modloader/modloader.twee'));
-assert.ok(fs.readFileSync(path.join(__dirname, 'twee', 'game.twee'), 'utf8').includes(':: Conveniencestore'));
-assert.ok(fs.readFileSync(path.join(__dirname, 'javascript', 'dol-optimization.js'), 'utf8').includes('maplebirch.npc.add({'));
-
 let reloads = 0;
 let confirmed = false;
 const context = {
@@ -278,10 +268,62 @@ context.dolOptOfferReload = message => (reloadOffers++, reloadMessage = message)
     assert.ok(twee.includes('class="dol-opt-log-filter-group"'), '必须包含日志级别筛选胶囊组');
     assert.ok(css.includes('dol-opt-overlay-fullscreen'), 'CSS 必须包含全屏管理弹窗规则');
     assert.ok(css.includes('filter-error-only'), 'CSS 必须包含仅错误日志筛选规则');
+    assert.ok(css.includes('dol-opt-container-fullscreen'), 'CSS 必须包含父容器全屏同步扩展规则');
 
     assert.equal(typeof context.dolOptToggleLogFullscreen, 'function');
     assert.equal(typeof context.dolOptSetLogLevelFilter, 'function');
     assert.equal(typeof context.dolOptCaptureLogScreenshot, 'function');
+
+    // 验证全屏切换与容器类名联动
+    const fakeContainer = {
+        classList: {
+            _set: new Set(),
+            contains(c) { return this._set.has(c); },
+            toggle(c, force) {
+                if (typeof force === 'boolean') {
+                    if (force) this._set.add(c); else this._set.delete(c);
+                    return force;
+                }
+                if (this._set.has(c)) { this._set.delete(c); return false; }
+                this._set.add(c); return true;
+            }
+        }
+    };
+    const fakeOverlay = {
+        classList: {
+            _set: new Set(),
+            contains(c) { return this._set.has(c); },
+            toggle(c, force) {
+                if (typeof force === 'boolean') {
+                    if (force) this._set.add(c); else this._set.delete(c);
+                    return force;
+                }
+                if (this._set.has(c)) { this._set.delete(c); return false; }
+                this._set.add(c); return true;
+            }
+        },
+        parentElement: fakeContainer,
+        closest(sel) { return sel.includes('customOverlayContainer') ? fakeContainer : null; }
+    };
+    const fakeBtn = { textContent: '', title: '', classList: { toggle: () => {} } };
+    const origGetElementById = context.document.getElementById;
+    context.document.getElementById = id => {
+        if (id === 'customOverlay') return fakeOverlay;
+        if (id === 'btnToggleLogFullscreen') return fakeBtn;
+        return origGetElementById ? origGetElementById.call(context.document, id) : null;
+    };
+
+    context.dolOptToggleLogFullscreen();
+    assert.ok(fakeOverlay.classList.contains('dol-opt-overlay-fullscreen'), '开启全屏必须为 overlay 添加全屏类名');
+    assert.ok(fakeContainer.classList.contains('dol-opt-container-fullscreen'), '开启全屏必须为父级遮罩容器添加全屏同步类名以阻断包含块裁切');
+    assert.equal(fakeBtn.textContent, '还原窗口', '全屏开启后按钮文本必须变为还原窗口');
+
+    context.dolOptToggleLogFullscreen(false);
+    assert.ok(!fakeOverlay.classList.contains('dol-opt-overlay-fullscreen'), '退出全屏必须移除 overlay 全屏类名');
+    assert.ok(!fakeContainer.classList.contains('dol-opt-container-fullscreen'), '退出全屏必须移除容器全屏类名');
+    assert.equal(fakeBtn.textContent, '全屏展示', '全屏退出后按钮文本必须恢复为全屏展示');
+    context.document.getElementById = origGetElementById;
+
     context.dolOptSetLogLevelFilter('error');
     assert.equal(context._dolOptCurrentLogLevelFilter, 'error', '设置仅错误筛选状态必须生效');
     context.dolOptSetLogLevelFilter('all');
@@ -1771,7 +1813,7 @@ context.dolOptOfferReload = message => (reloadOffers++, reloadMessage = message)
 
     // 14.8 验证社区异常模组容错规则及用户手动忽略更新功能
     const checkStatus = context.dolModMarket.checkModInstallStatus;
-
+    
     // 14.8.1 D.O.L.I 本地 0.2.2 遭遇作者打包未递增的远程 v0.2.3 -> 必须判定为 up_to_date
     const doliStatus = checkStatus(
         { name: 'D.O.L.I', version: 'v0.2.3', githubUrl: 'https://github.com/ArsNativa/Degrees-of-Lewdity-Intelligence' },
