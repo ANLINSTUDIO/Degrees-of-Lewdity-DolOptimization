@@ -66,8 +66,8 @@ button.dol-opt-btn-primary:active,
 }
 
 #customOverlay[data-overlay="modloader"] #overlayTabs {
-    display: flex !important;
-    flex-wrap: nowrap !important;
+    /* display: flex !important; */
+    /* flex-wrap: nowrap !important; */
     width: 100% !important;
     box-sizing: border-box !important;
     padding-right: 46px !important; /* 右侧留出 46px 给关闭叉叉，使灰底条完整延伸至右端 */
@@ -84,7 +84,7 @@ button.dol-opt-btn-primary:active,
 
 /* 4个标签：保持与原版【存档/设置】界面一致的固定舒适等宽（120px）！ */
 #customOverlay[data-overlay="modloader"] #overlayTabs button {
-    flex: 0 0 120px !important;
+    /* flex: 0 0 120px !important; */
     width: 120px !important;
     max-width: 120px !important;
     text-align: center !important;
