@@ -40,7 +40,7 @@
 		<!-- 模组标题与信息 -->
 		<h3>原版优化 <<print window.modSC2DataManager?.getModLoader()?.getModZip("原版优化")?.modInfo?.version ?? "未知版本">></h3>
 		<div class="m-2">
-			<b class="gold">Needmeet 遇欲</b> 呈现
+			<b class="gold">Needmeet 遇欲 & JohnLiao</b> 呈现
 		</div>
 
 		<div class="m-2">
