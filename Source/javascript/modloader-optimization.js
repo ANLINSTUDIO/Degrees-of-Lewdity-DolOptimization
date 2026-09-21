@@ -4,7 +4,7 @@
  */
 
 // 统一 Toast 提示
-window.dolOptShowToast = function(message, type = '') {
+window.dolOptShowToast = function(message, type = '', duration = 2500) {
     let toast = document.getElementById('dolOptToast');
     if (!toast) {
         toast = document.createElement('div');
@@ -17,7 +17,7 @@ window.dolOptShowToast = function(message, type = '') {
     if (window._dolOptToastTimer) clearTimeout(window._dolOptToastTimer);
     window._dolOptToastTimer = setTimeout(() => {
         toast.classList.remove('show');
-    }, 2500);
+    }, Math.max(1000, duration || 2500));
 };
 
 // 工具函数：获取 ModLoader Gui 实例
@@ -3463,16 +3463,108 @@ window.dolOptScrollToFirstError = function() {
     window.dolOptJumpToLevel('error');
 };
 
+// 通用模组管理器弹窗安全呼出接口（支持直达任意 Tab，如“加载日志”）
+window.dolOptOpenManager = function(tabName = '模组管理') {
+    try {
+        // 1. 防御初始化 State.temporary / T.buttons，消除原版 overlayReplace 报 Cannot read properties of undefined (reading 'activeTab')
+        if (typeof State !== 'undefined' && State.temporary) {
+            if (!State.temporary.buttons) {
+                State.temporary.buttons = {
+                    activeTab: -1,
+                    toggle: () => {},
+                    reset: () => {},
+                    setupTabs: () => {},
+                    setActive: () => {}
+                };
+            }
+            State.temporary.currentOverlay = 'modloader';
+        }
+        if (typeof V !== 'undefined') {
+            V.currentOverlay = 'modloader';
+        }
+
+        // 2. DOM 层面直接显示 customOverlay 容器
+        if (typeof document !== 'undefined') {
+            const overlay = (document.getElementById ? document.getElementById('customOverlay') : null) ||
+                            (document.querySelector ? document.querySelector('.customOverlay') : null);
+            if (overlay) {
+                if (overlay.classList?.remove) overlay.classList.remove('hidden');
+                if (overlay.parentElement?.classList?.remove) {
+                    overlay.parentElement.classList.remove('hidden');
+                }
+                if (overlay.setAttribute) overlay.setAttribute('data-overlay', 'modloader');
+            }
+        }
+
+        // 3. 决定目标 Tab 的渲染宏
+        let contentMacro = '<<modloadermodmanage>>';
+        if (tabName === '加载日志') {
+            contentMacro = '<<modloaderlog>>';
+        } else if (tabName === '模组市场') {
+            contentMacro = '<<modloadermarket>>';
+        } else if (tabName === '模组说明') {
+            contentMacro = '<<modloaderreadme>>';
+        }
+
+        // 4. 调用 Wikifier 渲染窗口标题与对应面板
+        let rendered = false;
+        if (typeof Wikifier !== 'undefined' && typeof Wikifier.wikifyEval === 'function') {
+            try {
+                Wikifier.wikifyEval(`<<replace #customOverlayTitle>><<titleModloader>><</replace>><<replace #customOverlayContent>>${contentMacro}<</replace>>`);
+                rendered = true;
+            } catch (errEval) {
+                console.warn('[DolOptimization] 直连渲染模组管理器面板失败，尝试降级呼出', errEval);
+            }
+        }
+
+        if (!rendered && typeof document !== 'undefined' && typeof document.querySelectorAll === 'function') {
+            // 降级：模拟点击侧边栏 Mod 管理器按钮
+            const btn = Array.from(document.querySelectorAll('button')).find(b => b.textContent?.includes('Mod管理器'));
+            if (btn && typeof btn.click === 'function') {
+                btn.click();
+                rendered = true;
+            }
+        }
+
+        // 5. 确保 Tab 高亮并视情况定位首处错误
+        setTimeout(() => {
+            if (typeof document !== 'undefined' && typeof document.querySelectorAll === 'function') {
+                const tabs = document.querySelectorAll('#overlayTabs button');
+                tabs.forEach(btn => {
+                    const match = btn.textContent?.trim().includes(tabName);
+                    if (btn.classList?.toggle) {
+                        btn.classList.toggle('active', match);
+                        btn.classList.toggle('macro-button-selected', match);
+                    }
+                });
+            }
+
+            if (tabName === '加载日志') {
+                setTimeout(() => {
+                    if (typeof window.dolOptScrollToFirstError === 'function') {
+                        window.dolOptScrollToFirstError();
+                    }
+                }, 150);
+            }
+        }, 50);
+
+        return true;
+    } catch (e) {
+        console.error('[DolOptimization] 呼出模组管理器失败', e);
+        return false;
+    }
+};
+
 // 启动时检测加载错误并自动弹窗
 window.dolOptCheckAndAutoOpenErrorLog = function() {
-    if (!window.dolOptIsAutoOpenErrorLogEnabled()) return;
-    if (window._dolOptErrorDialogShown) return;
+    if (!window.dolOptIsAutoOpenErrorLogEnabled()) return false;
+    if (window._dolOptErrorDialogShown) return false;
 
     const gui = window.dolOptGetGui();
     let rawLog = '';
     if (gui?.gLoadingProgress?.getLoadLogHtml) {
         try {
-            rawLog = gui.gLoadingProgress.getLoadLogHtml();
+            rawLog = gui.gLoadingProgress.getLoadLogHtml() || '';
         } catch (_) {}
     }
 
@@ -3481,34 +3573,31 @@ window.dolOptCheckAndAutoOpenErrorLog = function() {
         if (logContentEl) rawLog = logContentEl.innerHTML || logContentEl.textContent || '';
     }
 
-    // 判定是否存在错误
-    const hasError = rawLog.includes('[[logError]]') ||
-                     rawLog.includes('logError') ||
-                     rawLog.includes('log-row-error') ||
-                     /\bError\b/i.test(rawLog);
+    // 判定是否存在错误（多维度容错分析）
+    let hasError = false;
+    if (rawLog) {
+        hasError = rawLog.includes('[[logError]]') ||
+                   rawLog.includes('logError') ||
+                   rawLog.includes('log-row-error') ||
+                   rawLog.includes('cannot find findString') ||
+                   (rawLog.includes('errorCount:[') && !rawLog.includes('errorCount:[0]')) ||
+                   /\bError\b/i.test(rawLog);
 
-    if (!hasError) return;
-
-    window._dolOptErrorDialogShown = true;
-
-    // 自动呼出 Mod 管理器并切至日志定位
-    try {
-        if (typeof Wikifier !== 'undefined' && typeof Wikifier.wikifyEval === 'function') {
-            Wikifier.wikifyEval('<<overlayReplace "modloader">>');
-        } else if (typeof document !== 'undefined') {
-            const btn = Array.from(document.querySelectorAll('button')).find(b => b.textContent.includes('Mod管理器'));
-            if (btn) btn.click();
+        if (!hasError && typeof window.dolOptAnalyzeLogs === 'function') {
+            try {
+                const analysis = window.dolOptAnalyzeLogs(rawLog);
+                if (analysis && analysis.errorCount > 0) {
+                    hasError = true;
+                }
+            } catch (_) {}
         }
-    } catch (e) {
-        console.warn('[DolOptimization] 自动弹出错误日志窗口失败', e);
     }
 
-    setTimeout(() => {
-        window.dolOptSwitchTab('加载日志');
-        setTimeout(() => {
-            window.dolOptScrollToFirstError();
-        }, 200);
-    }, 120);
+    if (!hasError) return false;
+
+    window._dolOptErrorDialogShown = true;
+    window.dolOptOpenManager('加载日志');
+    return true;
 };
 
 window.dolOptFindTextOffsets = function(text, query) {
@@ -3992,21 +4081,7 @@ window.dolOptCaptureLogScreenshot = async function() {
         return;
     }
 
-    canvas.toBlob(async blob => {
-        if (!blob) {
-            window.dolOptShowToast('生成图片数据失败', 'warning');
-            return;
-        }
-
-        let clipboardSuccess = false;
-        try {
-            if (navigator.clipboard?.write && typeof ClipboardItem !== 'undefined') {
-                const item = new ClipboardItem({ 'image/png': blob });
-                await navigator.clipboard.write([item]);
-                clipboardSuccess = true;
-            }
-        } catch (_) {}
-
+    const triggerFileDownload = blob => {
         try {
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
@@ -4022,11 +4097,73 @@ window.dolOptCaptureLogScreenshot = async function() {
                 URL.revokeObjectURL(url);
             }, 1000);
         } catch (_) {}
+    };
 
-        if (clipboardSuccess) {
-            window.dolOptShowToast('诊断长图已复制到剪贴板！可直接在贴吧/QQ中 Ctrl+V 粘贴！(同时已保存图片)', 'success', 5000);
+    const isTouchDevice = typeof window !== 'undefined' && (
+        'ontouchstart' in window ||
+        (navigator.maxTouchPoints && navigator.maxTouchPoints > 0) ||
+        (window.innerWidth && window.innerWidth <= 768)
+    );
+
+    canvas.toBlob(async blob => {
+        if (!blob) {
+            window.dolOptShowToast('生成图片数据失败', 'warning');
+            return;
+        }
+
+        let clipboardSuccess = false;
+        try {
+            if (navigator.clipboard?.write && typeof ClipboardItem !== 'undefined') {
+                const item = new ClipboardItem({ 'image/png': blob });
+                await navigator.clipboard.write([item]);
+                clipboardSuccess = true;
+            }
+        } catch (_) {}
+
+        // 桌面端环境：优先剪贴板并触发文件下载
+        if (!isTouchDevice) {
+            triggerFileDownload(blob);
+            if (clipboardSuccess) {
+                window.dolOptShowToast('诊断长图已保存并复制到剪贴板', 'success', 2500);
+            } else {
+                window.dolOptShowToast('诊断长图已保存为图片文件', 'success', 2500);
+            }
+            return;
+        }
+
+        // 移动端环境：由于移动浏览器普遍禁止非直接手势异步下载或写入图片剪贴板，弹出可长按保存的原生暗黑模态预览
+        triggerFileDownload(blob);
+
+        let dataUrl = '';
+        try {
+            dataUrl = canvas.toDataURL ? canvas.toDataURL('image/png') : URL.createObjectURL(blob);
+        } catch (_) {
+            dataUrl = URL.createObjectURL(blob);
+        }
+
+        const previewHtml = `
+            <div class="dol-opt-screenshot-preview">
+                <div class="dol-opt-screenshot-tip gold">移动端请【长按下方图片】选择【保存图片】至相册分享</div>
+                <div class="dol-opt-screenshot-box">
+                    <img src="${dataUrl}" class="dol-opt-screenshot-img" alt="诊断长图" />
+                </div>
+            </div>
+        `;
+
+        if (typeof window.dolOptConfirm === 'function') {
+            const confirmed = await window.dolOptConfirm({
+                title: '诊断长图生成完毕',
+                message: '移动端请长按下方预览图片并选择【保存图片】到相册：',
+                trustedMessageHtml: previewHtml,
+                confirmText: '尝试直接下载',
+                cancelText: '关闭预览',
+                confirmType: 'primary'
+            });
+            if (confirmed) {
+                triggerFileDownload(blob);
+            }
         } else {
-            window.dolOptShowToast('诊断长图已自动保存为图片文件！', 'success', 4000);
+            window.dolOptShowToast('诊断长图已生成，请长按保存', 'success', 2500);
         }
     }, 'image/png');
 };
@@ -4060,3 +4197,43 @@ window.dolOptCopyLoadLog = async function() {
 
     window.dolOptShowToast(copied ? '加载日志已复制' : '复制日志失败，请手动选择日志文本', copied ? 'success' : 'warning');
 };
+
+// 启动自检测机制（支持多阶段延时轮询与事件监听兜底）
+window.dolOptInitStartupErrorCheck = function() {
+    if (window._dolOptStartupCheckInitialized) return;
+    window._dolOptStartupCheckInitialized = true;
+
+    const tryCheck = () => {
+        if (window._dolOptErrorDialogShown) return true;
+        if (typeof window.dolOptCheckAndAutoOpenErrorLog === 'function') {
+            return window.dolOptCheckAndAutoOpenErrorLog();
+        }
+        return false;
+    };
+
+    // 1. 多阶段延时自检（在不同生命周期点尝试捕获）
+    [300, 800, 1600, 3000].forEach(delay => {
+        setTimeout(() => {
+            if (!window._dolOptErrorDialogShown) {
+                tryCheck();
+            }
+        }, delay);
+    });
+
+    // 2. SugarCube 事件监听兜底
+    if (typeof $ !== 'undefined' && $(document) && typeof $(document).on === 'function') {
+        $(document).one(':storyready', () => {
+            setTimeout(tryCheck, 200);
+        });
+        $(document).on(':passagedisplay', () => {
+            if (!window._dolOptErrorDialogShown) {
+                setTimeout(tryCheck, 150);
+            }
+        });
+    }
+};
+
+// 脚本载入时自动挂载启动检测
+try {
+    window.dolOptInitStartupErrorCheck();
+} catch (_) {}

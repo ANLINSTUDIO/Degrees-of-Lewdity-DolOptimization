@@ -225,14 +225,14 @@
         ['料理', /料理|菜谱|烹饪/i]
     ];
 
-    // 下载线路配置：国内镜像优先，其次自建 Worker，最后浏览器 GitHub 直连。
+    // 下载线路配置：自建高速专线优先（推荐默认），其次经典公共镜像，最后浏览器 GitHub 直连。
     const MIRROR_SERVERS = [
-        { id: 'jasonzeng', name: '加速通道 1（JasonZeng）', shortName: 'JasonZeng', prefix: 'https://gh.jasonzeng.dev/' },
-        { id: 'ddlc', name: '加速通道 2（DDLC）', shortName: 'DDLC', prefix: 'https://gh.ddlc.top/' },
-        { id: 'worker', name: '加速通道 3（Cloudflare）', shortName: 'Cloudflare', prefix: '', useWorker: true },
+        { id: 'worker', name: '加速通道 1（高速专线）', shortName: '高速专线', prefix: '', useWorker: true },
+        { id: 'jasonzeng', name: '加速通道 2（JasonZeng）', shortName: 'JasonZeng', prefix: 'https://gh.jasonzeng.dev/' },
+        { id: 'ghfast', name: '加速通道 3（GHFast）', shortName: 'GHFast', prefix: 'https://ghfast.top/' },
         { id: 'github', name: 'GitHub 直连（浏览器）', shortName: 'GitHub', prefix: '', browserOnly: true }
     ];
-    let currentMirrorId = 'jasonzeng';
+    let currentMirrorId = 'worker';
 
     // 内存数据缓存
     let marketModList = [];
@@ -762,30 +762,39 @@
         const headers = { Accept: 'application/vnd.github+json' };
         const baseUrl = `https://api.github.com/repos/${repo.owner}/${repo.repo}`;
 
-        const latestRes = await fetch(`${baseUrl}/releases/latest`, { headers, signal });
         let releaseData = null;
+        try {
+            const latestRes = await fetch(`${baseUrl}/releases/latest`, { headers, signal });
 
-        if (latestRes.status === 429 || latestRes.status === 403) {
-            const err = new Error('GitHub API 触发速率限制，请稍候再试');
-            err.code = 'RATE_LIMITED';
-            throw err;
-        }
-
-        if (latestRes.status === 404) {
-            const listRes = await fetch(`${baseUrl}/releases?per_page=1`, { headers, signal });
-            if (listRes.status === 429 || listRes.status === 403) {
-                const err = new Error('GitHub API 触发速率限制');
+            if (latestRes.status === 429 || latestRes.status === 403) {
+                const err = new Error('GitHub API 触发速率限制，请稍候再试');
                 err.code = 'RATE_LIMITED';
                 throw err;
             }
-            if (!listRes.ok) throw new Error(`GitHub 访问异常: ${listRes.status}`);
-            const list = await listRes.json();
-            if (!Array.isArray(list) || !list.length) throw new Error('该仓库未发布 Release');
-            releaseData = list[0];
-        } else if (!latestRes.ok) {
-            throw new Error(`GitHub 访问异常: ${latestRes.status}`);
-        } else {
-            releaseData = await latestRes.json();
+
+            if (latestRes.status === 404) {
+                const listRes = await fetch(`${baseUrl}/releases?per_page=1`, { headers, signal });
+                if (listRes.status === 429 || listRes.status === 403) {
+                    const err = new Error('GitHub API 触发速率限制');
+                    err.code = 'RATE_LIMITED';
+                    throw err;
+                }
+                if (!listRes.ok) throw new Error(`GitHub 访问异常: ${listRes.status}`);
+                const list = await listRes.json();
+                if (!Array.isArray(list) || !list.length) throw new Error('该仓库未发布 Release');
+                releaseData = list[0];
+            } else if (!latestRes.ok) {
+                throw new Error(`GitHub 访问异常: ${latestRes.status}`);
+            } else {
+                releaseData = await latestRes.json();
+            }
+        } catch (fetchErr) {
+            const staleCache = readLocalCache(cacheKey, Infinity, true);
+            if (staleCache?.assets && staleCache.assets.length > 0) {
+                console.warn('[DolOptimization] GitHub API 直连受限，回退使用最近成功缓存的 Release 数据:', fetchErr);
+                return { ...staleCache, fromCache: true, isStale: true };
+            }
+            throw fetchErr;
         }
 
         const assets = (releaseData.assets || []).map(a => ({
@@ -1826,7 +1835,7 @@
             // 没有直接资源包，弹窗引导去网页下载
             const ok = await window.dolOptConfirm({
                 title: '前往外部页面下载',
-                message: `模组【${mod.name}】未检测到可直接下载的 Release 压缩包。\n\n是否打开其发布主页手动下载？`,
+                message: `模组【${mod.name}】未检测到可直接下载的 Release 压缩包。\n\n该模组最新发布可能尚未上传完成编译包，或作者仅发布了源代码。\n\n是否打开其发布主页手动下载？`,
                 confirmText: '打开主页',
                 cancelText: '取消',
                 confirmType: 'primary'
@@ -1906,10 +1915,34 @@
                 failedMirror = assetMirror;
                 const finalDownloadUrl = getDownloadUrl(asset.downloadUrl, assetMirror.id);
                 let blob;
+                let activeFetchUrl = finalDownloadUrl;
                 for (let attempt = 0; attempt < 2; attempt++) {
                     try {
                         if (attempt > 0) reportProgress(null, `${assetIndex + 1}/${installAssets.length} 连接中断，正在自动重试...`);
-                        const response = await fetch(finalDownloadUrl, controller ? { signal: controller.signal } : undefined);
+                        let response;
+                        try {
+                            response = await fetch(activeFetchUrl, controller ? { signal: controller.signal } : undefined);
+                        } catch (fetchErr) {
+                            if (assetMirror !== selectedMirror && selectedMirror.prefix && activeFetchUrl.includes('/download?url=')) {
+                                console.warn('[DolOptimization] Worker 线路连接中断，自动回退使用首选镜像:', selectedMirror.name);
+                                assetMirror = selectedMirror;
+                                activeFetchUrl = getDownloadUrl(asset.downloadUrl, selectedMirror.id);
+                                response = await fetch(activeFetchUrl, controller ? { signal: controller.signal } : undefined);
+                            } else {
+                                throw fetchErr;
+                            }
+                        }
+
+                        if (!response.ok && assetMirror !== selectedMirror && selectedMirror.prefix && activeFetchUrl.includes('/download?url=')) {
+                            console.warn('[DolOptimization] Worker 响应异常，自动回退使用首选镜像:', selectedMirror.name);
+                            assetMirror = selectedMirror;
+                            activeFetchUrl = getDownloadUrl(asset.downloadUrl, selectedMirror.id);
+                            try {
+                                const retryRes = await fetch(activeFetchUrl, controller ? { signal: controller.signal } : undefined);
+                                if (retryRes.ok) response = retryRes;
+                            } catch (_) {}
+                        }
+
                         if (!response.ok) {
                             const error = new Error(`网络响应异常 HTTP ${response.status}`);
                             error.status = response.status;

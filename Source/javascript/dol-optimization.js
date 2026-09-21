@@ -950,6 +950,11 @@ DolOptimization.loadSettings();
 if (typeof $ !== 'undefined' && $(document) && typeof $(document).one === 'function') {
     $(document).one(":storyready :passagedisplay", function () {
         setTimeout(async () => {
+            // 优先立即触发加载错误检测与弹窗定位，绝不被后续模组市场远程网络请求阻塞
+            if (typeof window.dolOptCheckAndAutoOpenErrorLog === 'function') {
+                window.dolOptCheckAndAutoOpenErrorLog();
+            }
+
             if (typeof window.dolOptLoadBeautyState === 'function' && window.dolOptIsAutoBeautyEnabled?.()) {
                 try {
                     await window.dolOptLoadBeautyState();
@@ -965,9 +970,6 @@ if (typeof $ !== 'undefined' && $(document) && typeof $(document).one === 'funct
                     console.warn('[DolOptimization] 启动时刷新模组市场失败，继续使用本地缓存', error);
                 }
             }
-            if (typeof window.dolOptCheckAndAutoOpenErrorLog === 'function') {
-                window.dolOptCheckAndAutoOpenErrorLog();
-            }
-        }, 600);
+        }, 200);
     });
 }

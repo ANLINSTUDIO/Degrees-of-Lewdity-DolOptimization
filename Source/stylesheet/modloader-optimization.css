@@ -1298,24 +1298,31 @@ button.dol-opt-btn-primary:active,
 /* ========== 11. Toast 提示 ========== */
 .toast {
     position: fixed;
-    bottom: 24px;
+    bottom: 32px;
     left: 50%;
-    transform: translateX(-50%) translateY(80px);
+    transform: translateX(-50%) translateY(16px);
+    opacity: 0;
+    visibility: hidden;
     background-color: var(--900);
     border: 1px solid var(--700);
     color: var(--000);
     padding: 8px 16px;
     font-size: 0.85em;
-    z-index: 9999;
-    transition: transform 0.25s ease;
+    line-height: 1.4;
+    z-index: 100005;
+    transition: opacity 0.2s ease, transform 0.2s ease, visibility 0.2s;
     pointer-events: none;
-    max-width: calc(100vw - 32px);
+    max-width: min(90vw, 460px);
     box-sizing: border-box;
     text-align: center;
     border-radius: 4px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.75);
+    word-break: break-word;
 }
 
 .toast.show {
+    opacity: 1;
+    visibility: visible;
     transform: translateX(-50%) translateY(0);
 }
 
@@ -1329,6 +1336,46 @@ button.dol-opt-btn-primary:active,
     color: var(--green);
 }
 
+/* 诊断长图移动端预览模态框 */
+.dol-opt-screenshot-preview {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.dol-opt-screenshot-tip {
+    font-size: 0.85em;
+    line-height: 1.4;
+    text-align: center;
+    padding: 4px 8px;
+    background: rgba(255, 215, 0, 0.08);
+    border: 1px dashed rgba(255, 215, 0, 0.35);
+    border-radius: 4px;
+}
+
+.dol-opt-screenshot-box {
+    max-height: 52vh;
+    overflow-y: auto;
+    overflow-x: hidden;
+    border: 1px solid var(--700);
+    border-radius: 4px;
+    background: #0d0d0d;
+    padding: 4px;
+    -webkit-overflow-scrolling: touch;
+}
+
+.dol-opt-screenshot-img {
+    display: block;
+    width: 100%;
+    height: auto;
+    border-radius: 2px;
+    user-select: auto;
+    -webkit-user-select: auto;
+    -webkit-touch-callout: default;
+}
+
 /* =========================================================================
  * 移动端与窄屏响应式核心适配 (max-width: 640px)
  * ========================================================================= */
@@ -1336,6 +1383,13 @@ button.dol-opt-btn-primary:active,
     /* 容器增加底部安全间距，彻底防范底层状态栏与浮动球遮挡 */
     .dol-opt-container {
         padding: 4px 0 60px 0 !important;
+    }
+
+    .toast {
+        bottom: max(36px, calc(env(safe-area-inset-bottom, 0px) + 20px));
+        max-width: calc(100vw - 28px);
+        font-size: 0.82em;
+        padding: 6px 12px;
     }
 
     /* 移动端 Tab 按钮弹性等分自适应 */
