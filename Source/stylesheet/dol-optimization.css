@@ -9,12 +9,18 @@
     color: var(--600);
     font-size: 0.6rem;
     bottom: 1px;
-    max-width: 50%;
+    max-width: 40%;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    overflow: hidden;
 }
 .fromopt-inline {
     color: var(--600);
     font-size: 0.6rem;
     margin-block: 0.6rem;
+}
+.passage-content:has(.fromopt) {
+    padding-bottom: 50px;
 }
 
 /* 1.0.3 选项高度优化 */
@@ -79,6 +85,9 @@
 .optimization:has(> .disabled) * {
     color: var(--750);
     pointer-events: none;
+}
+.opt-settings-tipimg {
+    display: none;
 }
 
 /* 1.0.3 衣柜容量自定义 */
