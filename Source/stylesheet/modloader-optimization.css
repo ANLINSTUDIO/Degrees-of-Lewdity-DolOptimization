@@ -135,16 +135,13 @@ button.dol-opt-btn-primary:active,
 /* ========== 3. 统计卡片网格 ========== */
 .dol-opt-stats-container {
     margin-bottom: 12px;
-}
-
-#dolOptMarketStats {
     display: grid !important;
     grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
 }
 
 .dol-opt-market-update-all {
     grid-column: 1 / -1;
-    width: 100%;
+    max-width: initial;
     min-height: 34px;
     color: var(--gold) !important;
     border-color: var(--gold) !important;
@@ -174,6 +171,7 @@ button.dol-opt-btn-primary:active,
     font-weight: 800;
     line-height: 1.2;
     letter-spacing: 0.02em;
+    overflow: clip;
 }
 
 .dol-opt-stat-label {
@@ -1332,8 +1330,7 @@ button.dol-opt-btn-primary:active,
     }
 
     /* 统计网格 2x2 对称排版 */
-    .dol-opt-stats-container,
-    #dolOptMarketStats {
+    .dol-opt-stats-container {
         grid-template-columns: repeat(2, 1fr) !important;
         gap: 6px !important;
     }
@@ -1553,13 +1550,13 @@ button.dol-opt-btn-primary:active,
 
     .dol-opt-log-actions-row button,
     .dol-opt-log-toolbar button.dol-opt-log-btn {
-        flex: 1 1 0 !important;
+        /* flex: 1 1 0 !important; */   /*这里两个地方注释掉，我发现显示起来对移动端更加友好*/
         width: auto !important;
         max-width: none !important;
         min-width: 0 !important;
         min-height: 32px !important;
         height: 32px !important;
-        padding: 3px 2px !important;
+        /* padding: 3px 2px !important; */
         font-size: 0.78em !important;
         white-space: nowrap !important;
         text-align: center !important;
