@@ -1,4 +1,5 @@
 import json
+import time
 import zipfile
 from pathlib import Path
 
@@ -107,7 +108,9 @@ def main():
 if __name__ == "__main__":
     try:
         main()
+        time.sleep(1)
     except Exception:
         print("="*50)
         import traceback
         traceback.print_exc()
+        input()
