@@ -344,7 +344,7 @@ context.dolOptOfferReload = message => (reloadOffers++, reloadMessage = message)
     assert.equal(context.dolOptGetModSubtext('UnknownMod', { bootJson: {} }, false), '');
     assert.equal(
         context.dolOptResolveImportedModName(
-            'Dol-Optimization-v1.1.0.2.zip',
+            'Dol-Optimization-v1.1.0.3.zip',
             ['原版优化', 'WardrobeIncrementalExpansion']
         ),
         '原版优化',
@@ -446,9 +446,9 @@ context.dolOptOfferReload = message => (reloadOffers++, reloadMessage = message)
     assert.ok(container.innerHTML.includes('智能整理将根据需要自动调整MOD的顺序'), '应包含自然流畅的模组管理提示语');
     assert.ok(css.includes('.dol-opt-sticky-toolbar'), '样式表中应包含吸顶工具栏样式');
 
-    // 5. 校验 boot.json 版本号为 1.1.0.2
+    // 5. 校验 boot.json 版本号为 1.1.0.3
     const bootJson = JSON.parse(fs.readFileSync(path.join(__dirname, 'boot.json'), 'utf8'));
-    assert.equal(bootJson.version, '1.1.0.2', 'boot.json 版本号必须为 1.1.0.2');
+    assert.equal(bootJson.version, '1.1.0.3', 'boot.json 版本号必须为 1.1.0.3');
     assert.ok(bootJson.scriptFileList.includes('javascript/dol-mod-market.js'), 'boot.json 必须注册 dol-mod-market.js');
     assert.ok(css.includes('visibility: hidden'), 'Toast 隐藏状态必须设置 visibility: hidden 彻底杜绝底部穿帮');
     assert.ok(css.includes('dol-opt-screenshot-preview'), '样式表必须包含诊断长图移动端预览样式');
@@ -627,10 +627,76 @@ context.dolOptOfferReload = message => (reloadOffers++, reloadMessage = message)
         wikifyEval: macro => { evaledMacro = macro; }
     };
     context.State = { temporary: {} };
+    const fakeOverlayEl = {
+        classList: { remove: () => {}, toggle: () => {} },
+        setAttribute: () => {}
+    };
+    context.document.getElementById = id => {
+        if (id === 'customOverlay') return fakeOverlayEl;
+        if (id === 'dolOptModManageContainer') return container;
+        return null;
+    };
     context.dolOptOpenManager('加载日志');
     assert.ok(context.State.temporary.buttons, 'dolOptOpenManager 必须安全防御初始化 temporary.buttons');
     assert.equal(context.State.temporary.buttons.activeTab, -1, 'buttons.activeTab 应默认置为 -1 避免原版 overlayReplace 报错');
     assert.ok(evaledMacro.includes('<<modloaderlog>>'), '打开加载日志必须直接渲染 modloaderlog 组件');
+    assert.ok(evaledMacro.includes('<<titleModloader 3>>'), '打开加载日志必须向 titleModloader 透传标签索引 3');
+
+    const tweeCode = fs.readFileSync('src/twee/modloader/modloader.twee', 'utf8');
+    assert.ok(tweeCode.includes('<<setupTabs _args[0]>>'), 'modloader.twee 必须使用 _args[0] 透传标签索引');
+    assert.ok(!tweeCode.includes('<<setupTabs $args[0]>>'), 'modloader.twee 严禁误用 $args[0] 全局变量');
+
+    // 12.0 测试统一日志获取引擎 (dolOptGetRawModLoaderLogs) 与控制台异常合并
+    fakeGui.gLoadingProgress = {
+        logList: [
+            { time: { format: () => '11:21:14.988' }, type: 'info', str: 'ModLoader ======= version: [2.101.1]' },
+            { time: { format: () => '11:21:15.100' }, type: 'warning', str: 'Deprecated field in mod [A]' },
+            { time: { format: () => '11:21:16.200' }, type: 'error', str: 'ReplacePatcher failed cannot find findString in file script.js' }
+        ]
+    };
+    context._dolOptStartupErrors = ['[控制台报错] DependenceChecker.checkGameVersion() not satisfies ["maplebirch", ">=0.5.12.11", "0.5.11.9"]'];
+    const extractedLogs = context.dolOptGetRawModLoaderLogs();
+    assert.equal(extractedLogs.length, 4, '应提取到 1 个控制台报错和 3 条原版日志');
+    assert.ok(!extractedLogs.some(l => l.message.includes('[object HTMLDivElement]')), '绝不能产生 [object HTMLDivElement] 字符碎片');
+    assert.equal(extractedLogs[0].isConsoleError, true, '控制台报错必须置顶');
+    assert.equal(extractedLogs[0].level, 'error', '控制台报错必须明确标记为 error 级别');
+
+    const combinedAnalysis = context.dolOptAnalyzeLogs(extractedLogs);
+    assert.equal(combinedAnalysis.errorCount, 2, '应准确统计出 2 处错误（1处控制台 + 1处原版错误）');
+    assert.equal(combinedAnalysis.warnCount, 1, '应准确统计出 1 处警告');
+
+    // 12.0.1 验证原版 ModLoader 真实场景对齐（1 error, 1 warning，Passout park 重复名为警告，版本不符去重后仅计 1 次错误）
+    fakeGui.gLoadingProgress = {
+        logList: [
+            { time: { format: () => '12:28:18.024' }, type: 'info', str: 'ModLoader ========= version: [2.101.1]' },
+            { time: { format: () => '12:28:29.707' }, type: 'warning', str: 'CacheRecord.replaceMerge() has duplicate name: [passageDataItems orgin] [passageDataItems EmptyMod] Passout park' },
+            { time: { format: () => '12:28:40.797' }, type: 'error', str: 'DependenceChecker.checkGameVersion() not satisfies: mod[maplebirch] need gameVersion[>=0.5.12.11] but gameVersion is [0.5.11.9].' }
+        ]
+    };
+    // 模拟控制台也同时输出版本异常（与 ModLoader 内部输出重复）
+    context._dolOptStartupErrors = ['[控制台报错] DependenceChecker.checkGameVersion() not satisfies ["maplebirch", ">=0.5.12.11", "0.5.11.9"]'];
+    const realModLoaderLogs = context.dolOptGetRawModLoaderLogs();
+    assert.equal(realModLoaderLogs.length, 3, '重复的版本报错必须被智能去重，总行数严格保持 3 条');
+    const realAnalysis = context.dolOptAnalyzeLogs(realModLoaderLogs);
+    assert.equal(realAnalysis.errorCount, 1, '真实原版场景必须严格统计为 1 处错误');
+    assert.equal(realAnalysis.warnCount, 1, 'Passout park duplicate name 必须严格识别为 1 处警告（绝不能误报为错误）');
+    assert.deepEqual([...realAnalysis.errorMods], ['maplebirch'], '报错关联模组必须精准定位为 maplebirch');
+
+    // 12.0.2 验证纯文本模式下 duplicate name 也必须作为警告而非错误
+    const textDuplicateLog = '12:28:29.707 [[logWarning]] CacheRecord.replaceMerge() has duplicate name: [passageDataItems orgin] [passageDataItems EmptyMod] Passout park';
+    const textAnalysis = context.dolOptAnalyzeLogs(textDuplicateLog);
+    assert.equal(textAnalysis.errorCount, 0, '文本格式下的 duplicate name 绝不得计为错误');
+    assert.equal(textAnalysis.warnCount, 1, '文本格式下的 duplicate name 必须计为警告');
+
+    // 12.0.1 验证无错误时绝对不误弹窗
+    context._dolOptStartupErrors = [];
+    fakeGui.gLoadingProgress = {
+        logList: [
+            { time: { format: () => '11:21:14.988' }, type: 'info', str: 'All mods loaded successfully' }
+        ]
+    };
+    context._dolOptErrorDialogShown = false;
+    assert.equal(context.dolOptCheckAndAutoOpenErrorLog(), false, '日志无错误且无控制台异常时绝对不触发自动弹窗');
 
     // 12.1 模拟用户截图中的真实 TweeReplacer 补丁失败报错场景
     const tweeReplacerErrorLog = `
@@ -654,6 +720,41 @@ context.dolOptOfferReload = message => (reloadOffers++, reloadMessage = message)
     context.dolOptSetAutoOpenErrorLogEnabled(false);
     assert.equal(context.dolOptCheckAndAutoOpenErrorLog(), false, '配置关闭时不得触发错误弹窗');
     context.dolOptSetAutoOpenErrorLogEnabled(true); // 恢复默认开启
+
+    // 12.4 验证启动初期加载阶段（存在 init-screen 且无 customOverlay）时挂起为 pending 且绝不误标记已弹窗
+    context._dolOptErrorDialogShown = false;
+    context._dolOptPendingAutoOpenErrorLog = false;
+    const savedDoc = context.document;
+    context.document = {
+        body: {},
+        getElementById: id => id === 'init-screen' ? {} : null,
+        querySelector: () => ({})
+    };
+    const pendingResult = context.dolOptCheckAndAutoOpenErrorLog();
+    assert.equal(pendingResult, false, '启动加载中阶段不得执行伪弹窗');
+    assert.equal(context._dolOptPendingAutoOpenErrorLog, true, '启动加载中阶段检测到错误必须挂起待弹窗标记');
+    assert.equal(context._dolOptErrorDialogShown, false, '未成功呼出时绝不得置位已弹窗标记');
+
+    // 12.5 模拟通道就绪，恢复 customOverlay 后成功消费 pending 自动弹窗
+    context.document.getElementById = id => id === 'customOverlay' ? { classList: { remove: () => {} }, parentElement: { classList: { remove: () => {} } }, setAttribute: () => {} } : null;
+    const consumedResult = context.dolOptCheckAndAutoOpenErrorLog();
+    assert.equal(consumedResult, true, 'DOM 就绪后必须成功弹出错误日志窗口');
+    assert.equal(context._dolOptErrorDialogShown, true, '成功弹出后必须标记已弹窗');
+    assert.equal(context._dolOptPendingAutoOpenErrorLog, false, '弹出成功后必须清理 pending 标记');
+    // 12.6 测试定位错误级别时不篡改搜索输入框内容
+    const searchInput = { value: '' };
+    const errorLogRow = { classList: { add: () => {}, remove: () => {} }, scrollIntoView: () => {} };
+    context.document.getElementById = id => {
+        if (id === 'dolOptLogSearch') return searchInput;
+        if (id === 'dolOptLogContent') return {
+            querySelectorAll: () => [errorLogRow],
+            getBoundingClientRect: () => ({ top: 100, bottom: 200 })
+        };
+        return null;
+    };
+    context.dolOptJumpToLevel('error');
+    assert.equal(searchInput.value, '', '定位错误级别不得篡改搜索输入框内容');
+    context.document = savedDoc;
 
     // 13. 测试同排序组统一管理、就地启闭与长按置顶置底完整流程
     context._dolOptModState = {
@@ -814,6 +915,39 @@ context.dolOptOfferReload = message => (reloadOffers++, reloadMessage = message)
     context.fetch = savedReadmeFetch;
     context.FileReader = savedFileReader;
 
+    // 验证 README 本地相对路径图片渲染安全机制：初始必须输出 data: 占位图，杜绝 404 与 CSP 违规
+    const localMarkdownImg = context.dolOptRenderMarkdown('![示例](./guide/opt-tip.png)', { modName: 'TestMod' });
+    assert.ok(localMarkdownImg.includes('data-local-mod-path="./guide/opt-tip.png"'), '必须记录待解包本地资源相对路径');
+    assert.ok(localMarkdownImg.includes('src="data:image/gif;base64,'), '本地图片初始 src 必须使用安全透明占位图');
+    assert.doesNotMatch(localMarkdownImg, /\ssrc="\.\/guide\/opt-tip\.png"/, '初始渲染绝不能直接将文件相对路径赋给 src');
+
+    // 验证模组 Zip 内图片解包：支持中文路径解码与 Base64 Data URL 转换
+    const localImgNode = {
+        alt: '说明图',
+        src: 'data:image/gif;base64,placeholder',
+        dataset: { originalSrc: './guide/%E2%80%9C%E6%89%93%E5%BC%80%E5%85%B3%E9%97%AD%E5%AF%BC%E8%88%AA%E6%A0%8F%E2%80%9D%E7%9A%84%E9%BB%91%E5%9D%97%E7%AE%AD%E5%A4%B4.png' },
+        classList: { contains: () => false, add: () => {} },
+        getAttribute: name => name === 'data-local-mod-path' ? './guide/%E2%80%9C%E6%89%93%E5%BC%80%E5%85%B3%E9%97%AD%E5%AF%BC%E8%88%AA%E6%A0%8F%E2%80%9D%E7%9A%84%E9%BB%91%E5%9D%97%E7%AE%AD%E5%A4%B4.png' : null,
+        removeAttribute: name => { localImgNode.removedAttribute = name; }
+    };
+    const fakeZip = {
+        files: {
+            'guide/“打开关闭导航栏”的黑块箭头.png': {
+                async: async type => type === 'base64' ? 'QUJDRA==' : null
+            }
+        },
+        file(path) { return this.files[path] || null; }
+    };
+    const savedGetModInfo = context.dolOptGetModInfo;
+    context.dolOptGetModInfo = () => ({ zip: fakeZip });
+    await context.dolOptSetupReadmeImages({
+        querySelectorAll: selector => selector === 'img[data-local-mod-path]' ? [localImgNode] : [],
+        addEventListener: () => {}
+    }, 'TestMod');
+    assert.equal(localImgNode.src, 'data:image/png;base64,QUJDRA==', '本地 Zip 图片必须解码中文并转为符合 CSP 的 data URL');
+    assert.equal(localImgNode.removedAttribute, 'data-local-mod-path');
+    context.dolOptGetModInfo = savedGetModInfo;
+
     const readmeMarketMod = findMarketModByLocalName('maplebirch', [{
         name: '秋枫白桦框架',
         author: '枫桦叶',
@@ -964,37 +1098,52 @@ context.dolOptOfferReload = message => (reloadOffers++, reloadMessage = message)
 
     // 14.3 测试下载线路 URL 生成 (getAcceleratedUrl)
     const testUrl = 'https://github.com/user/repo/releases/download/v1.0/mod.zip';
-    assert.deepEqual([...MIRROR_SERVERS.map(mirror => mirror.id)], ['worker', 'jasonzeng', 'ghfast', 'github']);
+    assert.deepEqual([...MIRROR_SERVERS.map(mirror => mirror.id)], ['ddlc', 'boki', 'worker', 'github']);
     assert.deepEqual(
         [...MIRROR_SERVERS.map(mirror => mirror.name)],
-        ['加速通道 1（高速专线）', '加速通道 2（JasonZeng）', '加速通道 3（GHFast）', 'GitHub 直连（浏览器）']
+        ['加速通道 1（DDLC 加速·推荐）', '加速通道 2（Boki 高速）', '加速通道 3（自建反代专线）', 'GitHub 直连（浏览器）']
     );
     assert.deepEqual(
         [...MIRROR_SERVERS.map(mirror => mirror.shortName)],
-        ['高速专线', 'JasonZeng', 'GHFast', 'GitHub'],
+        ['DDLC', 'Boki', '自建专线', 'GitHub'],
         '顶部下载线路卡必须为四条线路提供对应的短名称'
     );
-    assert.ok(marketScript.includes("let currentMirrorId = 'worker'"), '默认下载线路必须为自建高速专线');
+    assert.ok(marketScript.includes("let currentMirrorId = 'ddlc'"), '默认下载线路必须为 DDLC 加速');
     assert.ok(marketScript.includes('${selectedMirror.shortName}'), '顶部下载线路卡必须读取当前选中的线路，禁止写死为直连');
     assert.equal(
         getDownloadUrl(testUrl),
-        `https://dol.alseece.top/download?url=${encodeURIComponent(testUrl)}`,
-        '未指定线路时必须默认通过自建高速专线下载'
+        `https://gh.ddlc.top/${testUrl}`,
+        '未指定线路时必须默认通过 DDLC 加速下载'
+    );
+    assert.equal(
+        getDownloadUrl(testUrl, 'ddlc'),
+        `https://gh.ddlc.top/${testUrl}`,
+        'DDLC 必须作为第一推荐加速线路'
+    );
+    assert.equal(
+        getDownloadUrl(testUrl, 'boki'),
+        `https://github.boki.moe/${testUrl}`,
+        'Boki 必须作为第二高速加速线路'
     );
     assert.equal(
         getDownloadUrl(testUrl, 'worker'),
-        `https://dol.alseece.top/download?url=${encodeURIComponent(testUrl)}`,
-        '自建高速专线必须作为默认一键安装线路'
+        `https://dolmod-release-index.johnliao381658675.workers.dev/download?url=${encodeURIComponent(testUrl)}`,
+        '自建反代专线必须保留'
     );
     assert.equal(
         getDownloadUrl(testUrl, 'jasonzeng'),
-        `https://gh.jasonzeng.dev/${testUrl}`,
-        'JasonZeng 必须保留为备用加速线路'
+        `https://gh.ddlc.top/${testUrl}`,
+        '旧版 jasonzeng 线路必须自动平滑映射到 ddlc 线路'
+    );
+    assert.equal(
+        getDownloadUrl(testUrl, 'llkk'),
+        `https://github.boki.moe/${testUrl}`,
+        '旧版 llkk 线路必须自动平滑映射到 boki 线路'
     );
     assert.equal(
         getDownloadUrl(testUrl, 'ghfast'),
-        `https://ghfast.top/${testUrl}`,
-        'GHFast 必须作为第三加速线路'
+        `https://github.boki.moe/${testUrl}`,
+        '旧版 ghfast 线路必须自动平滑映射到 boki 线路'
     );
     assert.equal(getDownloadUrl(testUrl, 'github'), testUrl, 'GitHub 直连必须保留官方原始地址');
     assert.equal(MIRROR_SERVERS.find(mirror => mirror.id === 'github').browserOnly, true, 'GitHub 直连必须明确使用浏览器下载');
@@ -1574,12 +1723,12 @@ context.dolOptOfferReload = message => (reloadOffers++, reloadMessage = message)
     assert.equal(downloadAttempts, 2, '页面内下载连接中断后必须自动重试一次');
     assert.equal(
         downloadFetches.at(-1),
-        'https://ghfast.top/https://github.com/test/testmod/releases/download/v1/TestMod.zip',
+        'https://github.boki.moe/https://github.com/test/testmod/releases/download/v1/TestMod.zip',
         '安装包请求必须使用当前所选镜像'
     );
-    assert.ok(marketScript.includes("new URL('/download', activeReleaseWorkerBaseUrl || RELEASE_INDEX_URL)"), '市场必须保留自建 Worker 下载线路');
+    assert.ok(marketScript.includes("new URL('/download', RELEASE_WORKER_API_BASE)"), '市场必须保留自建 Worker 下载线路');
     assert.ok(marketScript.includes('getDownloadUrl(asset.downloadUrl, mirrorId)'), '浏览器下载必须让安装计划中的每个包使用当前线路');
-    assert.ok(marketScript.includes('仅此文件改走'), '缺少官方摘要时必须明确仅回退当前文件，不能误报为全局切换线路');
+    assert.ok(marketScript.includes('正在自动切换至'), '线路连接异常时必须支持跨镜像自动故障转移切换');
 
     const singlePackageFetch = context.fetch;
     context.fetch = async url => {
@@ -1598,7 +1747,7 @@ context.dolOptOfferReload = message => (reloadOffers++, reloadMessage = message)
         }
         return { ok: true, status: 200, blob: async () => testDownloadBlob };
     };
-    await downloadAndInstallMod({ name: '智能手机', githubUrl: 'https://github.com/test/phone' }, 'ghfast', { askRestart: false });
+    await downloadAndInstallMod({ name: '智能手机', githubUrl: 'https://github.com/test/phone' }, 'llkk', { askRestart: false });
     assert.deepEqual(
         [...installedInput.files.map(file => file.name)],
         ['DoL-SmartPhone-Alpha.valpha.3.82.zip', 'DoL-SmartPhone-PhotoPack-Alpha.3.82.zip'],
@@ -1607,20 +1756,47 @@ context.dolOptOfferReload = message => (reloadOffers++, reloadMessage = message)
     context.fetch = singlePackageFetch;
 
     const unsignedFetches = [];
-    const toastCountBeforeUnsignedDownload = toastMessages.length;
     context.fetch = async url => {
         unsignedFetches.push(url);
         return { ok: true, status: 200, blob: async () => testDownloadBlob };
     };
-    assert.equal(await downloadAndInstallMod({ name: '无摘要模组' }, 'jasonzeng', {
+    assert.equal(await downloadAndInstallMod({ name: '无摘要模组' }, 'ddlc', {
         askRestart: false,
         releaseInfo: {
             version: '1.0.0',
             assets: [{ name: 'Unsigned.zip', size: 1024, downloadUrl: 'https://github.com/test/unsigned/releases/download/v1/Unsigned.zip' }]
         }
     }), true);
-    assert.ok(unsignedFetches[0].includes('/download?url='), '公共镜像遇到无摘要文件时必须只让该文件回退到自建 Worker');
-    assert.ok(toastMessages.slice(toastCountBeforeUnsignedDownload).some(message => message.includes('首选线路仍为 加速通道 2（JasonZeng）')), '回退提示必须说明首选线路未改变');
+    assert.equal(
+        unsignedFetches[0],
+        'https://gh.ddlc.top/https://github.com/test/unsigned/releases/download/v1/Unsigned.zip',
+        '无摘要文件必须直接通过当前所选镜像下载，禁止强行回退给国内不可达的 Worker'
+    );
+    context.fetch = singlePackageFetch;
+
+    // 测试：首选镜像失败时，自动无缝跨镜像故障转移至备选镜像
+    const failoverFetches = [];
+    let ddlcFailCount = 0;
+    context.fetch = async url => {
+        failoverFetches.push(url);
+        if (url.includes('gh.ddlc.top')) {
+            ddlcFailCount++;
+            throw new TypeError('Failed to fetch');
+        }
+        return { ok: true, status: 200, blob: async () => testDownloadBlob };
+    };
+    assert.equal(await downloadAndInstallMod({ name: '容灾模组' }, 'ddlc', {
+        askRestart: false,
+        releaseInfo: {
+            version: '1.0.0',
+            assets: [{ name: 'FailoverMod.zip', size: 1024, downloadUrl: 'https://github.com/test/failover/releases/download/v1/FailoverMod.zip' }]
+        }
+    }), true);
+    assert.equal(ddlcFailCount, 2, '首选镜像失败后必须重试一次');
+    assert.ok(
+        failoverFetches.at(-1).includes('github.boki.moe'),
+        '首选镜像失败重试依然不通时，必须自动跨镜像故障转移至备选镜像 Boki 并成功下载'
+    );
     context.fetch = singlePackageFetch;
 
     const successfulDownloadFetch = context.fetch;
@@ -1659,12 +1835,12 @@ context.dolOptOfferReload = message => (reloadOffers++, reloadMessage = message)
 
     browserDownloadStarts = 0;
     browserDownloadUrl = '';
-    assert.equal(await downloadAndInstallMod({ name: '旧版模组', githubUrl: 'https://github.com/test/legacymod' }, 'ghfast'), true);
-    assert.equal(browserDownloadStarts, 0, '缺少官方摘要的旧资源不应交给第三方镜像或浏览器下载');
+    assert.equal(await downloadAndInstallMod({ name: '旧版模组', githubUrl: 'https://github.com/test/legacymod' }, 'llkk'), true);
+    assert.equal(browserDownloadStarts, 0, '正常资源不应误触浏览器外跳下载');
     assert.equal(
         directPackageUrl,
-        'https://dol.alseece.top/download?url=https%3A%2F%2Fgithub.com%2Ftest%2Fdirectmod%2Freleases%2Fdownload%2Fv1%2FDirectMod.zip',
-        '缺少摘要时必须回退自建 Worker'
+        'https://github.boki.moe/https://github.com/test/directmod/releases/download/v1/DirectMod.zip',
+        '旧版模组资源应正常通过所映射的加速镜像直接下载'
     );
     assert.equal(directPackageFetches, 1);
 
@@ -1686,15 +1862,20 @@ context.dolOptOfferReload = message => (reloadOffers++, reloadMessage = message)
     };
     assert.equal(await downloadAndInstallMod({ name: '失败模组', githubUrl: 'https://github.com/test/failmod' }), false);
     assert.equal(fallbackPrompt.title, '自动安装失败', '重试仍失败后必须允许用户选择其他线路');
-    assert.deepEqual([...fallbackPrompt.selectOptions.map(option => option.value)], ['jasonzeng', 'ghfast', 'github']);
+    assert.deepEqual([...fallbackPrompt.selectOptions.map(option => option.value)], ['ddlc', 'boki', 'github']);
     assert.equal(fallbackPrompt.confirmText, '切换并重试');
     assert.equal(browserDownloadStarts, 0, '用户未确认时不得自动启动浏览器下载');
 
     let switchedPrompt = null;
     const switchedFetches = [];
+    let allowWorkerSuccess = false;
     context.dolOptConfirm = async options => {
         switchedPrompt = options;
-        return options.selectOptions ? 'worker' : false;
+        if (options.selectOptions) {
+            allowWorkerSuccess = true;
+            return 'worker';
+        }
+        return false;
     };
     context.fetch = async url => {
         if (url.includes('api.github.com')) {
@@ -1708,11 +1889,13 @@ context.dolOptOfferReload = message => (reloadOffers++, reloadMessage = message)
             };
         }
         switchedFetches.push(url);
-        if (url.startsWith('https://ghfast.top/')) return { ok: false, status: 429 };
-        return { ok: true, status: 200, blob: async () => testDownloadBlob };
+        if (allowWorkerSuccess && url.includes('/download?url=')) {
+            return { ok: true, status: 200, blob: async () => testDownloadBlob };
+        }
+        return { ok: false, status: 429 };
     };
-    assert.equal(await downloadAndInstallMod({ name: '切换线路模组', githubUrl: 'https://github.com/test/switchmod' }, 'ghfast', { askRestart: false }), true);
-    assert.ok(switchedPrompt.message.includes('HTTP 429'), 'GHFast 限流必须给出明确原因');
+    assert.equal(await downloadAndInstallMod({ name: '切换线路模组', githubUrl: 'https://github.com/test/switchmod' }, 'boki', { askRestart: false }), true);
+    assert.ok(switchedPrompt.message.includes('HTTP 429'), '限流必须给出明确原因');
     assert.ok(switchedFetches.some(url => url.includes('/download?url=')), '选择高速专线后必须立即通过新线路重试');
 
     let packageRequestStarted;
@@ -2079,7 +2262,7 @@ context.dolOptOfferReload = message => (reloadOffers++, reloadMessage = message)
     assert.equal(typeof context.dolOptInitGlobalDragDrop, 'function', '必须导出 dolOptInitGlobalDragDrop 全局拖拽守护函数');
 
     // 14.13 验证 boot.json 版本号基准与脚本注册
-    assert.equal(bootJson.version, '1.1.0.2', 'boot.json 版本号必须为 1.1.0.2');
+    assert.equal(bootJson.version, '1.1.0.3', 'boot.json 版本号必须为 1.1.0.3');
     assert.ok(bootJson.scriptFileList.includes('javascript/dol-mod-market.js'), 'boot.json 必须注册 dol-mod-market.js');
 
     // 14.14 验证按钮长按手势与防二次短按误触
@@ -2158,7 +2341,7 @@ context.dolOptOfferReload = message => (reloadOffers++, reloadMessage = message)
         context.clearTimeout = savedClearTimeout;
     }
 
-    console.log('Dol-Optimization v1.1.0.2 all tests including Cloudflare identity catalog PASSED!');
+    console.log('Dol-Optimization v1.1.0.3 all tests including Cloudflare identity catalog PASSED!');
 })().catch(error => {
     console.error(error);
     process.exitCode = 1;

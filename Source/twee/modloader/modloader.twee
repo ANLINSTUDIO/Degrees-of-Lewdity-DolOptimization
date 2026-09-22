@@ -1,6 +1,6 @@
 :: modloader-optimization [widget]
 <<widget "titleModloader">>
-	<<setupTabs>>
+	<<setupTabs _args[0]>>
 	<div id="overlayTabs" class="tab dol-opt-modloader-tabs">
 		<<closeButtonMobile>>
 		<<button "模组管理">>
@@ -80,14 +80,9 @@
 	</div>
 	<<script>>
 		setTimeout(() => {
-			const gui = window.dolOptGetGui();
-			const target = $("#dolOptLogContent");
-			if (gui?.gLoadingProgress) {
-				target.html(gui.gLoadingProgress.getLoadLogHtml());
-			} else {
-				target.html('<div class="mod-empty grey">无法获取加载日志</div>');
+			if (typeof window.dolOptInitLogTools === 'function') {
+				window.dolOptInitLogTools();
 			}
-			window.dolOptInitLogTools();
 		}, 1);
 	<</script>>
 <</widget>>

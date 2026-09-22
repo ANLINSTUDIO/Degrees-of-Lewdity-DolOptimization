@@ -947,29 +947,29 @@ if (window.maplebirch) {
 DolOptimization.loadSettings();
 
 // 启动检测：加载日志错误自动弹窗定位与旁加载美化静默同步
-if (typeof $ !== 'undefined' && $(document) && typeof $(document).one === 'function') {
-    $(document).one(":storyready :passagedisplay", function () {
-        setTimeout(async () => {
-            // 优先立即触发加载错误检测与弹窗定位，绝不被后续模组市场远程网络请求阻塞
-            if (typeof window.dolOptCheckAndAutoOpenErrorLog === 'function') {
-                window.dolOptCheckAndAutoOpenErrorLog();
-            }
+if (typeof $ !== 'undefined' && $(document) && typeof $(document).on === 'function') {
+    const startupHandler = async () => {
+        // 持续尝试消费待弹窗状态或检测启动错误，直至成功弹出或确认无错误
+        if (typeof window.dolOptCheckAndAutoOpenErrorLog === 'function' && !window._dolOptErrorDialogShown) {
+            window.dolOptCheckAndAutoOpenErrorLog();
+        }
 
-            if (typeof window.dolOptLoadBeautyState === 'function' && window.dolOptIsAutoBeautyEnabled?.()) {
-                try {
-                    await window.dolOptLoadBeautyState();
-                } catch (_) {}
+        if (typeof window.dolOptLoadBeautyState === 'function' && window.dolOptIsAutoBeautyEnabled?.()) {
+            try {
+                await window.dolOptLoadBeautyState();
+            } catch (_) {}
+        }
+        if (window.dolModMarket?.loadMarketData && !window._dolOptMarketChecked) {
+            window._dolOptMarketChecked = true;
+            try {
+                await window.dolModMarket.loadMarketData(true);
+                const updates = window.dolModMarket.getUpdatableMods?.() || [];
+                window.dolOptNotifyUpdateState?.(updates.length, updates);
+            } catch (error) {
+                console.warn('[DolOptimization] 启动时刷新模组市场失败，继续使用本地缓存', error);
             }
-            if (window.dolModMarket?.loadMarketData && !window._dolOptMarketChecked) {
-                window._dolOptMarketChecked = true;
-                try {
-                    await window.dolModMarket.loadMarketData(true);
-                    const updates = window.dolModMarket.getUpdatableMods?.() || [];
-                    window.dolOptNotifyUpdateState?.(updates.length, updates);
-                } catch (error) {
-                    console.warn('[DolOptimization] 启动时刷新模组市场失败，继续使用本地缓存', error);
-                }
-            }
-        }, 200);
-    });
+        }
+    };
+
+    $(document).on(":storyready :passagedisplay", startupHandler);
 }

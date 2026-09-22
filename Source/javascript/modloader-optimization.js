@@ -3,6 +3,73 @@
  * 提供基于游戏内置界面的模组管理、美化包排序、ReadMe 查看与通用运行设置
  */
 
+// 全局启动错误与控制台异常捕获器（捕获 ModLoader 未录入文本的严重依赖或运行时异常）
+window._dolOptStartupErrors = window._dolOptStartupErrors || [];
+
+if (typeof window !== 'undefined' && !window._dolOptGlobalErrorHooked) {
+    window._dolOptGlobalErrorHooked = true;
+
+    // 1. 监听全局脚本未捕获错误
+    window.addEventListener?.('error', (event) => {
+        const msg = event?.message || '';
+        if (msg && !msg.includes('ResizeObserver loop')) {
+            window._dolOptStartupErrors.push(`[脚本异常] ${msg} (${event.filename || ''}:${event.lineno || 0})`);
+            window._dolOptHasDetectedStartupError = true;
+            window._dolOptPendingAutoOpenErrorLog = true;
+            if (typeof window.dolOptCheckAndAutoOpenErrorLog === 'function' && typeof window.dolOptIsGameStartupReady === 'function' && window.dolOptIsGameStartupReady()) {
+                window.dolOptCheckAndAutoOpenErrorLog();
+            }
+        }
+    });
+
+    // 2. 监听未捕获的 Promise 拒绝
+    window.addEventListener?.('unhandledrejection', (event) => {
+        const reason = event?.reason?.message || event?.reason || '';
+        if (reason) {
+            window._dolOptStartupErrors.push(`[异步异常] ${reason}`);
+            window._dolOptHasDetectedStartupError = true;
+            window._dolOptPendingAutoOpenErrorLog = true;
+            if (typeof window.dolOptCheckAndAutoOpenErrorLog === 'function' && typeof window.dolOptIsGameStartupReady === 'function' && window.dolOptIsGameStartupReady()) {
+                window.dolOptCheckAndAutoOpenErrorLog();
+            }
+        }
+    });
+
+    // 3. 监控控制台 error 中的启动与依赖报错
+    if (typeof console !== 'undefined' && console.error) {
+        const origConsoleError = console.error;
+        console.error = function(...args) {
+            try {
+                const text = args.map(a => typeof a === 'string' ? a : (a?.message || JSON.stringify(a) || '')).join(' ');
+                const textLower = text.toLowerCase();
+                // 忽略预期内良性降级或无害提示，避免无错误时误报弹窗
+                const isBenign = !text ||
+                    textLower.includes('modlist.json') ||
+                    textLower.includes('resizeobserver') ||
+                    textLower.includes('webpack:') ||
+                    textLower.includes('content security policy') ||
+                    textLower.includes('duplicate name');
+
+                if (!isBenign && (
+                    text.includes('not satisfies') ||
+                    text.includes('cannot find') ||
+                    text.includes('ERR_') ||
+                    text.includes('Error') ||
+                    text.includes('Exception')
+                )) {
+                    window._dolOptStartupErrors.push(`[控制台报错] ${text}`);
+                    window._dolOptHasDetectedStartupError = true;
+                    window._dolOptPendingAutoOpenErrorLog = true;
+                    if (typeof window.dolOptCheckAndAutoOpenErrorLog === 'function' && typeof window.dolOptIsGameStartupReady === 'function' && window.dolOptIsGameStartupReady()) {
+                        setTimeout(() => window.dolOptCheckAndAutoOpenErrorLog(), 50);
+                    }
+                }
+            } catch (_) {}
+            return origConsoleError.apply(this, args);
+        };
+    }
+}
+
 // 统一 Toast 提示
 window.dolOptShowToast = function(message, type = '', duration = 2500) {
     let toast = document.getElementById('dolOptToast');
@@ -626,13 +693,16 @@ window.dolOptRenderMarkdown = function(md, options = {}) {
         const proxyUrl = /^https?:\/\//i.test(originalSrc)
             ? window.dolModMarket?.getReadmeImageProxyUrl?.(options.repositoryUrl, originalSrc) || ''
             : '';
-        const isLocal = !proxyUrl && !/^https?:\/\//i.test(renderedSrc) && !renderedSrc.startsWith('data:');
+        const isDataUrl = renderedSrc.startsWith('data:');
+        const isLocal = !proxyUrl && !/^https?:\/\//i.test(renderedSrc) && !isDataUrl;
         const localAttr = isLocal ? ` data-local-mod-path="${window.dolOptEscapeHtml(originalSrc)}"` : '';
-        const remoteAttr = proxyUrl ? ` data-remote-image-url="${window.dolOptEscapeHtml(proxyUrl)}"` : '';
+        const remoteUrl = proxyUrl || (/^https?:\/\//i.test(originalSrc) ? originalSrc : '');
+        const remoteAttr = remoteUrl ? ` data-remote-image-url="${window.dolOptEscapeHtml(remoteUrl)}"` : '';
         const fallbackAttr = isBadge ? ' data-fallback="badge"' : (isLocal ? '' : ' data-fallback="image"');
         const imgClass = isBadge ? 'dol-opt-readme-image dol-opt-readme-badge' : 'dol-opt-readme-image';
+        const initialSrc = isDataUrl ? renderedSrc : emptyImage;
 
-        return `<img class="${imgClass}" src="${window.dolOptEscapeHtml(proxyUrl ? emptyImage : renderedSrc)}" alt="${window.dolOptEscapeHtml(alt)}" loading="lazy"${fallbackAttr}${localAttr}${remoteAttr} data-original-src="${window.dolOptEscapeHtml(originalSrc)}"${extraAttrs}>`;
+        return `<img class="${imgClass}" src="${window.dolOptEscapeHtml(initialSrc)}" alt="${window.dolOptEscapeHtml(alt)}" loading="lazy"${fallbackAttr}${localAttr}${remoteAttr} data-original-src="${window.dolOptEscapeHtml(originalSrc)}"${extraAttrs}>`;
     };
     let text = String(md);
 
@@ -2715,6 +2785,76 @@ window.dolOptSelectReadmeMod = function(modName) {
     window.dolOptLoadReadme(modName);
 };
 
+// 辅助：根据文件后缀获取合法图片 MIME 类型
+window.dolOptGetMimeTypeByExt = function(filePath) {
+    const ext = String(filePath || '').split('.').pop().toLowerCase();
+    switch (ext) {
+        case 'png': return 'image/png';
+        case 'jpg':
+        case 'jpeg': return 'image/jpeg';
+        case 'gif': return 'image/gif';
+        case 'webp': return 'image/webp';
+        case 'svg': return 'image/svg+xml';
+        case 'bmp': return 'image/bmp';
+        case 'ico': return 'image/x-icon';
+        default: return 'image/png';
+    }
+};
+
+// 辅助：在模组 Zip 中智能多级查找图片 entry（支持 URI 解码、大小写容错、纯文件名容错与常见子目录）
+window.dolOptFindZipImageEntry = function(zip, rawPath) {
+    if (!zip || !rawPath) return null;
+    let decoded = '';
+    try {
+        decoded = decodeURIComponent(rawPath);
+    } catch (_) {
+        decoded = rawPath;
+    }
+    const cleanPath = decoded.replace(/^\.?\//, '').trim();
+    if (!cleanPath) return null;
+
+    // 1. 精确路径匹配
+    if (typeof zip.file === 'function') {
+        const directEntry = zip.file(cleanPath);
+        if (directEntry) return { entry: directEntry, path: cleanPath };
+    }
+
+    if (!zip.files) return null;
+
+    const lowerClean = cleanPath.toLowerCase();
+    const fileNameOnly = lowerClean.split('/').pop();
+
+    // 2. 大小写不敏感全路径匹配
+    for (const relPath in zip.files) {
+        if (!zip.files[relPath].dir && relPath.toLowerCase() === lowerClean) {
+            return { entry: zip.files[relPath], path: relPath };
+        }
+    }
+
+    // 3. 常见资源子目录补全匹配
+    const commonPrefixes = ['img/', 'guide/', 'images/', 'photo/', 'assets/'];
+    for (const prefix of commonPrefixes) {
+        const candidate = prefix + lowerClean;
+        for (const relPath in zip.files) {
+            if (!zip.files[relPath].dir && relPath.toLowerCase() === candidate) {
+                return { entry: zip.files[relPath], path: relPath };
+            }
+        }
+    }
+
+    // 4. 纯文件名跨目录匹配
+    for (const relPath in zip.files) {
+        if (!zip.files[relPath].dir) {
+            const fileLower = relPath.toLowerCase();
+            if (fileLower === fileNameOnly || fileLower.endsWith('/' + fileNameOnly)) {
+                return { entry: zip.files[relPath], path: relPath };
+            }
+        }
+    }
+
+    return null;
+};
+
 // 为 ReadMe 视图中的图片设置本地 Zip 资源解析与加载失败容灾兜底
 window.dolOptSetupReadmeImages = async function(container, modName) {
     if (!container || typeof container.querySelectorAll !== 'function') return;
@@ -2753,40 +2893,51 @@ window.dolOptSetupReadmeImages = async function(container, modName) {
         if (img?.tagName === 'IMG') replaceWithFallback(img);
     }, true);
 
-    // 1. 解析模组内置相对路径图片
+    const modInfo = window.dolOptGetModInfo(modName);
+    const zip = modInfo?.zip || (typeof modInfo?.getZipFile === 'function' ? modInfo.getZipFile() : null);
+
+    // 1. 解析模组内置相对路径图片（转为合规 data: Base64 URL 彻底消除 CSP 与 404 限制）
     const localImgs = container.querySelectorAll('img[data-local-mod-path]');
-    if (localImgs && localImgs.length > 0) {
+    if (localImgs && localImgs.length > 0 && zip) {
         try {
-            const modInfo = window.dolOptGetModInfo(modName);
-            const zip = modInfo?.zip || (typeof modInfo?.getZipFile === 'function' ? modInfo.getZipFile() : null);
-            if (zip && typeof zip.file === 'function') {
-                for (const img of localImgs) {
-                    const rawPath = img.getAttribute('data-local-mod-path');
-                    if (!rawPath) continue;
+            for (const img of localImgs) {
+                const rawPath = img.getAttribute('data-local-mod-path');
+                if (!rawPath) continue;
 
-                    const cleanPath = rawPath.replace(/^\.?\//, '').trim();
-                    let entry = zip.file(cleanPath);
-                    if (!entry && zip.files) {
-                        const targetKey = cleanPath.toLowerCase();
-                        for (const relPath in zip.files) {
-                            if (relPath.toLowerCase() === targetKey && !zip.files[relPath].dir) {
-                                entry = zip.files[relPath];
-                                break;
-                            }
-                        }
-                    }
-
-                    if (entry && typeof entry.async === 'function') {
+                const found = window.dolOptFindZipImageEntry(zip, rawPath);
+                if (found && found.entry && typeof found.entry.async === 'function') {
+                    try {
+                        let dataUrl = '';
+                        const mime = window.dolOptGetMimeTypeByExt(found.path || rawPath);
                         try {
-                            const blob = await entry.async('blob');
-                            if (blob && typeof URL !== 'undefined' && typeof URL.createObjectURL === 'function') {
-                                img.src = URL.createObjectURL(blob);
-                                img.removeAttribute('data-local-mod-path');
+                            const base64 = await found.entry.async('base64');
+                            if (base64) dataUrl = `data:${mime};base64,${base64}`;
+                        } catch (_) {}
+
+                        if (!dataUrl) {
+                            const blob = await found.entry.async('blob');
+                            if (blob && typeof FileReader !== 'undefined') {
+                                dataUrl = await new Promise((resolve, reject) => {
+                                    const reader = new FileReader();
+                                    reader.onload = () => resolve(reader.result);
+                                    reader.onerror = () => reject(reader.error || new Error('图片转码失败'));
+                                    reader.readAsDataURL(blob);
+                                });
                             }
-                        } catch (err) {
-                            console.warn('[DolOptimization] 读取模组内图片失败:', rawPath, err);
                         }
+
+                        if (dataUrl) {
+                            img.src = dataUrl;
+                            img.removeAttribute('data-local-mod-path');
+                        } else {
+                            replaceWithFallback(img);
+                        }
+                    } catch (err) {
+                        console.warn('[DolOptimization] 解码模组内置图片失败:', rawPath, err);
+                        replaceWithFallback(img);
                     }
+                } else {
+                    replaceWithFallback(img);
                 }
             }
         } catch (err) {
@@ -2794,11 +2945,31 @@ window.dolOptSetupReadmeImages = async function(container, modName) {
         }
     }
 
-    // 2. Worker 拉取 GitHub 原图，再转为 CSP 允许的 data: URL。
+    // 2. 远程图片：优先尝试本地 Zip 容灾匹配，次选 Worker 代理转 data: URL，最后优雅降级
     const remoteImgs = container.querySelectorAll('img[data-remote-image-url]');
     for (const img of remoteImgs) {
         try {
-            const response = await fetch(img.getAttribute('data-remote-image-url'));
+            const originalSrc = img.dataset.originalSrc || '';
+            // 2.1 检查本地 Zip 是否自带同名资源（秒开且免疫外网断联）
+            if (zip && originalSrc) {
+                const localMatch = window.dolOptFindZipImageEntry(zip, originalSrc);
+                if (localMatch && localMatch.entry && typeof localMatch.entry.async === 'function') {
+                    try {
+                        const mime = window.dolOptGetMimeTypeByExt(localMatch.path || originalSrc);
+                        const base64 = await localMatch.entry.async('base64');
+                        if (base64) {
+                            img.src = `data:${mime};base64,${base64}`;
+                            img.removeAttribute('data-remote-image-url');
+                            continue;
+                        }
+                    } catch (_) {}
+                }
+            }
+
+            // 2.2 请求 Worker 代理接口或远程原图并转为 CSP 允许的 data: URL
+            const remoteUrl = img.getAttribute('data-remote-image-url');
+            if (!remoteUrl) throw new Error('缺少远程图片加载地址');
+            const response = await fetch(remoteUrl);
             if (!response.ok) throw new Error(`HTTP ${response.status}`);
             const blob = await response.blob();
             const dataUrl = await new Promise((resolve, reject) => {
@@ -3130,7 +3301,145 @@ window.dolOptGetAllKnownModNames = function() {
     return modSet;
 };
 
-// 日志分析核心引擎
+// 统一原版 ModLoader 加载日志与控制台异常获取引擎
+window.dolOptGetRawModLoaderLogs = function() {
+    const gui = window.dolOptGetGui ? window.dolOptGetGui() : null;
+    const modLoaderLogs = [];
+
+    // 1. 优先从原版 gui.gLoadingProgress.logList 结构化数据提取（这是原版 ModLoader 存储的真实数据源）
+    if (Array.isArray(gui?.gLoadingProgress?.logList) && gui.gLoadingProgress.logList.length > 0) {
+        gui.gLoadingProgress.logList.forEach(item => {
+            const timeStr = item.time?.format ? item.time.format('HH:mm:ss.SSS') : (item.time ? String(item.time) : '');
+            const rawType = String(item.type || '').toLowerCase();
+            const level = rawType === 'error' ? 'error' : (rawType === 'warning' || rawType === 'warn' ? 'warn' : 'info');
+            modLoaderLogs.push({
+                time: timeStr,
+                level,
+                message: String(item.str || item.message || '').trim()
+            });
+        });
+    } else if (typeof gui?.gLoadingProgress?.getLoadLog === 'function') {
+        // 2. 次优：从 gui.gLoadingProgress.getLoadLog() 字符串数组提取
+        try {
+            const lines = gui.gLoadingProgress.getLoadLog();
+            if (Array.isArray(lines) && lines.length > 0) {
+                lines.forEach(line => {
+                    const lineStr = String(line || '').trim();
+                    if (!lineStr) return;
+                    let timeStr = '';
+                    let level = 'info';
+                    let message = lineStr;
+                    const m = lineStr.match(/^\[(\d{2}:\d{2}:\d{2}(?:\.\d+)?)\]\[(error|warning|warn|info)\]\s*(.*)$/i);
+                    if (m) {
+                        timeStr = m[1];
+                        const t = m[2].toLowerCase();
+                        level = t === 'error' ? 'error' : (t.startsWith('warn') ? 'warn' : 'info');
+                        message = m[3];
+                    }
+                    modLoaderLogs.push({ time: timeStr, level, message });
+                });
+            }
+        } catch (_) {}
+    } else if (typeof gui?.gLoadingProgress?.getLoadLogHtml === 'function') {
+        // 3. 再次：从 gui.gLoadingProgress.getLoadLogHtml() 提取（兼容 DOM 元素数组或 HTML 字符串）
+        try {
+            const raw = gui.gLoadingProgress.getLoadLogHtml();
+            if (Array.isArray(raw)) {
+                raw.forEach((node, idx) => {
+                    const text = node?.innerText || node?.textContent || '';
+                    if (!text) return;
+                    if (idx === 0 && /error,\s*\d+\s*warning/i.test(text)) return;
+                    let level = 'info';
+                    if (node?.style?.color === 'red' || /error/i.test(node?.className || '')) level = 'error';
+                    else if (node?.style?.color === 'orange' || /warn/i.test(node?.className || '')) level = 'warn';
+
+                    let timeStr = '';
+                    let message = text;
+                    const tm = text.match(/^(\d{2}:\d{2}:\d{2}(?:\.\d+)?)\s*(.*)$/);
+                    if (tm) {
+                        timeStr = tm[1];
+                        message = tm[2];
+                    }
+                    modLoaderLogs.push({ time: timeStr, level, message });
+                });
+            } else if (typeof raw === 'string' && raw.trim()) {
+                const lines = raw.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
+                lines.forEach(l => {
+                    modLoaderLogs.push({ time: '', level: 'info', message: l });
+                });
+            }
+        } catch (_) {}
+    }
+
+    // 4. 兜底：从 modModLoadController.logRecordBeforeAnyLogHookRegister 提取
+    if (!modLoaderLogs.length) {
+        const controller = window.dolOptGetController ? window.dolOptGetController() : null;
+        if (Array.isArray(controller?.logRecordBeforeAnyLogHookRegister)) {
+            controller.logRecordBeforeAnyLogHookRegister.forEach(item => {
+                const timeStr = item.time?.format ? item.time.format('HH:mm:ss.SSS') : '';
+                const rawType = String(item.type || '').toLowerCase();
+                const level = rawType === 'error' ? 'error' : (rawType === 'warning' || rawType === 'warn' ? 'warn' : 'info');
+                modLoaderLogs.push({
+                    time: timeStr,
+                    level,
+                    message: String(item.message || item.str || '').trim()
+                });
+            });
+        }
+    }
+
+    const result = [];
+    const seenConsole = new Set();
+
+    // 5. 跨流去重导入控制台捕获的严重启动异常（仅保留原版日志未收录的外部异常）
+    if (Array.isArray(window._dolOptStartupErrors) && window._dolOptStartupErrors.length > 0) {
+        window._dolOptStartupErrors.forEach(err => {
+            const rawMsg = String(err || '').trim();
+            if (!rawMsg || seenConsole.has(rawMsg)) return;
+            seenConsole.add(rawMsg);
+
+            const cleanMsg = rawMsg.replace(/^\[(?:控制台报错|脚本异常|异步异常)\]\s*/, '').trim();
+            const cleanLower = cleanMsg.toLowerCase();
+
+            // 过滤良性降级异常
+            if (cleanLower.includes('modlist.json') || cleanLower.includes('resizeobserver') || cleanLower.includes('duplicate name')) {
+                return;
+            }
+
+            // 比对 ModLoader 日志中是否已收录该错误（若已有则丢弃控制台重复条目）
+            const isDuplicate = modLoaderLogs.some(l => {
+                const lMsg = String(l.message || '');
+                const lLower = lMsg.toLowerCase();
+                if (lMsg.includes(cleanMsg) || cleanMsg.includes(lMsg)) return true;
+                if (cleanLower.includes('checkgameversion() not satisfies') && lLower.includes('checkgameversion() not satisfies')) {
+                    const m1 = cleanMsg.match(/\["([^"]+)"/);
+                    const m2 = lMsg.match(/mod\[([^\]]+)\]/);
+                    if (m1 && m2 && m1[1] === m2[1]) return true;
+                    if (!m1 && !m2) return true;
+                }
+                if (cleanLower.includes('cannot find findstring') && lLower.includes('cannot find findstring')) return true;
+                if (cleanLower.includes('modloadcontroller') && lLower.includes('modloadcontroller')) return true;
+                return false;
+            });
+
+            if (!isDuplicate) {
+                result.push({
+                    time: '',
+                    level: 'error',
+                    message: rawMsg,
+                    isConsoleError: true
+                });
+            }
+        });
+    }
+
+    // 6. 追加原版 ModLoader 真实日志
+    modLoaderLogs.forEach(item => result.push(item));
+
+    return result;
+};
+
+// 日志分析核心引擎（支持结构化行对象数组或原始文本）
 window.dolOptAnalyzeLogs = function(rawContent) {
     if (!rawContent) {
         return {
@@ -3145,19 +3454,7 @@ window.dolOptAnalyzeLogs = function(rawContent) {
         };
     }
 
-    // 格式化文本行
-    let text = String(rawContent);
-    text = text.replace(/<br\s*\/?>/gi, '\n');
-    text = text.replace(/<\/div>/gi, '\n');
-    text = text.replace(/<[^>]+>/g, '');
-    const entities = { amp: '&', quot: '"', '#39': "'", apos: "'", lt: '<', gt: '>' };
-    for (let i = 0; i < 2; i++) {
-        text = text.replace(/&(amp|quot|#39|apos|lt|gt);/gi, entity => entities[entity.slice(1, -1).toLowerCase()] || entity);
-    }
-
-    const rawLines = text.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
     const allKnownMods = window.dolOptGetAllKnownModNames();
-
     const parsedLines = [];
     const errorMods = new Set();
     const errorFiles = new Set();
@@ -3167,37 +3464,87 @@ window.dolOptAnalyzeLogs = function(rawContent) {
     let infoCount = 0;
     let firstErrorIndex = -1;
 
-    rawLines.forEach((line, index) => {
-        // 1. 提取时间
-        let timeStr = '';
-        const timeMatch = line.match(/^(\d{4}-\d{2}-\d{2}[ T]\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:\d{2})?|\[\d{2}:\d{2}:\d{2}\]|\d{2}:\d{2}:\d{2})/);
-        if (timeMatch) {
-            timeStr = timeMatch[1];
+    // 统一拆解为行队列
+    let items = [];
+    if (Array.isArray(rawContent)) {
+        items = rawContent.map(item => {
+            if (typeof item === 'string') return { time: '', level: 'info', message: item };
+            return {
+                time: item?.time || '',
+                level: item?.level || 'info',
+                message: String(item?.message || item?.str || '')
+            };
+        });
+    } else {
+        let text = String(rawContent);
+        text = text.replace(/<br\s*\/?>/gi, '\n');
+        text = text.replace(/<\/div>/gi, '\n');
+        text = text.replace(/<[^>]+>/g, '');
+        const entities = { amp: '&', quot: '"', '#39': "'", apos: "'", lt: '<', gt: '>' };
+        for (let i = 0; i < 2; i++) {
+            text = text.replace(/&(amp|quot|#39|apos|lt|gt);/gi, entity => entities[entity.slice(1, -1).toLowerCase()] || entity);
+        }
+        const rawLines = text.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
+        items = rawLines.map(line => ({ time: '', level: 'info', message: line }));
+    }
+
+    items.forEach((item, index) => {
+        let line = item.message;
+        let timeStr = item.time;
+        if (!timeStr) {
+            const timeMatch = line.match(/^(\d{4}-\d{2}-\d{2}[ T]\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:\d{2})?|\[\d{2}:\d{2}:\d{2}\]|\d{2}:\d{2}:\d{2})/);
+            if (timeMatch) timeStr = timeMatch[1];
         }
 
-        // 2. 判定日志等级
-        let level = 'info';
+        let level = item.level || 'info';
         const lineLower = line.toLowerCase();
-        if (line.includes('[[logError]]') || line.includes('[ERROR]') || lineLower.includes('logerror') || line.includes('Error:') || line.includes('error:')) {
+        const isExplicitError = level === 'error' ||
+            line.includes('[[logError]]') ||
+            line.includes('[ERROR]') ||
+            line.includes('[错误]') ||
+            line.includes('[控制台报错]') ||
+            lineLower.includes('logerror') ||
+            line.includes('Error:') ||
+            line.includes('error:') ||
+            line.includes('cannot find findString') ||
+            line.includes('not satisfies') ||
+            (line.includes('errorCount:[') && !line.includes('errorCount:[0]'));
+
+        const isExplicitWarn = !isExplicitError && (
+            level === 'warn' ||
+            level === 'warning' ||
+            line.includes('[[logWarning]]') ||
+            line.includes('[WARN]') ||
+            line.includes('[WARNING]') ||
+            line.includes('[警告]') ||
+            line.includes('[控制台警告]') ||
+            lineLower.includes('logwarning') ||
+            line.includes('Warning:') ||
+            line.includes('warning:') ||
+            line.includes('duplicate name') ||
+            (line.includes('warningCount:[') && !line.includes('warningCount:[0]'))
+        );
+
+        if (isExplicitError) {
             level = 'error';
             errorCount++;
             if (firstErrorIndex === -1) firstErrorIndex = index;
-        } else if (line.includes('[[logWarning]]') || line.includes('[WARN]') || line.includes('[WARNING]') || lineLower.includes('logwarning') || line.includes('Warning:')) {
+        } else if (isExplicitWarn) {
             level = 'warn';
             warnCount++;
         } else {
+            level = 'info';
             infoCount++;
         }
 
-        // 3. 清理正文中的原始级别标签
+        // 清理正文中的原始级别标签
         let cleanMsg = line;
         cleanMsg = cleanMsg.replace(/^(\d{4}-\d{2}-\d{2}[ T]\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:\d{2})?|\[\d{2}:\d{2}:\d{2}\]|\d{2}:\d{2}:\d{2})\s*/, '');
         cleanMsg = cleanMsg.replace(/\[\[log(?:Error|Warning|Info)\]\]\s*/g, '');
-        cleanMsg = cleanMsg.replace(/^\[(?:ERROR|WARN|WARNING|INFO)\]\s*/i, '');
+        cleanMsg = cleanMsg.replace(/^\[(?:ERROR|WARN|WARNING|INFO|错误|警告|信息)\]\s*/i, '');
 
-        // 4. 提取模组名
+        // 提取模组名
         const foundModsInLine = new Set();
-        // 模式匹配：mod [xxx], Mod [xxx], id [xxx], modName: xxx
         const modRegexes = [
             /(?:mod|id|Mod|MOD)\s*\[([^\]]+)\]/g,
             /(?:modName|mod_name|mod)[\s:=]+([A-Za-z0-9_\-\u4e00-\u9fa5]+)/g,
@@ -3213,26 +3560,22 @@ window.dolOptAnalyzeLogs = function(rawContent) {
             }
         });
 
-        // 遍历已知模组库比对包含
         for (const known of allKnownMods) {
-            if (cleanMsg.includes(known)) {
-                foundModsInLine.add(known);
-            }
+            if (cleanMsg.includes(known)) foundModsInLine.add(known);
         }
 
-        // 5. 提取文件名
+        // 提取文件名
         const foundFilesInLine = new Set();
         const fileRegex = /([a-zA-Z0-9_\-\u4e00-\u9fa5./\\]+\.(?:js|twee|json|png|gif|css|zip|html))/gi;
         let fm;
         while ((fm = fileRegex.exec(cleanMsg)) !== null) {
             const fileName = fm[1].trim();
-            // 过滤常见非文件名虚词
             if (!fileName.startsWith('http') && !fileName.endsWith('.com')) {
                 foundFilesInLine.add(fileName);
             }
         }
 
-        // 6. 如果是错误行，归纳并匹配知识库
+        // 如果是错误行，归纳并匹配知识库
         if (level === 'error') {
             foundModsInLine.forEach(m => errorMods.add(m));
             foundFilesInLine.forEach(f => errorFiles.add(f));
@@ -3420,12 +3763,7 @@ window.dolOptJumpToLevel = function(level) {
     const label = normLevel === 'warn' ? '警告' : '错误';
     const rows = Array.from(log.querySelectorAll(`.dol-opt-log-row.${targetClass}`));
 
-    const status = document.getElementById('dolOptLogSearchStatus');
-    const input = document.getElementById('dolOptLogSearch');
-    if (input) input.value = label;
-
     if (!rows.length) {
-        if (status) status.textContent = '0/0';
         window.dolOptShowToast(`未在日志中检测到【${label}】项`, 'info');
         return;
     }
@@ -3440,14 +3778,12 @@ window.dolOptJumpToLevel = function(level) {
     const currentIdx = window._dolOptLevelJumpIndex[normLevel];
     const targetRow = rows[currentIdx];
 
-    // 清除其他行活跃样式
+    // 清除其他行活跃样式并为当前行添加脉冲高亮
     log.querySelectorAll('.dol-opt-log-row').forEach(r => r.classList.remove('active', 'dol-opt-highlight-pulse'));
     targetRow.classList.add('active', 'dol-opt-highlight-pulse');
-    targetRow.scrollIntoView({ behavior: 'smooth', block: 'center' });
 
-    if (status) {
-        status.textContent = `${currentIdx + 1}/${rows.length}`;
-    }
+    // 内层滚动：将错误行在日志容器内垂直居中
+    targetRow.scrollIntoView({ behavior: 'smooth', block: 'center' });
 
     window.dolOptShowToast(`已定位至【${label}】(${currentIdx + 1}/${rows.length})`, normLevel === 'error' ? 'warning' : 'info');
 
@@ -3464,7 +3800,7 @@ window.dolOptScrollToFirstError = function() {
 };
 
 // 通用模组管理器弹窗安全呼出接口（支持直达任意 Tab，如“加载日志”）
-window.dolOptOpenManager = function(tabName = '模组管理') {
+window.dolOptOpenManager = function(tabName = '模组管理', options = {}) {
     try {
         // 1. 防御初始化 State.temporary / T.buttons，消除原版 overlayReplace 报 Cannot read properties of undefined (reading 'activeTab')
         if (typeof State !== 'undefined' && State.temporary) {
@@ -3483,20 +3819,20 @@ window.dolOptOpenManager = function(tabName = '模组管理') {
             V.currentOverlay = 'modloader';
         }
 
-        // 2. DOM 层面直接显示 customOverlay 容器
-        if (typeof document !== 'undefined') {
-            const overlay = (document.getElementById ? document.getElementById('customOverlay') : null) ||
-                            (document.querySelector ? document.querySelector('.customOverlay') : null);
-            if (overlay) {
-                if (overlay.classList?.remove) overlay.classList.remove('hidden');
-                if (overlay.parentElement?.classList?.remove) {
-                    overlay.parentElement.classList.remove('hidden');
-                }
-                if (overlay.setAttribute) overlay.setAttribute('data-overlay', 'modloader');
-            }
-        }
+        // 2. 检查 DOM 层面 customOverlay 容器是否已挂载
+        const overlay = (typeof document !== 'undefined') ?
+            ((document.getElementById ? document.getElementById('customOverlay') : null) ||
+             (document.querySelector ? document.querySelector('.customOverlay') : null)) : null;
 
-        // 3. 决定目标 Tab 的渲染宏
+        // 3. 决定目标 Tab 的渲染宏与索引
+        const tabIndexMap = {
+            '模组管理': 0,
+            '模组市场': 1,
+            '模组说明': 2,
+            '加载日志': 3
+        };
+        const tabIdx = tabIndexMap[tabName] !== undefined ? tabIndexMap[tabName] : 0;
+
         let contentMacro = '<<modloadermodmanage>>';
         if (tabName === '加载日志') {
             contentMacro = '<<modloaderlog>>';
@@ -3506,11 +3842,25 @@ window.dolOptOpenManager = function(tabName = '模组管理') {
             contentMacro = '<<modloaderreadme>>';
         }
 
-        // 4. 调用 Wikifier 渲染窗口标题与对应面板
+        if (tabName === '加载日志' || options.scrollToError) {
+            window._dolOptPendingScrollToFirstError = true;
+        }
+
+        // 4. 调用原生 DOM 显示并使用 Wikifier 渲染窗口标题与指定 Tab 内容
         let rendered = false;
+        if (overlay) {
+            if (overlay.classList?.remove) overlay.classList.remove('hidden');
+            const parent = (typeof overlay.closest === 'function' ? overlay.closest('.customOverlayContainer') : null) || overlay.parentElement;
+            if (parent?.classList?.remove) {
+                parent.classList.remove('hidden');
+            }
+            if (overlay.setAttribute) overlay.setAttribute('data-overlay', 'modloader');
+        }
+
         if (typeof Wikifier !== 'undefined' && typeof Wikifier.wikifyEval === 'function') {
             try {
-                Wikifier.wikifyEval(`<<replace #customOverlayTitle>><<titleModloader>><</replace>><<replace #customOverlayContent>>${contentMacro}<</replace>>`);
+                // 直接精准渲染标题与指定 Tab 内容，向 titleModloader 透传目标 Tab 索引以激活正确的 tab-selected
+                Wikifier.wikifyEval(`<<replace #customOverlayTitle>><<titleModloader ${tabIdx}>><</replace>><<replace #customOverlayContent>>${contentMacro}<</replace>>`);
                 rendered = true;
             } catch (errEval) {
                 console.warn('[DolOptimization] 直连渲染模组管理器面板失败，尝试降级呼出', errEval);
@@ -3523,81 +3873,124 @@ window.dolOptOpenManager = function(tabName = '模组管理') {
             if (btn && typeof btn.click === 'function') {
                 btn.click();
                 rendered = true;
+                if (tabName !== '模组管理' && typeof Wikifier !== 'undefined' && typeof Wikifier.wikifyEval === 'function') {
+                    setTimeout(() => {
+                        Wikifier.wikifyEval(`<<replace #customOverlayContent>>${contentMacro}<</replace>>`);
+                    }, 50);
+                }
             }
         }
 
-        // 5. 确保 Tab 高亮并视情况定位首处错误
+        // 5. 确保 Tab 高亮（tab-selected）并联动定位首处错误
         setTimeout(() => {
             if (typeof document !== 'undefined' && typeof document.querySelectorAll === 'function') {
                 const tabs = document.querySelectorAll('#overlayTabs button');
                 tabs.forEach(btn => {
                     const match = btn.textContent?.trim().includes(tabName);
-                    if (btn.classList?.toggle) {
-                        btn.classList.toggle('active', match);
-                        btn.classList.toggle('macro-button-selected', match);
+                    if (btn.classList) {
+                        btn.classList.toggle('tab-selected', !!match);
+                        btn.classList.toggle('active', !!match);
+                        btn.classList.toggle('macro-button-selected', !!match);
                     }
                 });
             }
 
-            if (tabName === '加载日志') {
+            if (typeof State !== 'undefined' && State.temporary?.tab && typeof State.temporary.tab.setActive === 'function') {
+                const offset = (typeof V !== 'undefined' && V.options?.closeButtonMobile) ? 1 : 0;
+                State.temporary.tab.setActive(tabIdx + offset);
+            }
+
+            if (tabName === '加载日志' || options.scrollToError) {
                 setTimeout(() => {
                     if (typeof window.dolOptScrollToFirstError === 'function') {
                         window.dolOptScrollToFirstError();
                     }
-                }, 150);
+                }, 100);
             }
         }, 50);
 
-        return true;
+        return rendered;
     } catch (e) {
         console.error('[DolOptimization] 呼出模组管理器失败', e);
         return false;
     }
 };
 
-// 启动时检测加载错误并自动弹窗
+// 判定游戏启动生命周期是否已正式结束且通道就绪（严禁在遮罩加载期提前弹出半成品日志）
+window.dolOptIsGameStartupReady = function() {
+    if (window._dolOptForceStartupErrorOpen) return true;
+    if (typeof document === 'undefined') return true;
+
+    // 1. 检查启动遮罩 #init-screen 是否仍然可见（处于模组与游戏加载阶段）
+    const initScreen = document.getElementById('init-screen');
+    if (initScreen) {
+        if (typeof window.getComputedStyle === 'function') {
+            try {
+                const style = window.getComputedStyle(initScreen);
+                if (style && style.display !== 'none' && style.visibility !== 'hidden' && style.opacity !== '0') {
+                    return false;
+                }
+            } catch (_) {}
+        } else {
+            return false;
+        }
+    }
+
+    // 2. 检查 customOverlay 容器是否已挂载
+    const overlay = document.getElementById('customOverlay');
+    if (!overlay) return false;
+
+    // 3. 检查游戏引擎是否已经就绪进入通道（针对 SugarCube 运行时环境）
+    if (typeof SugarCube !== 'undefined' && SugarCube.State) {
+        if (!SugarCube.State.passage) return false;
+    }
+
+    return true;
+};
+
+// 启动时检测加载错误并自动弹窗（严格与日志分析器自洽）
 window.dolOptCheckAndAutoOpenErrorLog = function() {
     if (!window.dolOptIsAutoOpenErrorLogEnabled()) return false;
     if (window._dolOptErrorDialogShown) return false;
 
-    const gui = window.dolOptGetGui();
-    let rawLog = '';
-    if (gui?.gLoadingProgress?.getLoadLogHtml) {
-        try {
-            rawLog = gui.gLoadingProgress.getLoadLogHtml() || '';
-        } catch (_) {}
-    }
-
-    if (!rawLog) {
-        const logContentEl = document.getElementById('dolOptLogContent');
-        if (logContentEl) rawLog = logContentEl.innerHTML || logContentEl.textContent || '';
-    }
-
-    // 判定是否存在错误（多维度容错分析）
+    // 1. 获取最新日志流并做统一错误分析
+    const rawLogs = typeof window.dolOptGetRawModLoaderLogs === 'function' ? window.dolOptGetRawModLoaderLogs() : null;
     let hasError = false;
-    if (rawLog) {
-        hasError = rawLog.includes('[[logError]]') ||
-                   rawLog.includes('logError') ||
-                   rawLog.includes('log-row-error') ||
-                   rawLog.includes('cannot find findString') ||
-                   (rawLog.includes('errorCount:[') && !rawLog.includes('errorCount:[0]')) ||
-                   /\bError\b/i.test(rawLog);
 
-        if (!hasError && typeof window.dolOptAnalyzeLogs === 'function') {
-            try {
-                const analysis = window.dolOptAnalyzeLogs(rawLog);
-                if (analysis && analysis.errorCount > 0) {
-                    hasError = true;
-                }
-            } catch (_) {}
+    if (rawLogs && rawLogs.length > 0) {
+        const analysis = window.dolOptAnalyzeLogs(rawLogs);
+        if (analysis && analysis.errorCount > 0) {
+            hasError = true;
         }
     }
 
+    // 2. 补充检查控制台捕获的严重启动错误
+    if (!hasError && Array.isArray(window._dolOptStartupErrors) && window._dolOptStartupErrors.length > 0) {
+        hasError = true;
+    }
+
+    // 若无任何错误，绝对不自动弹窗，避免误打扰正常玩家
     if (!hasError) return false;
 
-    window._dolOptErrorDialogShown = true;
-    window.dolOptOpenManager('加载日志');
-    return true;
+    // 标记系统已检测到启动错误
+    window._dolOptHasDetectedStartupError = true;
+
+    // 严禁在游戏启动遮罩加载中途强行呼出半成品日志弹窗
+    if (!window.dolOptIsGameStartupReady()) {
+        window._dolOptPendingAutoOpenErrorLog = true;
+        return false;
+    }
+
+    // 尝试呼出模组错误日志弹窗
+    const opened = window.dolOptOpenManager('加载日志', { scrollToError: true });
+    if (opened) {
+        window._dolOptErrorDialogShown = true;
+        window._dolOptPendingAutoOpenErrorLog = false;
+        return true;
+    } else {
+        window._dolOptPendingAutoOpenErrorLog = true;
+        return false;
+    }
 };
 
 window.dolOptFindTextOffsets = function(text, query) {
@@ -3707,9 +4100,9 @@ window.dolOptInitLogTools = function() {
     const input = document.getElementById('dolOptLogSearch');
     if (!log) return;
 
-    // 1. 获取并深度分析加载日志
-    const rawContent = log.innerHTML || '';
-    const analysis = window.dolOptAnalyzeLogs(rawContent);
+    // 1. 获取并深度分析加载日志（优先从结构化原版日志流与控制台异常获取）
+    const rawLogs = typeof window.dolOptGetRawModLoaderLogs === 'function' ? window.dolOptGetRawModLoaderLogs() : null;
+    const analysis = window.dolOptAnalyzeLogs(rawLogs && rawLogs.length > 0 ? rawLogs : (log.innerHTML || ''));
     window._dolOptLastLogAnalysis = analysis;
     window._dolOptFirstErrorIndex = analysis.firstErrorIndex;
 
@@ -3719,6 +4112,8 @@ window.dolOptInitLogTools = function() {
     // 3. 结构化渲染日志正文行
     if (analysis.lines.length > 0) {
         window.dolOptRenderStructuredLogs(log, analysis.lines);
+    } else {
+        log.innerHTML = '<div class="mod-empty grey">暂无模组加载日志</div>';
     }
 
     // 4. 记录结构化后的原始 HTML 供搜索高亮
@@ -3774,6 +4169,16 @@ window.dolOptInitLogTools = function() {
 
     // 默认保持当前的筛选状态（若未设置则为全部）
     window.dolOptSetLogLevelFilter(window._dolOptCurrentLogLevelFilter || 'all');
+
+    // 若存在待定位首处错误标记，在当前微任务/下一帧立即执行精准定位
+    if (window._dolOptPendingScrollToFirstError) {
+        window._dolOptPendingScrollToFirstError = false;
+        setTimeout(() => {
+            if (typeof window.dolOptScrollToFirstError === 'function') {
+                window.dolOptScrollToFirstError();
+            }
+        }, 60);
+    }
 };
 
 /* =========================================================================
@@ -4211,25 +4616,31 @@ window.dolOptInitStartupErrorCheck = function() {
         return false;
     };
 
-    // 1. 多阶段延时自检（在不同生命周期点尝试捕获）
-    [300, 800, 1600, 3000].forEach(delay => {
+    // 1. 多阶段延时自检（在通道就绪后安全消费；若超过 45 秒仍未就绪且有严重错误，兜底强行呼出以便排查）
+    [500, 1500, 3000, 6000, 10000, 15000, 25000, 45000].forEach(delay => {
         setTimeout(() => {
             if (!window._dolOptErrorDialogShown) {
+                if (delay >= 45000 && window._dolOptPendingAutoOpenErrorLog) {
+                    window._dolOptForceStartupErrorOpen = true;
+                }
                 tryCheck();
             }
         }, delay);
     });
 
-    // 2. SugarCube 事件监听兜底
+    // 2. SugarCube 事件监听权威就绪点：在故事就绪与通道展示时检查并消费 pending 状态
     if (typeof $ !== 'undefined' && $(document) && typeof $(document).on === 'function') {
-        $(document).one(':storyready', () => {
-            setTimeout(tryCheck, 200);
-        });
-        $(document).on(':passagedisplay', () => {
-            if (!window._dolOptErrorDialogShown) {
-                setTimeout(tryCheck, 150);
-            }
-        });
+        const onPassageOrReady = () => {
+            if (window._dolOptErrorDialogShown) return;
+            setTimeout(() => {
+                if (!window._dolOptErrorDialogShown) {
+                    tryCheck();
+                }
+            }, 100);
+        };
+
+        $(document).on(':storyready', onPassageOrReady);
+        $(document).on(':passagedisplay', onPassageOrReady);
     }
 };
 

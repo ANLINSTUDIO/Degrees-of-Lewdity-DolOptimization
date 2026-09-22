@@ -18,6 +18,7 @@
     const WIKI_CACHE_TTL = 30 * 60 * 1000; // 30 分钟
     const PRIMARY_RELEASE_INDEX_URL = 'https://dol.alseece.top/release-index.json';
     const BACKUP_RELEASE_INDEX_URL = 'https://dolmod-release-index.johnliao381658675.workers.dev/release-index.json';
+    const RELEASE_WORKER_API_BASE = 'https://dolmod-release-index.johnliao381658675.workers.dev';
     const RELEASE_INDEX_URL = PRIMARY_RELEASE_INDEX_URL;
     const RELEASE_INDEX_MIRRORS = [
         PRIMARY_RELEASE_INDEX_URL,
@@ -225,14 +226,22 @@
         ['料理', /料理|菜谱|烹饪/i]
     ];
 
-    // 下载线路配置：自建高速专线优先（推荐默认），其次经典公共镜像，最后浏览器 GitHub 直连。
+    // 下载线路配置：经国内直连网络真实压测，DDLC 与 Boki 具备极速稳定且带 CORS 优势；自建反代专线与 GitHub 直连作为补充。
     const MIRROR_SERVERS = [
-        { id: 'worker', name: '加速通道 1（高速专线）', shortName: '高速专线', prefix: '', useWorker: true },
-        { id: 'jasonzeng', name: '加速通道 2（JasonZeng）', shortName: 'JasonZeng', prefix: 'https://gh.jasonzeng.dev/' },
-        { id: 'ghfast', name: '加速通道 3（GHFast）', shortName: 'GHFast', prefix: 'https://ghfast.top/' },
+        { id: 'ddlc', name: '加速通道 1（DDLC 加速·推荐）', shortName: 'DDLC', prefix: 'https://gh.ddlc.top/' },
+        { id: 'boki', name: '加速通道 2（Boki 高速）', shortName: 'Boki', prefix: 'https://github.boki.moe/' },
+        { id: 'worker', name: '加速通道 3（自建反代专线）', shortName: '自建专线', prefix: '', useWorker: true },
         { id: 'github', name: 'GitHub 直连（浏览器）', shortName: 'GitHub', prefix: '', browserOnly: true }
     ];
-    let currentMirrorId = 'worker';
+    let currentMirrorId = 'ddlc';
+
+    function resolveMirrorServer(mirrorId) {
+        let normId = mirrorId;
+        if (normId === 'jasonzeng') normId = 'ddlc';
+        if (normId === 'llkk') normId = 'boki';
+        if (normId === 'ghfast') normId = 'boki';
+        return MIRROR_SERVERS.find(m => m.id === normId) || MIRROR_SERVERS[0];
+    }
 
     // 内存数据缓存
     let marketModList = [];
@@ -611,7 +620,7 @@
 
     function getReleaseWorkerUrl(path) {
         try {
-            return new URL(path, activeReleaseWorkerBaseUrl || RELEASE_INDEX_URL).toString();
+            return new URL(path, RELEASE_WORKER_API_BASE).toString();
         } catch {
             return '';
         }
@@ -977,22 +986,22 @@
 
     function getAcceleratedUrl(url, mirrorId) {
         if (!url) return '';
-        const mirror = MIRROR_SERVERS.find(m => m.id === mirrorId) || MIRROR_SERVERS[0];
+        const mirror = resolveMirrorServer(mirrorId);
         if (!mirror.prefix) return url;
         return `${mirror.prefix}${url}`;
     }
 
     function getDownloadUrl(url, mirrorId) {
-        const mirror = MIRROR_SERVERS.find(m => m.id === mirrorId) || MIRROR_SERVERS[0];
+        const mirror = resolveMirrorServer(mirrorId);
         const targetUrl = getAcceleratedUrl(url, mirrorId);
         if (!targetUrl || !mirror.useWorker) return targetUrl;
-        const proxyUrl = new URL('/download', activeReleaseWorkerBaseUrl || RELEASE_INDEX_URL);
+        const proxyUrl = new URL('/download', RELEASE_WORKER_API_BASE);
         proxyUrl.searchParams.set('url', targetUrl);
         return proxyUrl.toString();
     }
 
     function setCurrentMirror(mirrorId, notify = true) {
-        const mirror = MIRROR_SERVERS.find(item => item.id === mirrorId);
+        const mirror = resolveMirrorServer(mirrorId);
         if (!mirror) return false;
         currentMirrorId = mirror.id;
         const select = document.getElementById?.('dolOptMirrorSelect');
@@ -1811,7 +1820,7 @@
 
         if (releaseInfo?.requiresManualSelection) {
             reportProgress(null, '需要手动选择兼容安装包', 'error');
-            const selectedMirror = MIRROR_SERVERS.find(mirror => mirror.id === mirrorId) || MIRROR_SERVERS[0];
+            const selectedMirror = resolveMirrorServer(mirrorId);
             const choice = await window.dolOptConfirm({
                 title: '请选择对应的安装包',
                 message: `${releaseInfo.selectionReason}。请从候选文件中明确选择一个安装包。`,
@@ -1848,18 +1857,25 @@
         }
 
         // 2. 准备下载链接与原生下载触发器
-        const selectedMirror = MIRROR_SERVERS.find(m => m.id === mirrorId) || MIRROR_SERVERS[0];
-        const triggerBrowserDownload = (downloadUrl) => {
+        const selectedMirror = resolveMirrorServer(mirrorId);
+        const triggerBrowserDownload = (downloadUrl, fileName) => {
+            if (!downloadUrl) return;
             try {
-                const frame = document.createElement('iframe');
-                frame.hidden = true;
-                frame.src = downloadUrl;
-                document.body.appendChild(frame);
-                setTimeout(() => frame.remove(), 60000);
+                const el = document.createElement('a');
+                el.href = downloadUrl;
+                el.src = downloadUrl;
+                if (fileName) el.download = fileName;
+                el.target = '_blank';
+                el.rel = 'noopener noreferrer';
+                if (document.body && typeof document.body.appendChild === 'function') {
+                    document.body.appendChild(el);
+                }
+                if (typeof el.click === 'function') el.click();
+                setTimeout(() => el.remove?.(), 1000);
             } catch (_) {}
         };
         const startBrowserDownload = async () => {
-            installAssets.forEach(asset => triggerBrowserDownload(getDownloadUrl(asset.downloadUrl, mirrorId)));
+            installAssets.forEach(asset => triggerBrowserDownload(getDownloadUrl(asset.downloadUrl, mirrorId), asset.name));
             const fileNames = installAssets.map(asset => asset.name).join('、');
             window.dolOptShowToast(`已为您启动浏览器下载 ${installAssets.length} 个安装包`, 'info');
             reportProgress(null, '浏览器下载已启动，请下载后手动导入');
@@ -1896,7 +1912,12 @@
 
         try {
             const fileObjects = [];
-            let workerFallbackNotified = false;
+            let activeMirror = selectedMirror;
+            const availableMirrors = [
+                selectedMirror,
+                ...MIRROR_SERVERS.filter(m => !m.browserOnly && m.id !== selectedMirror.id)
+            ];
+
             for (let assetIndex = 0; assetIndex < installAssets.length; assetIndex++) {
                 const asset = installAssets[assetIndex];
                 const fileName = asset.name || `${mod.name}-${assetIndex + 1}.zip`;
@@ -1904,78 +1925,106 @@
                 const assetDigest = asset.digest || '';
                 if (assetSize > MAX_DOWNLOAD_BYTES) throw createFileTooLargeError();
 
-                let assetMirror = selectedMirror;
-                if (assetMirror.prefix && !assetDigest) {
-                    assetMirror = MIRROR_SERVERS.find(m => m.useWorker) || MIRROR_SERVERS[0];
-                    if (!workerFallbackNotified) {
-                        workerFallbackNotified = true;
-                        window.dolOptShowToast(`【${fileName}】缺少官方摘要，仅此文件改走 ${assetMirror.name}；首选线路仍为 ${selectedMirror.name}`, 'warning');
+                const candidateMirrors = [
+                    activeMirror,
+                    ...availableMirrors.filter(m => m.id !== activeMirror.id)
+                ];
+
+                let blob = null;
+                let lastError = null;
+
+                for (let cIdx = 0; cIdx < candidateMirrors.length; cIdx++) {
+                    const currentCandidate = candidateMirrors[cIdx];
+                    failedMirror = currentCandidate;
+                    const fetchUrl = getDownloadUrl(asset.downloadUrl, currentCandidate.id);
+
+                    if (cIdx > 0) {
+                        console.warn(`[DolOptimization] 下载线路故障转移，正在自动切换至 ${currentCandidate.name} 下载【${fileName}】`);
+                        window.dolOptShowToast(`【${fileName}】正在自动切换至 ${currentCandidate.name}...`, 'warning');
                     }
-                }
-                failedMirror = assetMirror;
-                const finalDownloadUrl = getDownloadUrl(asset.downloadUrl, assetMirror.id);
-                let blob;
-                let activeFetchUrl = finalDownloadUrl;
-                for (let attempt = 0; attempt < 2; attempt++) {
-                    try {
-                        if (attempt > 0) reportProgress(null, `${assetIndex + 1}/${installAssets.length} 连接中断，正在自动重试...`);
-                        let response;
-                        try {
-                            response = await fetch(activeFetchUrl, controller ? { signal: controller.signal } : undefined);
-                        } catch (fetchErr) {
-                            if (assetMirror !== selectedMirror && selectedMirror.prefix && activeFetchUrl.includes('/download?url=')) {
-                                console.warn('[DolOptimization] Worker 线路连接中断，自动回退使用首选镜像:', selectedMirror.name);
-                                assetMirror = selectedMirror;
-                                activeFetchUrl = getDownloadUrl(asset.downloadUrl, selectedMirror.id);
-                                response = await fetch(activeFetchUrl, controller ? { signal: controller.signal } : undefined);
+                    reportProgress(null, `${assetIndex + 1}/${installAssets.length} 正在连接 ${currentCandidate.name}...`);
+
+                    let success = false;
+                    for (let attempt = 0; attempt < 2; attempt++) {
+                        if (controller?.signal.aborted) break;
+                        if (attempt > 0) {
+                            reportProgress(null, `${assetIndex + 1}/${installAssets.length} 连接中断，正在自动重试...`);
+                        }
+
+                        // 连接握手超时控制（8 秒内未建立响应则超时中断并自动故障转移）
+                        const connectTimeoutController = typeof AbortController === 'function' ? new AbortController() : null;
+                        let abortHandler = null;
+                        if (controller && connectTimeoutController) {
+                            if (controller.signal.aborted) {
+                                connectTimeoutController.abort();
                             } else {
-                                throw fetchErr;
+                                abortHandler = () => connectTimeoutController.abort();
+                                controller.signal.addEventListener('abort', abortHandler);
                             }
                         }
+                        const timeoutId = connectTimeoutController
+                            ? setTimeout(() => {
+                                const timeoutErr = new Error(`连接 ${currentCandidate.name} 超时（超过 8 秒未响应）`);
+                                timeoutErr.name = 'TimeoutError';
+                                timeoutErr.code = 'ETIMEDOUT';
+                                connectTimeoutController.abort(timeoutErr);
+                            }, 8000)
+                            : null;
 
-                        if (!response.ok && assetMirror !== selectedMirror && selectedMirror.prefix && activeFetchUrl.includes('/download?url=')) {
-                            console.warn('[DolOptimization] Worker 响应异常，自动回退使用首选镜像:', selectedMirror.name);
-                            assetMirror = selectedMirror;
-                            activeFetchUrl = getDownloadUrl(asset.downloadUrl, selectedMirror.id);
-                            try {
-                                const retryRes = await fetch(activeFetchUrl, controller ? { signal: controller.signal } : undefined);
-                                if (retryRes.ok) response = retryRes;
-                            } catch (_) {}
-                        }
+                        try {
+                            const response = await fetch(fetchUrl, connectTimeoutController ? { signal: connectTimeoutController.signal } : (controller ? { signal: controller.signal } : undefined));
+                            if (timeoutId !== null) clearTimeout(timeoutId);
 
-                        if (!response.ok) {
-                            const error = new Error(`网络响应异常 HTTP ${response.status}`);
-                            error.status = response.status;
-                            if (response.status === 413) error.code = 'FILE_TOO_LARGE';
-                            throw error;
-                        }
+                            if (!response.ok) {
+                                const error = new Error(`网络响应异常 HTTP ${response.status}`);
+                                error.status = response.status;
+                                if (response.status === 413) error.code = 'FILE_TOO_LARGE';
+                                throw error;
+                            }
 
-                        blob = await readDownloadResponse(response, percent => {
-                            const overall = percent === null ? null : ((assetIndex + percent / 100) / installAssets.length) * 100;
-                            reportProgress(
-                                overall,
-                                `${assetIndex + 1}/${installAssets.length} ${percent === null ? '正在接收' : `正在下载 ${Math.round(percent)}%`}：${fileName}`
-                            );
-                        }, MAX_DOWNLOAD_BYTES, assetSize);
-                        if (assetSize && blob.size !== assetSize) {
-                            const error = new Error(`安装包大小不完整（预期 ${assetSize} 字节，实际 ${blob.size} 字节）`);
-                            error.code = 'DOWNLOAD_INCOMPLETE';
-                            throw error;
+                            // 握手成功后读取流（流式下载过程不再受 8 秒连接握手限制，仅受外层取消信号控制）
+                            blob = await readDownloadResponse(response, percent => {
+                                const overall = percent === null ? null : ((assetIndex + percent / 100) / installAssets.length) * 100;
+                                reportProgress(
+                                    overall,
+                                    `${assetIndex + 1}/${installAssets.length} ${percent === null ? '正在接收' : `正在下载 ${Math.round(percent)}%`}：${fileName}`
+                                );
+                            }, MAX_DOWNLOAD_BYTES, assetSize);
+
+                            if (assetSize && blob.size !== assetSize) {
+                                const error = new Error(`安装包大小不完整（预期 ${assetSize} 字节，实际 ${blob.size} 字节）`);
+                                error.code = 'DOWNLOAD_INCOMPLETE';
+                                throw error;
+                            }
+
+                            await verifyAssetDigest(blob, assetDigest);
+                            activeMirror = currentCandidate;
+                            success = true;
+                            break;
+                        } catch (err) {
+                            if (timeoutId !== null) clearTimeout(timeoutId);
+                            lastError = err;
+                            const nonRetryableCodes = ['FILE_TOO_LARGE', 'DIGEST_MISMATCH', 'DIGEST_UNSUPPORTED', 'DIGEST_UNAVAILABLE'];
+                            if (controller?.signal.aborted || nonRetryableCodes.includes(err?.code)) {
+                                throw err;
+                            }
+                            if (attempt === 0) {
+                                console.warn(`[DolOptimization] ${currentCandidate.name} 下载中断，自动重试一次:`, err);
+                                continue;
+                            }
+                        } finally {
+                            if (controller && abortHandler) {
+                                controller.signal.removeEventListener('abort', abortHandler);
+                            }
                         }
-                        await verifyAssetDigest(blob, assetDigest);
-                        break;
-                    } catch (error) {
-                        const nonRetryableCodes = ['FILE_TOO_LARGE', 'DIGEST_MISMATCH', 'DIGEST_UNSUPPORTED', 'DIGEST_UNAVAILABLE'];
-                        const retryable = error?.name !== 'AbortError'
-                            && !controller?.signal.aborted
-                            && !nonRetryableCodes.includes(error?.code)
-                            && (!error?.status || error.status >= 500);
-                        if (attempt === 0 && retryable) {
-                            console.warn('[DolOptimization] 安装包下载中断，自动重试一次:', error);
-                            continue;
-                        }
-                        throw error;
                     }
+
+                    if (success && blob) break;
+                    if (controller?.signal.aborted) break;
+                }
+
+                if (!blob) {
+                    throw lastError || new Error('所有可用下载线路均尝试失败');
                 }
 
                 try {
@@ -3053,6 +3102,7 @@
         RELEASE_INDEX_URL,
         RELEASE_INDEX_MIRRORS,
         getActiveReleaseWorkerBaseUrl: () => activeReleaseWorkerBaseUrl,
+        RELEASE_WORKER_API_BASE,
         IDENTITY_CATALOG_URL,
         normalizeReleaseIndex,
         fetchReleaseIndex,
