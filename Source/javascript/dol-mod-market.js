@@ -815,7 +815,12 @@
         const assetPlan = buildReleaseAssetPlan(assets, gameVersion);
         const bestAsset = assetPlan.assets[0] || null;
 
-        const version = releaseData.tag_name || mod.version || '';
+        const releaseTitle = String(releaseData.name || '').trim();
+        const explicitTitleVersion = releaseTitle.match(/^v?(\d+(?:\.\d+){1,3}(?:-[0-9a-z][0-9a-z.-]*)?)$/i)?.[1];
+        const tagName = String(releaseData.tag_name || '');
+        const tagVersion = /^(?:v?\d)|(?:^|[^a-z0-9])(?:v\d|\d+\.\d+)/i.test(tagName) ? tagName : '';
+        const prefixedTitleVersion = releaseTitle.match(/^v(\d+(?:\.\d+){1,3})(?=$|[\s(（-])/i)?.[1];
+        const version = explicitTitleVersion || tagVersion || prefixedTitleVersion || mod.version || '';
         const updateDate = releaseData.published_at ? releaseData.published_at.slice(0, 10) : mod.updateDate || '';
 
         const result = {
@@ -1159,6 +1164,7 @@
                 description: mod.description || '暂无说明',
                 author: mod.author || '未知作者',
                 version: mod.version || '',
+                versionLabel: typeof mod.versionLabel === 'string' ? mod.versionLabel.trim() : '',
                 updateDate: mod.updateDate || '',
                 category: classification.category,
                 tags: classification.tags,
@@ -2446,8 +2452,8 @@
                     </div>
                     <div class="dol-opt-market-meta grey">
                         <span>作者: ${escapeHtml(mod.author)}</span>
-                        <span>更新: ${escapeHtml(mod.updateDate || '未知')}</span>
-                        ${mod.version ? `<span>版本: ${escapeHtml(formatVersionDisplay(mod.version))}</span>` : ''}
+                        ${mod.updateDate ? `<span>更新: ${escapeHtml(mod.updateDate)}</span>` : ''}
+                        ${mod.version || mod.versionLabel ? `<span>版本: ${escapeHtml(mod.version ? formatVersionDisplay(mod.version) : mod.versionLabel)}</span>` : ''}
                         ${localVerText}
                     </div>
                     <div class="dol-opt-market-desc">

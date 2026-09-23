@@ -344,7 +344,7 @@ context.dolOptOfferReload = message => (reloadOffers++, reloadMessage = message)
     assert.equal(context.dolOptGetModSubtext('UnknownMod', { bootJson: {} }, false), '');
     assert.equal(
         context.dolOptResolveImportedModName(
-            'Dol-Optimization-v1.1.0.3.zip',
+            'Dol-Optimization-v1.1.0.4.zip',
             ['原版优化', 'WardrobeIncrementalExpansion']
         ),
         '原版优化',
@@ -446,9 +446,9 @@ context.dolOptOfferReload = message => (reloadOffers++, reloadMessage = message)
     assert.ok(container.innerHTML.includes('智能整理将根据需要自动调整MOD的顺序'), '应包含自然流畅的模组管理提示语');
     assert.ok(css.includes('.dol-opt-sticky-toolbar'), '样式表中应包含吸顶工具栏样式');
 
-    // 5. 校验 boot.json 版本号为 1.1.0.3
+    // 5. 校验 boot.json 版本号为 1.1.0.4
     const bootJson = JSON.parse(fs.readFileSync(path.join(__dirname, 'boot.json'), 'utf8'));
-    assert.equal(bootJson.version, '1.1.0.3', 'boot.json 版本号必须为 1.1.0.3');
+    assert.equal(bootJson.version, '1.1.0.4', 'boot.json 版本号必须为 1.1.0.4');
     assert.ok(bootJson.scriptFileList.includes('javascript/dol-mod-market.js'), 'boot.json 必须注册 dol-mod-market.js');
     assert.ok(css.includes('visibility: hidden'), 'Toast 隐藏状态必须设置 visibility: hidden 彻底杜绝底部穿帮');
     assert.ok(css.includes('dol-opt-screenshot-preview'), '样式表必须包含诊断长图移动端预览样式');
@@ -642,7 +642,7 @@ context.dolOptOfferReload = message => (reloadOffers++, reloadMessage = message)
     assert.ok(evaledMacro.includes('<<modloaderlog>>'), '打开加载日志必须直接渲染 modloaderlog 组件');
     assert.ok(evaledMacro.includes('<<titleModloader 3>>'), '打开加载日志必须向 titleModloader 透传标签索引 3');
 
-    const tweeCode = fs.readFileSync('src/twee/modloader/modloader.twee', 'utf8');
+    const tweeCode = fs.readFileSync(path.join(__dirname, 'twee', 'modloader', 'modloader.twee'), 'utf8');
     assert.ok(tweeCode.includes('<<setupTabs _args[0]>>'), 'modloader.twee 必须使用 _args[0] 透传标签索引');
     assert.ok(!tweeCode.includes('<<setupTabs $args[0]>>'), 'modloader.twee 严禁误用 $args[0] 全局变量');
 
@@ -1263,6 +1263,7 @@ context.dolOptOfferReload = message => (reloadOffers++, reloadMessage = message)
             repositoryKeys: ['example/IndexedRepo'],
             version: '2.0.0',
             updateDate: '2026-09-20',
+            updateDateSource: 'github',
             githubUrl: 'https://github.com/example/IndexedRepo',
             description: '功能扩展',
             author: '测试作者',
@@ -1272,6 +1273,14 @@ context.dolOptOfferReload = message => (reloadOffers++, reloadMessage = message)
         }]
     });
     assert.equal(indexedMods[0].version, '2.0.0');
+    assert.equal(indexedMods[0].updateDateSource, 'github', '客户端应保留统一索引的日期来源');
+    const authorLabelMod = normalizeReleaseIndex({
+        schemaVersion: 1,
+        mods: [{ name: '作者标签测试', version: null, versionLabel: '稳定版', githubUrl: 'https://github.com/example/AuthorLabel' }]
+    })[0];
+    assert.equal(authorLabelMod.version, '', '作者标签不得进入数字版本字段');
+    assert.equal(authorLabelMod.versionLabel, '稳定版', '统一索引应保留作者的发布标签');
+    assert.equal(checkModInstallStatus(authorLabelMod, [{ name: '作者标签测试', version: '1.0.0' }]), 'up_to_date', '作者标签不得触发版本更新');
     assert.deepEqual([...indexedMods[0].githubUrls], ['https://github.com/example/IndexedRepo']);
     assert.equal(indexedMods[0].category, '界面与便利');
     assert.deepEqual([...indexedMods[0].tags], ['任务']);
@@ -1491,6 +1500,25 @@ context.dolOptOfferReload = message => (reloadOffers++, reloadMessage = message)
     assert.equal(rel.assetSize, 2000, 'Release 资源大小必须传给下载边界检查');
     assert.equal(rel.assetDigest, `sha256:${'a'.repeat(64)}`, 'Release 官方摘要必须传给安装完整性校验');
     assert.equal(rel.assets.length, 1, '单包 Release 必须生成一个安装项');
+
+    const originalMarketFetch = context.fetch;
+    context.fetch = async () => ({
+        ok: true,
+        json: async () => ({ tag_name: 'V0.20+', name: 'V0.21',
+            html_url: 'https://github.com/test/repo/releases/tag/V0.20%2B', assets: [] })
+    });
+    const retitledRelease = await fetchModRelease({ githubUrl: 'https://github.com/test/repo' }, { useCache: false });
+    assert.equal(retitledRelease.version, '0.21', '安装目标版本应与明确的 Release 标题一致');
+    assert.equal(retitledRelease.tagName, 'V0.20+', '下载定位仍应保留原 Tag');
+    context.fetch = async () => ({
+        ok: true,
+        json: async () => ({ tag_name: '版本维护', name: '适配0.5.8.9', assets: [] })
+    });
+    const compatibilityRelease = await fetchModRelease({
+        githubUrl: 'https://github.com/test/repo', version: '1.7'
+    }, { useCache: false });
+    assert.equal(compatibilityRelease.version, '1.7', '游戏兼容版本不得覆盖模组版本');
+    context.fetch = originalMarketFetch;
 
     const releaseAsset = name => ({ name, size: 1024, digest: `sha256:${'b'.repeat(64)}`, downloadUrl: `https://example.test/${name}` });
     const smartphonePlan = buildReleaseAssetPlan([
@@ -2262,7 +2290,7 @@ context.dolOptOfferReload = message => (reloadOffers++, reloadMessage = message)
     assert.equal(typeof context.dolOptInitGlobalDragDrop, 'function', '必须导出 dolOptInitGlobalDragDrop 全局拖拽守护函数');
 
     // 14.13 验证 boot.json 版本号基准与脚本注册
-    assert.equal(bootJson.version, '1.1.0.3', 'boot.json 版本号必须为 1.1.0.3');
+    assert.equal(bootJson.version, '1.1.0.4', 'boot.json 版本号必须为 1.1.0.4');
     assert.ok(bootJson.scriptFileList.includes('javascript/dol-mod-market.js'), 'boot.json 必须注册 dol-mod-market.js');
 
     // 14.14 验证按钮长按手势与防二次短按误触
@@ -2341,7 +2369,7 @@ context.dolOptOfferReload = message => (reloadOffers++, reloadMessage = message)
         context.clearTimeout = savedClearTimeout;
     }
 
-    console.log('Dol-Optimization v1.1.0.3 all tests including Cloudflare identity catalog PASSED!');
+    console.log('Dol-Optimization v1.1.0.4 all tests including Cloudflare identity catalog PASSED!');
 })().catch(error => {
     console.error(error);
     process.exitCode = 1;
