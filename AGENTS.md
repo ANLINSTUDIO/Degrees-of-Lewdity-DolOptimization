@@ -1,4 +1,6 @@
-# 原版优化 (Dol-Optimization) 智能体协作开发指南 (agent.md)
+# 原版优化 (Dol-Optimization) 智能体协作开发指南 (AGENTS.md)
+
+> 本仓库是 Git 发布仓库，模组源码位于 `Source/`，版本以 `Source/boot.json` 为准，校验命令为 `node Source/test-smart-sort.js`。下文提到的 `src/`、`pack.py`、`release/`、`dolmod-site/` 和 `../MOD/` 路径属于上级“DOL优化”完整工作目录；单独使用本仓库时，不在此处执行对应的打包或部署步骤。
 
 本文件适用于本项目全生命周期的功能迭代、样式优化、缺陷修复、测试打包与文档维护。后续所有接手本项目的 Agent 必须在开展工作前仔细阅读并无条件遵循本指南中的原则与规约，确保项目架构质量、原生体验与工作流的一致性。
 
