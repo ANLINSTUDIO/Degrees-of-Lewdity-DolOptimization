@@ -2576,3 +2576,14 @@ button.dol-opt-btn-primary:active,
         width: 100%;
     }
 }
+
+/* 管理器保存期间统一禁用输入，保持原生布局与窄屏宽度。 */
+.dol-opt-manager-controls {
+    border: 0;
+    padding: 0;
+    margin: 0;
+    min-width: 0;
+    width: 100%;
+    box-sizing: border-box;
+}
+#dolOptManagerStatus { margin: 6px 0; font-size: 0.9em; overflow-wrap: anywhere; }

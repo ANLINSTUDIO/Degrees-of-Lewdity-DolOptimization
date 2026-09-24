@@ -2060,11 +2060,16 @@
             // 4. 调用已有的智能模组导入器
             const askRestart = options.askRestart !== undefined ? options.askRestart : true;
             if (typeof window.dolOptHandleAddMod === 'function') {
-                await window.dolOptHandleAddMod(dummyInput, {
+                const installed = await window.dolOptHandleAddMod(dummyInput, {
                     askRestart,
                     targetModName: mod._matchedLocal?.name || '',
                     displayName: mod.name || ''
                 });
+                if (installed === false) {
+                    clearActiveDownload();
+                    reportProgress(null, '安装未完成，请检查管理器提示后重试', 'error');
+                    return false;
+                }
             } else if (typeof gui.loadAndAddMod === 'function') {
                 await gui.loadAndAddMod(dummyInput);
                 if (askRestart) {

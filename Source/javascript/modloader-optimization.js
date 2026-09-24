@@ -139,15 +139,11 @@ window.dolOptGetModInfo = function(modName) {
 };
 
 // 禁用模组不会进入运行时缓存，直接从 ModLoader 的 IndexedDB 安装包读取 boot.json
-window.dolOptLoadDisabledModInfo = async function(modNames) {
+window.dolOptLoadDisabledModInfo = async function(modNames, refresh = false) {
     const gui = window.dolOptGetGui();
     const names = window.dolOptUniqueModNames(Array.isArray(modNames)
         ? modNames
         : (gui?.listSideLoadHiddenModNameOnly ? await gui.listSideLoadHiddenModNameOnly() : []));
-    const activeKeys = new Set(names.map(name => name.trim().toLowerCase()));
-    for (const key of window._dolOptDisabledModInfo.keys()) {
-        if (!activeKeys.has(key)) window._dolOptDisabledModInfo.delete(key);
-    }
     if (!names.length) return 0;
 
     const utils = gui?.gModUtils;
@@ -159,6 +155,7 @@ window.dolOptLoadDisabledModInfo = async function(modNames) {
 
     let loaded = 0;
     for (const name of names) {
+        if (!refresh && window._dolOptDisabledModInfo.has(name.trim().toLowerCase())) continue;
         try {
             const data = await keyval.get(loader.constructor.calcModNameKey(name), loader.customStore);
             if (!data) continue;
@@ -183,33 +180,14 @@ window.dolOptSaveIndexDBModList = async function(enabledList, disabledList) {
     const targetDisabled = window.dolOptUniqueModNames(disabledList)
         .filter(name => !enabledNames.has(name.trim().toLowerCase()));
 
-    const controller = window.dolOptGetController();
-    if (controller && typeof controller.overwriteModIndexDBModList === 'function') {
-        await controller.overwriteModIndexDBModList(targetEnabled);
-        if (typeof controller.overwriteModIndexDBHiddenModList === 'function') {
-            await controller.overwriteModIndexDBHiddenModList(targetDisabled);
-        }
-        return true;
-    }
-
     const gui = window.dolOptGetGui();
-    if (gui && typeof gui.overwriteModIndexDBModList === 'function') {
-        await gui.overwriteModIndexDBModList(targetEnabled);
-        if (typeof gui.overwriteModIndexDBHiddenModList === 'function') {
-            await gui.overwriteModIndexDBHiddenModList(targetDisabled);
-        }
-        return true;
-    }
-
-    if (gui && gui.modModLoadController && typeof gui.modModLoadController.overwriteModIndexDBModList === 'function') {
-        await gui.modModLoadController.overwriteModIndexDBModList(targetEnabled);
-        if (typeof gui.modModLoadController.overwriteModIndexDBHiddenModList === 'function') {
-            await gui.modModLoadController.overwriteModIndexDBHiddenModList(targetDisabled);
-        }
-        return true;
-    }
-
-    throw new Error('未找到 ModLoadController.overwriteModIndexDBModList 存储接口');
+    const controller = [window.dolOptGetController(), gui, gui?.modModLoadController].find(target =>
+        typeof target?.overwriteModIndexDBModList === 'function' &&
+        typeof target?.overwriteModIndexDBHiddenModList === 'function');
+    if (!controller) throw new Error('未找到完整的 ModLoadController 模组列表存储接口');
+    if (await controller.overwriteModIndexDBModList(targetEnabled) === false) throw new Error('启用列表保存失败');
+    if (await controller.overwriteModIndexDBHiddenModList(targetDisabled) === false) throw new Error('禁用列表保存失败');
+    return true;
 };
 
 // 工具函数：转义 HTML
@@ -814,10 +792,24 @@ window.dolOptRenderMarkdown = function(md, options = {}) {
  * ========================================================================= */
 // 全局重新载入游戏方法
 window.dolOptRestartGame = function() {
+    if (window._dolOptManagerBusy || window._dolOptModLoading || window._dolOptManagerSaveFailed) {
+        window.dolOptShowToast('请等待操作完成；保存失败时请先刷新列表核实配置。', 'warning');
+        return false;
+    }
     window.dolOptShowToast('正在重新载入游戏...', 'warning');
     setTimeout(() => {
-        location.reload();
+        if (!window._dolOptManagerBusy && !window._dolOptModLoading && !window._dolOptManagerSaveFailed) location.reload();
     }, 450);
+};
+
+window.dolOptToggleSafeMode = function(checked) {
+    return window.dolOptRunManagerAction(async () => {
+        const modSwitch = window.dolOptGetGui()?.modLoadSwitch;
+        if (!modSwitch) throw new Error('无法获取安全模式设置');
+        if (checked) await modSwitch.enableSafeMode();
+        else await modSwitch.disableSafeMode();
+        window.dolOptShowToast(checked ? '安全模式已开启，重新载入后生效' : '安全模式已关闭，重新载入后生效', 'success');
+    });
 };
 
 window.initGeneral = function() {
@@ -834,20 +826,7 @@ window.initGeneral = function() {
     if (toggleSafeMode && gui && gui.modLoadSwitch) {
         toggleSafeMode.checked = gui.modLoadSwitch.isSafeModeOn();
 
-        toggleSafeMode.onchange = async () => {
-            try {
-                if (toggleSafeMode.checked) {
-                    await gui.modLoadSwitch.enableSafeMode();
-                    window.dolOptShowToast('安全模式已开启（刷新后仅加载签名模组）', 'success');
-                } else {
-                    await gui.modLoadSwitch.disableSafeMode();
-                    window.dolOptShowToast('安全模式已关闭（刷新后允许所有模组）', 'warning');
-                }
-            } catch (err) {
-                console.error('[DolOptimization] 切换安全模式失败', err);
-                window.dolOptShowToast('切换安全模式失败: ' + err.message, 'warning');
-            }
-        };
+        toggleSafeMode.onchange = () => window.dolOptToggleSafeMode(toggleSafeMode.checked);
     }
 
     // 拖放及文件选择上传模组
@@ -968,9 +947,10 @@ window.dolOptUpdateGeneralInfo = async function() {
     try {
         const mlVersion = gui?.gModUtils?.version || window.modUtils?.version || '2.x';
         const allMods = window.dolOptUniqueModNames(gui?.gModUtils?.getModListNameNoAlias() || []);
-        const sideLoadMods = window.dolOptUniqueModNames(gui ? await gui.listSideLoadModNameOnly() : []);
+        const state = window._dolOptModState || await window.dolOptLoadModManageState();
+        const sideLoadMods = window.dolOptUniqueModNames(state.sideEnabled);
         const enabledNames = new Set(sideLoadMods.map(name => name.trim().toLowerCase()));
-        const hiddenSideMods = window.dolOptUniqueModNames(gui ? await gui.listSideLoadHiddenModNameOnly() : [])
+        const hiddenSideMods = window.dolOptUniqueModNames(state.sideDisabled)
             .filter(name => !enabledNames.has(name.trim().toLowerCase()));
 
         // 尝试从模组市场接口直接检测可更新项
@@ -1120,18 +1100,18 @@ window.dolOptHandleAddMod = async function(fileInput, options = {}) {
 
     window.dolOptShowToast(isBatch ? `正在解析并批量导入 ${fileCount} 个模组文件...` : '正在解析并导入模组文件...', 'warning');
     try {
-        // 1. 记录导入前的已有模组快照
-        const beforeSide = new Set([
-            ...(gui.listSideLoadModNameOnly ? await gui.listSideLoadModNameOnly() : []),
-            ...(gui.listSideLoadHiddenModNameOnly ? await gui.listSideLoadHiddenModNameOnly() : [])
-        ]);
-
-        // 2. 执行导入
-        await gui.loadAndAddMod(fileInput);
-
-        // 3. 获取导入后的模组列表
-        const afterEnabled = gui.listSideLoadModNameOnly ? await gui.listSideLoadModNameOnly() : [];
-        const afterDisabled = gui.listSideLoadHiddenModNameOnly ? await gui.listSideLoadHiddenModNameOnly() : [];
+        const imported = await window.dolOptRunManagerAction(async () => {
+            const beforeSide = new Set([
+                ...(gui.listSideLoadModNameOnly ? await gui.listSideLoadModNameOnly() : []),
+                ...(gui.listSideLoadHiddenModNameOnly ? await gui.listSideLoadHiddenModNameOnly() : [])
+            ]);
+            await gui.loadAndAddMod(fileInput);
+            const state = await window.dolOptLoadModManageState(true);
+            await window.dolOptLoadBeautyState();
+            return { beforeSide, afterEnabled: state.sideEnabled, afterDisabled: state.sideDisabled };
+        }, '正在导入模组，请稍候...');
+        if (!imported) return false;
+        const { beforeSide, afterEnabled, afterDisabled } = imported;
         const afterAll = [...afterEnabled, ...afterDisabled];
         const newlyAdded = afterAll.filter(name => !beforeSide.has(name));
 
@@ -1152,11 +1132,6 @@ window.dolOptHandleAddMod = async function(fileInput, options = {}) {
 
         // ===== 快捷添加模式：导入后询问是否立即重启游戏生效 =====
         if (options && (options.askRestart || options.promptReload)) {
-            if (typeof window.dolOptLoadBeautyState === 'function') {
-                try {
-                    await window.dolOptLoadBeautyState();
-                } catch (_) {}
-            }
             const label = isBatch ? `${fileCount} 个模组` : (targetDisplayName ? `模组【${targetDisplayName}】` : '模组');
             const ok = await window.dolOptConfirm({
                 title: '重新载入游戏',
@@ -1167,9 +1142,7 @@ window.dolOptHandleAddMod = async function(fileInput, options = {}) {
             });
             if (ok) {
                 window.dolOptShowToast('正在重新载入游戏...', 'warning');
-                setTimeout(() => {
-                    location.reload();
-                }, 400);
+                window.dolOptRestartGame();
             } else {
                 window._dolOptHighlightMods = new Set(newlyAdded.length > 0 ? newlyAdded : (targetModName ? [targetModName] : []));
                 window.dolOptShowToast(`${label}已添加完成，已在列表中标出。全部操作完成后可手动点击【重新载入游戏】生效。`, 'info');
@@ -1185,16 +1158,9 @@ window.dolOptHandleAddMod = async function(fileInput, options = {}) {
 
         // 兼容原有的静默直接重启参数
         if (options && options.autoRestart) {
-            if (typeof window.dolOptLoadBeautyState === 'function') {
-                try {
-                    await window.dolOptLoadBeautyState();
-                } catch (_) {}
-            }
             const label = isBatch ? `${fileCount} 个模组` : (targetDisplayName ? `模组【${targetDisplayName}】` : '模组');
             window.dolOptShowToast(`${label}快捷添加成功，正在自动重新载入游戏...`, 'success');
-            setTimeout(() => {
-                location.reload();
-            }, 400);
+            window.dolOptRestartGame();
             return;
         }
 
@@ -1261,6 +1227,7 @@ window.dolOptHandleAddMod = async function(fileInput, options = {}) {
     } catch (e) {
         console.error('[DolOptimization] 添加模组失败', e);
         window.dolOptShowToast('添加模组失败: ' + (e.message || e), 'warning');
+        return false;
     }
 };
 
@@ -1456,37 +1423,39 @@ window.dolOptBindAllMoveButtons = function(container) {
 
 // 重新排列列表项并持久化保存
 window.dolOptReorderList = async function(listType, fromIndex, targetIndex, isAfter) {
-    if (fromIndex === undefined || targetIndex === undefined || isNaN(fromIndex) || isNaN(targetIndex)) return;
-    let toIndex = isAfter ? targetIndex + 1 : targetIndex;
-    if (fromIndex < toIndex) toIndex--;
-    if (fromIndex === toIndex) return;
+    return window.dolOptRunManagerAction(async () => {
+        if (fromIndex === undefined || targetIndex === undefined || isNaN(fromIndex) || isNaN(targetIndex)) return false;
+        let toIndex = isAfter ? targetIndex + 1 : targetIndex;
+        if (fromIndex < toIndex) toIndex--;
+        if (fromIndex === toIndex) return false;
 
-    if (listType === 'side') {
-        const state = window._dolOptModState;
-        if (!state) return;
-        window.dolOptEnsureModStateSync(state);
-        const list = state.sideMods;
-        if (!list || fromIndex < 0 || fromIndex >= list.length || toIndex < 0 || toIndex >= list.length) return;
-        const [moved] = list.splice(fromIndex, 1);
-        list.splice(toIndex, 0, moved);
+        if (listType === 'side') {
+            const state = window._dolOptModState;
+            if (!state) return false;
+            window.dolOptEnsureModStateSync(state);
+            const list = state.sideMods;
+            if (!list || fromIndex < 0 || fromIndex >= list.length || toIndex < 0 || toIndex >= list.length) return false;
+            const [moved] = list.splice(fromIndex, 1);
+            list.splice(toIndex, 0, moved);
 
-        window.dolOptEnsureModStateSync(state);
-        await window.dolOptSaveModManageState(false);
-        window.dolOptRenderModManageUI();
-        const movedName = typeof moved === 'object' ? moved.name : moved;
-        window.dolOptShowToast(`已将【${movedName}】排序调整至第 ${toIndex + 1} 位`, 'success');
-    } else if (listType === 'beauty') {
-        const state = window._dolOptBeautyState;
-        if (!state || !state.enabledList) return;
-        const list = state.enabledList;
-        if (fromIndex < 0 || fromIndex >= list.length || toIndex < 0 || toIndex >= list.length) return;
-        const [moved] = list.splice(fromIndex, 1);
-        list.splice(toIndex, 0, moved);
+            window.dolOptEnsureModStateSync(state);
+            if (!await window.dolOptSaveModManageState(false)) throw new Error('模组配置保存失败');
 
-        await window.dolOptSaveBeautyState(false);
-        window.dolOptRenderBeautyUI();
-        window.dolOptShowToast(`已将美化包【${moved.type}】覆盖优先级调整至第 ${toIndex + 1} 位`, 'success');
-    }
+            const movedName = typeof moved === 'object' ? moved.name : moved;
+            window.dolOptShowToast(`已将【${movedName}】排序调整至第 ${toIndex + 1} 位`, 'success');
+        } else if (listType === 'beauty') {
+            const state = window._dolOptBeautyState;
+            if (!state || !state.enabledList) return false;
+            const list = state.enabledList;
+            if (fromIndex < 0 || fromIndex >= list.length || toIndex < 0 || toIndex >= list.length) return false;
+            const [moved] = list.splice(fromIndex, 1);
+            list.splice(toIndex, 0, moved);
+
+            if (!await window.dolOptSaveBeautyState(false)) throw new Error('美化配置保存失败');
+
+            window.dolOptShowToast(`已将美化包【${moved.type}】覆盖优先级调整至第 ${toIndex + 1} 位`, 'success');
+        }
+    });
 };
 
 // 统一拖拽排序绑定函数（同时支持桌面端 HTML5 Drag & 移动端 Touch，内置视口边缘自动滚动）
@@ -1799,22 +1768,17 @@ window.dolOptEnsureModStateSync = function(state) {
 /* =========================================================================
  * 2. 模组管理模块 (Mod Manager)
  * ========================================================================= */
-window.initModManage = async function() {
-    const container = document.getElementById('dolOptModManageContainer');
-    if (!container) return;
-
+// 数据读取与界面挂载分开；重复打开共用内存和正在进行的读取。
+window.dolOptLoadModManageState = function(refresh = false) {
+    if (window._dolOptModLoading) return window._dolOptModLoading;
+    if (!refresh && window._dolOptModState) return Promise.resolve(window._dolOptModState);
     const gui = window.dolOptGetGui();
-    if (!gui) {
-        container.innerHTML = '<div class="mod-empty grey">无法获取 ModLoader 实例，请按 Alt+M 打开原版管理界面。</div>';
-        return;
-    }
-
-    container.innerHTML = '<div class="mod-empty grey">正在读取模组列表...</div>';
-
-    try {
-        const sideEnabled = window.dolOptUniqueModNames(await gui.listSideLoadModNameOnly());
+    if (!gui) return Promise.reject(new Error('无法获取 ModLoader 实例'));
+    window._dolOptModLoading = (async () => {
+        const [enabled, disabled] = await Promise.all([gui.listSideLoadModNameOnly(), gui.listSideLoadHiddenModNameOnly()]);
+        const sideEnabled = window.dolOptUniqueModNames(enabled);
         const enabledNames = new Set(sideEnabled.map(name => name.trim().toLowerCase()));
-        const sideDisabled = window.dolOptUniqueModNames(await gui.listSideLoadHiddenModNameOnly())
+        const sideDisabled = window.dolOptUniqueModNames(disabled)
             .filter(name => !enabledNames.has(name.trim().toLowerCase()));
         const allLoaded = window.dolOptUniqueModNames(gui.gModUtils?.getModListNameNoAlias ? gui.gModUtils.getModListNameNoAlias() : []);
 
@@ -1828,8 +1792,12 @@ window.initModManage = async function() {
         } catch (_) {}
 
         const enabledSet = new Set(sideEnabled);
-        const disabledSet = new Set(sideDisabled);
         const allSideSet = new Set([...sideEnabled, ...sideDisabled]);
+        // 本次刚启用的模组尚未进入运行时，仍需保留它的安装包资料。
+        const installedKeys = new Set([...allSideSet].map(name => name.trim().toLowerCase()));
+        for (const key of window._dolOptDisabledModInfo.keys()) {
+            if (!installedKeys.has(key)) window._dolOptDisabledModInfo.delete(key);
+        }
 
         // 按照 savedOrder 还原交错顺序，新出现的模组追加在末尾
         const orderedNames = [];
@@ -1855,13 +1823,15 @@ window.initModManage = async function() {
             }
         }
 
-        const sideMods = orderedNames.map(name => ({
-            name,
-            enabled: enabledSet.has(name)
-        }));
+        // 保留启用与禁用的交错位置，同时尊重原版管理器写入的新顺序。
+        let enabledIndex = 0, disabledIndex = 0;
+        const sideMods = orderedNames.map(name => {
+            const enabled = enabledSet.has(name);
+            return { name: enabled ? sideEnabled[enabledIndex++] : sideDisabled[disabledIndex++], enabled };
+        });
 
         // 区分内置核心模组
-        const builtInMods = allLoaded.filter(name => !allSideSet.has(name));
+        const builtInMods = (window._dolOptModState?.builtInMods || allLoaded).filter(name => !allSideSet.has(name));
 
         window._dolOptModState = {
             sideMods,
@@ -1870,13 +1840,105 @@ window.initModManage = async function() {
             builtInMods: [...builtInMods]
         };
 
-        await window.dolOptLoadDisabledModInfo(sideDisabled);
-        await window.dolOptLoadBeautyState();
-        window.dolOptRenderModManageUI();
-    } catch (e) {
-        console.error('[DolOptimization] 读取模组列表异常', e);
-        container.innerHTML = `<div class="mod-empty red">读取模组列表失败：${window.dolOptEscapeHtml(e.message)}</div>`;
+        await window.dolOptLoadDisabledModInfo(sideDisabled, refresh);
+        return window._dolOptModState;
+    })().finally(() => { window._dolOptModLoading = null; });
+    return window._dolOptModLoading;
+};
+
+window.dolOptUpdateManagerStatus = function() {
+    const controls = document.getElementById('dolOptManagerControls');
+    if (controls) controls.disabled = !!(window._dolOptManagerBusy || window._dolOptModLoading);
+    const status = document.getElementById('dolOptManagerStatus');
+    if (status) {
+        status.textContent = window._dolOptManagerStatus || '配置自动保存，重新载入后生效';
+        status.className = window._dolOptManagerSaveFailed ? 'red' : 'grey';
     }
+};
+
+// ponytail: 共用一把操作锁；确有并行操作需求时再按存储资源拆分。
+window.dolOptRunManagerAction = async function(action, message = '正在保存，请稍候...') {
+    if (window._dolOptManagerBusy || window._dolOptModLoading || window._dolOptManagerStateUncertain) {
+        window.dolOptShowToast(window._dolOptManagerStateUncertain ? '请先刷新列表核实配置，再进行修改。' : '上一项操作尚未完成，请稍候。', 'warning');
+        return false;
+    }
+    const modState = window._dolOptModState;
+    const beforeMod = modState && {
+        ...modState,
+        sideMods: modState.sideMods?.map(item => ({ ...item })),
+        sideEnabled: [...(modState.sideEnabled || [])], sideDisabled: [...(modState.sideDisabled || [])]
+    };
+    const beauty = window._dolOptBeautyState;
+    const beforeBeauty = beauty && { ...beauty, enabledList: [...beauty.enabledList], disabledList: [...beauty.disabledList] };
+    const previousStatus = window._dolOptManagerStatus;
+    window._dolOptManagerBusy = true;
+    window._dolOptManagerStatus = message;
+    window.dolOptUpdateManagerStatus();
+    try {
+        const result = await action();
+        window._dolOptManagerStatus = result === false ? previousStatus : '已保存，重新载入后生效';
+        if (result !== false) window._dolOptManagerSaveFailed = false;
+        return result === undefined ? true : result;
+    } catch (error) {
+        window._dolOptModState = beforeMod;
+        window._dolOptBeautyState = beforeBeauty;
+        // 两份模组列表可能只写入了一份，以重新读到的实际记录为准。
+        try {
+            await window.dolOptLoadModManageState(true);
+            await window.dolOptLoadBeautyState(false);
+            window._dolOptManagerStateUncertain = false;
+        } catch (_) {
+            window._dolOptModState = beforeMod;
+            window._dolOptManagerStateUncertain = true;
+        }
+        window._dolOptManagerSaveFailed = true;
+        window._dolOptManagerStatus = window._dolOptManagerStateUncertain
+            ? '操作失败，配置状态待核实，请刷新列表后重试'
+            : '操作失败，已重新读取配置，请检查后重试';
+        console.error('[DolOptimization] 管理器操作失败', error);
+        window.dolOptShowToast(window._dolOptManagerStatus + '：' + (error.message || error), 'warning');
+        return false;
+    } finally {
+        window._dolOptManagerBusy = false;
+        window.dolOptRenderModManageUI();
+        window.dolOptUpdateManagerStatus();
+    }
+};
+
+window.initModManage = async function(refresh = false) {
+    const container = document.getElementById('dolOptModManageContainer');
+    if (!container) return;
+    if (window._dolOptModState) window.dolOptRenderModManageUI();
+    else container.innerHTML = '<div class="mod-empty grey">正在读取模组列表...</div>';
+    if (window._dolOptManagerInit) return window._dolOptManagerInit;
+    if (window._dolOptManagerBusy) return;
+    if (!refresh && window._dolOptModState && window._dolOptBeautyLoaded && !window._dolOptModLoading) return;
+    window._dolOptManagerInit = (async () => {
+        try {
+            const loading = window.dolOptLoadModManageState(refresh);
+            window.dolOptUpdateManagerStatus();
+            await loading;
+            // 美化自动启用也可能写入配置，初始化期间同样禁止交错操作。
+            window._dolOptManagerBusy = true;
+            await window.dolOptLoadBeautyState();
+            window._dolOptManagerStateUncertain = false;
+            if (refresh) {
+                window._dolOptManagerSaveFailed = false;
+                window._dolOptManagerStatus = '已同步配置，修改在重新载入后生效';
+            }
+        } catch (error) {
+            window._dolOptManagerSaveFailed = true;
+            window._dolOptManagerStateUncertain = true;
+            window._dolOptManagerStatus = '读取配置失败，请刷新列表重试';
+            console.error('[DolOptimization] 读取模组列表异常', error);
+            if (!window._dolOptModState) container.innerHTML = '<div class="mod-empty red">读取模组列表失败，请重新打开管理器重试。</div>';
+        } finally {
+            window._dolOptManagerBusy = false;
+            window.dolOptRenderModManageUI();
+            window.dolOptUpdateManagerStatus();
+        }
+    })().finally(() => { window._dolOptManagerInit = null; });
+    return window._dolOptManagerInit;
 };
 
 window.dolOptRenderModManageUI = function() {
@@ -1891,7 +1953,7 @@ window.dolOptRenderModManageUI = function() {
     const totalSideCount = sideMods ? sideMods.length : 0;
     const beautyCount = (window._dolOptBeautyState?.enabledList.length || 0) + (window._dolOptBeautyState?.disabledList.length || 0);
 
-    let html = '';
+    let html = '<fieldset id="dolOptManagerControls" class="dol-opt-manager-controls">';
 
     // 1. 环境统计看板（原通用页面核心信息）
     html += '<div id="dolOptEnvInfo" class="settingsGridSmall dol-opt-stats-container"></div>';
@@ -1907,11 +1969,13 @@ window.dolOptRenderModManageUI = function() {
                     <span class="gold">安全模式</span>
                 </label>
             </div>
+            <div id="dolOptManagerStatus" class="grey" role="status" aria-live="polite"></div>
             <div class="dol-opt-group-header">
                 <span class="gold">模组与美化顺序管理</span>
                 <div class="dol-opt-header-actions">
                     <button id="dolOptImportModBtn" class="macro-button dol-opt-btn-primary" type="button" title="从本地选择或直接拖拽 Zip 模组文件导入" onclick="window.dolOptTriggerImport()">导入模组</button>
                     <button id="dolOptRestartGameBtn" class="macro-button dol-opt-btn-primary" type="button" title="重新载入游戏以使最新模组和美化配置生效" onclick="window.dolOptRestartGame()">重新载入游戏</button>
+                    <button class="macro-button" type="button" title="在原版管理器修改后，重新读取列表与模组资料" onclick="window.initModManage(true)">刷新列表</button>
                     <button id="dolOptSmartSortAllBtn" class="macro-button dol-opt-btn-primary" type="button" title="根据明确依赖，同时整理已安装模组的加载顺序和美化包的覆盖顺序" onclick="window.dolOptSmartSortAll()">智能整理模组与美化顺序</button>
                 </div>
             </div>
@@ -2022,7 +2086,8 @@ window.dolOptRenderModManageUI = function() {
     });
     html += '</ul></div></details>';
 
-    container.innerHTML = html;
+    container.innerHTML = html + '</fieldset>';
+    window.dolOptUpdateManagerStatus();
     container.onclick = async event => {
         const button = event.target?.closest?.('[data-mod-action]');
         const modName = button?.closest?.('li[data-mod-name]')?.dataset.modName;
@@ -2042,20 +2107,7 @@ window.dolOptRenderModManageUI = function() {
     const toggleSafeMode = container.querySelector ? container.querySelector('#toggleSafeMode') : null;
     if (toggleSafeMode && gui && gui.modLoadSwitch) {
         toggleSafeMode.checked = gui.modLoadSwitch.isSafeModeOn();
-        toggleSafeMode.onchange = async () => {
-            try {
-                if (toggleSafeMode.checked) {
-                    await gui.modLoadSwitch.enableSafeMode();
-                    window.dolOptShowToast('安全模式已开启（刷新后仅加载签名模组）', 'success');
-                } else {
-                    await gui.modLoadSwitch.disableSafeMode();
-                    window.dolOptShowToast('安全模式已关闭（刷新后允许所有模组）', 'warning');
-                }
-            } catch (err) {
-                console.error('[DolOptimization] 切换安全模式失败', err);
-                window.dolOptShowToast('切换安全模式失败: ' + err.message, 'warning');
-            }
-        };
+        toggleSafeMode.onchange = () => window.dolOptToggleSafeMode(toggleSafeMode.checked);
     }
 
     // 3. 为模组管理容器绑定全区域文件拖拽直接导入
@@ -2124,8 +2176,7 @@ window.dolOptOfferReload = async function(message = '配置已更新。') {
         confirmType: 'primary'
     });
     if (!ok) return;
-    window.dolOptShowToast('正在重新载入游戏...', 'warning');
-    setTimeout(() => location.reload(), 300);
+    window.dolOptRestartGame();
 };
 
 window.dolOptBuildSmartOrder = async function(nodes, gui, dependentsFirst = false) {
@@ -2190,135 +2241,139 @@ window.dolOptBuildSmartOrder = async function(nodes, gui, dependentsFirst = fals
 };
 
 window.dolOptSmartSortAll = async function() {
-    const gui = window.dolOptGetGui();
-    if (!gui) {
-        window.dolOptShowToast('未找到模组管理器实例', 'warning');
-        return;
-    }
+    const saved = await window.dolOptRunManagerAction(async () => {
+        const gui = window.dolOptGetGui();
+        if (!gui) {
+            window.dolOptShowToast('未找到模组管理器实例', 'warning');
+            return false;
+        }
 
-    const button = document.getElementById('dolOptSmartSortAllBtn');
-    if (button) {
-        button.disabled = true;
-        button.textContent = '正在整理...';
-    }
+        const button = document.getElementById('dolOptSmartSortAllBtn');
+        if (button) {
+            button.disabled = true;
+            button.textContent = '正在整理...';
+        }
 
-    try {
-        let sideChanged = false;
-        let beautyChanged = false;
+        try {
+            let sideChanged = false;
+            let beautyChanged = false;
 
-        if (window._dolOptModState) {
-            window.dolOptEnsureModStateSync(window._dolOptModState);
-            const sideMods = window._dolOptModState.sideMods;
-            const sideNodes = sideMods.map(item => ({ key: item.name, modName: item.name }));
-            const sortedSideKeys = await window.dolOptBuildSmartOrder(sideNodes, gui, false);
-            sideChanged = sortedSideKeys.some((name, index) => name !== sideMods[index].name);
-            if (sideChanged) {
-                const map = new Map(sideMods.map(m => [m.name, m]));
-                window._dolOptModState.sideMods = sortedSideKeys.map(key => map.get(key)).filter(Boolean);
+            if (window._dolOptModState) {
                 window.dolOptEnsureModStateSync(window._dolOptModState);
+                const sideMods = window._dolOptModState.sideMods;
+                const sideNodes = sideMods.map(item => ({ key: item.name, modName: item.name }));
+                const sortedSideKeys = await window.dolOptBuildSmartOrder(sideNodes, gui, false);
+                sideChanged = sortedSideKeys.some((name, index) => name !== sideMods[index].name);
+                if (sideChanged) {
+                    const map = new Map(sideMods.map(m => [m.name, m]));
+                    window._dolOptModState.sideMods = sortedSideKeys.map(key => map.get(key)).filter(Boolean);
+                    window.dolOptEnsureModStateSync(window._dolOptModState);
+                }
+            }
+
+            if (window._dolOptBeautyState?.enabledList?.length) {
+                const beautyNodes = window._dolOptBeautyState.enabledList.map(item => ({
+                    key: item.type,
+                    modName: item.modRef?.name || item.modName || item.type,
+                    boot: item.modRef?.bootJson
+                }));
+                const sortedBeautyKeys = await window.dolOptBuildSmartOrder(beautyNodes, gui, true);
+                beautyChanged = sortedBeautyKeys.some((type, index) => type !== window._dolOptBeautyState.enabledList[index].type);
+                if (beautyChanged) {
+                    const beautyMap = new Map(window._dolOptBeautyState.enabledList.map(item => [item.type, item]));
+                    window._dolOptBeautyState.enabledList = sortedBeautyKeys.map(key => beautyMap.get(key)).filter(Boolean);
+                }
+            }
+
+            if (!sideChanged && !beautyChanged) {
+                window.dolOptShowToast('智能整理完成，暂时无需调整', 'success');
+                return false;
+            }
+
+            if (sideChanged && !await window.dolOptSaveModManageState(false)) throw new Error('模组配置保存失败');
+            if (beautyChanged && !await window.dolOptSaveBeautyState(false)) throw new Error('美化配置保存失败');
+
+            const details = [];
+            if (sideChanged) details.push('旁加载加载顺序');
+            if (beautyChanged) details.push('美化覆盖顺序');
+            const message = `已按依赖关系智能整理【${details.join(' 与 ')}】`;
+            window.dolOptShowToast(message, 'success');
+            return message;
+        } catch (e) {
+            console.error('[DolOptimization] 智能整理顺序失败', e);
+            throw e;
+        } finally {
+            if (button?.isConnected) {
+                button.disabled = false;
+                button.textContent = '智能整理模组与美化顺序';
             }
         }
-
-        if (window._dolOptBeautyState?.enabledList?.length) {
-            const beautyNodes = window._dolOptBeautyState.enabledList.map(item => ({
-                key: item.type,
-                modName: item.modRef?.name || item.modName || item.type,
-                boot: item.modRef?.bootJson
-            }));
-            const sortedBeautyKeys = await window.dolOptBuildSmartOrder(beautyNodes, gui, true);
-            beautyChanged = sortedBeautyKeys.some((type, index) => type !== window._dolOptBeautyState.enabledList[index].type);
-            if (beautyChanged) {
-                const beautyMap = new Map(window._dolOptBeautyState.enabledList.map(item => [item.type, item]));
-                window._dolOptBeautyState.enabledList = sortedBeautyKeys.map(key => beautyMap.get(key)).filter(Boolean);
-            }
-        }
-
-        if (!sideChanged && !beautyChanged) {
-            window.dolOptShowToast('智能整理完成，暂时无需调整', 'success');
-            return;
-        }
-
-        if (sideChanged) await window.dolOptSaveModManageState(false);
-        if (beautyChanged) await window.dolOptSaveBeautyState(false);
-
-        window.dolOptRenderModManageUI();
-        const details = [];
-        if (sideChanged) details.push('旁加载加载顺序');
-        if (beautyChanged) details.push('美化覆盖顺序');
-        const message = `已按依赖关系智能整理【${details.join(' 与 ')}】`;
-        window.dolOptShowToast(message, 'success');
-        window.dolOptOfferReload(`${message}。配置已保存。`);
-    } catch (e) {
-        console.error('[DolOptimization] 智能整理顺序失败', e);
-        window.dolOptShowToast('智能整理失败: ' + (e.message || e), 'warning');
-    } finally {
-        if (button?.isConnected) {
-            button.disabled = false;
-            button.textContent = '智能整理模组与美化顺序';
-        }
-    }
+    });
+    if (typeof saved === 'string') window.dolOptOfferReload(`${saved}。配置已保存。`);
+    return saved;
 };
 
 // 旁加载模组移动（支持短按步进与长按置顶/置底）
 window.dolOptMoveSideMod = async function(index, deltaOrPosition) {
-    const state = window._dolOptModState;
-    if (!state) return;
-    window.dolOptEnsureModStateSync(state);
-    const list = state.sideMods;
-    if (!list || index < 0 || index >= list.length) return;
+    return window.dolOptRunManagerAction(async () => {
+        const state = window._dolOptModState;
+        if (!state) return false;
+        window.dolOptEnsureModStateSync(state);
+        const list = state.sideMods;
+        if (!list || index < 0 || index >= list.length) return false;
 
-    let targetIndex = index;
-    if (deltaOrPosition === 'top') {
-        targetIndex = 0;
-    } else if (deltaOrPosition === 'bottom') {
-        targetIndex = list.length - 1;
-    } else if (typeof deltaOrPosition === 'number') {
-        targetIndex = index + deltaOrPosition;
-    }
+        let targetIndex = index;
+        if (deltaOrPosition === 'top') {
+            targetIndex = 0;
+        } else if (deltaOrPosition === 'bottom') {
+            targetIndex = list.length - 1;
+        } else if (typeof deltaOrPosition === 'number') {
+            targetIndex = index + deltaOrPosition;
+        }
 
-    if (targetIndex < 0 || targetIndex >= list.length || targetIndex === index) return;
+        if (targetIndex < 0 || targetIndex >= list.length || targetIndex === index) return false;
 
-    const [item] = list.splice(index, 1);
-    list.splice(targetIndex, 0, item);
+        const [item] = list.splice(index, 1);
+        list.splice(targetIndex, 0, item);
 
-    window.dolOptEnsureModStateSync(state);
-    await window.dolOptSaveModManageState(false);
-    window.dolOptRenderModManageUI();
+        window.dolOptEnsureModStateSync(state);
+        if (!await window.dolOptSaveModManageState(false)) throw new Error('模组配置保存失败');
 
-    const name = item.name;
-    if (deltaOrPosition === 'top') {
-        window.dolOptShowToast(`已将【${name}】置顶`, 'success');
-    } else if (deltaOrPosition === 'bottom') {
-        window.dolOptShowToast(`已将【${name}】置底`, 'success');
-    }
+
+        const name = item.name;
+        if (deltaOrPosition === 'top') {
+            window.dolOptShowToast(`已将【${name}】置顶`, 'success');
+        } else if (deltaOrPosition === 'bottom') {
+            window.dolOptShowToast(`已将【${name}】置底`, 'success');
+        }
+    });
 };
 
 // 旁加载模组启用/禁用就地切换（保持原有排序位置绝对不变）
 window.dolOptToggleSideMod = async function(modName, enable) {
-    const state = window._dolOptModState;
-    if (!state) return;
-    window.dolOptEnsureModStateSync(state);
+    return window.dolOptRunManagerAction(async () => {
+        const state = window._dolOptModState;
+        if (!state) return false;
+        window.dolOptEnsureModStateSync(state);
 
-    const item = state.sideMods.find(m => m.name === modName);
-    if (!item) return;
+        const item = state.sideMods.find(m => m.name === modName);
+        if (!item) return false;
 
-    const targetEnable = enable !== undefined ? !!enable : !item.enabled;
-    if (item.enabled === targetEnable) return;
+        const targetEnable = enable !== undefined ? !!enable : !item.enabled;
+        if (item.enabled === targetEnable) return false;
 
-    item.enabled = targetEnable;
-    window.dolOptEnsureModStateSync(state);
+        item.enabled = targetEnable;
+        window.dolOptEnsureModStateSync(state);
 
-    await window.dolOptSaveModManageState(false);
+        if (!await window.dolOptSaveModManageState(false)) throw new Error('模组配置保存失败');
 
-    // 若开启了美化自动启用，跟随对齐美化状态
-    if (window.dolOptIsAutoBeautyEnabled()) {
-        try {
+        // 若开启了美化自动启用，跟随对齐美化状态
+        if (window.dolOptIsAutoBeautyEnabled()) {
             await window.dolOptLoadBeautyState();
-        } catch (_) {}
-    }
+        }
 
-    window.dolOptRenderModManageUI();
-    window.dolOptShowToast(`模组【${modName}】已${targetEnable ? '启用' : '禁用'}（原排序保持不变）`, 'success');
+        window.dolOptShowToast(`模组【${modName}】已${targetEnable ? '启用' : '禁用'}（原排序保持不变）`, 'success');
+    });
 };
 
 // 永久删除旁加载模组
@@ -2332,33 +2387,21 @@ window.dolOptDeleteSideMod = async function(modName) {
     });
     if (!confirmed) return;
 
-    try {
+    const saved = await window.dolOptRunManagerAction(async () => {
         const state = window._dolOptModState;
-        if (state) {
-            window.dolOptEnsureModStateSync(state);
-            state.sideMods = (state.sideMods || []).filter(m => m.name !== modName);
-            state.sideEnabled = (state.sideEnabled || []).filter(n => n !== modName);
-            state.sideDisabled = (state.sideDisabled || []).filter(n => n !== modName);
-            window.dolOptEnsureModStateSync(state);
-        }
-
-        await window.dolOptSaveIndexDBModList(state ? state.sideEnabled : [], state ? state.sideDisabled : []);
-        if (typeof localStorage !== 'undefined' && state && state.sideMods) {
-            try {
-                localStorage.setItem('dol_opt_sideload_mod_order', JSON.stringify(state.sideMods.map(m => m.name)));
-            } catch (_) {}
-        }
-
-        window.dolOptShowToast(`已删除模组【${modName}】`, 'warning');
-        window.dolOptRenderModManageUI();
-        if (typeof window.dolOptUpdateGeneralInfo === 'function') {
-            window.dolOptUpdateGeneralInfo();
-        }
-        window.dolOptOfferReload(`模组【${modName}】已从浏览器存储中删除。`);
-    } catch (e) {
-        console.error('[DolOptimization] 删除模组失败', e);
-        window.dolOptShowToast('删除模组失败: ' + (e.message || e), 'warning');
+        if (!state) throw new Error('模组列表尚未读取完成');
+        window.dolOptEnsureModStateSync(state);
+        state.sideMods = state.sideMods.filter(item => item.name !== modName);
+        state.sideEnabled = state.sideEnabled.filter(name => name !== modName);
+        state.sideDisabled = state.sideDisabled.filter(name => name !== modName);
+        if (!await window.dolOptSaveModManageState(false)) throw new Error('删除模组配置失败');
+        window._dolOptDisabledModInfo.delete(modName.trim().toLowerCase());
+    });
+    if (saved) {
+        window.dolOptShowToast(`已删除模组【${modName}】，重新载入后生效`, 'warning');
+        window.dolOptOfferReload(`模组【${modName}】已从模组列表中删除。`);
     }
+    return saved;
 };
 
 // 保存模组管理状态
@@ -2367,17 +2410,19 @@ window.dolOptSaveModManageState = async function(showSuccess = true) {
     if (!state) return false;
     window.dolOptEnsureModStateSync(state);
 
+    window.dolOptRenderModManageUI();
     try {
+        await window.dolOptSaveIndexDBModList(state.sideEnabled, state.sideDisabled);
         if (typeof localStorage !== 'undefined' && state.sideMods) {
             try {
                 localStorage.setItem('dol_opt_sideload_mod_order', JSON.stringify(state.sideMods.map(m => m.name)));
             } catch (_) {}
         }
 
-        await window.dolOptSaveIndexDBModList(state.sideEnabled, state.sideDisabled);
         if (showSuccess) window.dolOptShowToast('模组配置已更新，重新载入后生效', 'success');
         return true;
     } catch (e) {
+        if (window._dolOptManagerBusy) throw e;
         console.error('[DolOptimization] 保存模组状态失败', e);
         window.dolOptShowToast('保存模组状态失败: ' + (e.message || e), 'warning');
         return false;
@@ -2409,15 +2454,18 @@ window.dolOptSetAutoBeautyEnabled = function(val) {
 };
 
 window.dolOptToggleAutoBeautySetting = async function(checked) {
-    window.dolOptSetAutoBeautyEnabled(checked);
-    window.dolOptShowToast(checked ? '已开启【自动启用旁加载模组美化】' : '已关闭【自动启用旁加载模组美化】', 'info');
-    await window.dolOptLoadBeautyState();
-    window.dolOptRenderBeautyUI();
+    return window.dolOptRunManagerAction(async () => {
+        window.dolOptSetAutoBeautyEnabled(checked);
+        window.dolOptShowToast(checked ? '已开启【自动启用旁加载模组美化】' : '已关闭【自动启用旁加载模组美化】', 'info');
+        await window.dolOptLoadBeautyState();
+
+    });
 };
 
-window.dolOptLoadBeautyState = async function() {
+window.dolOptLoadBeautyState = async function(syncAuto = true) {
     const bAddon = window.addonBeautySelectorAddon;
     if (!bAddon || typeof bAddon.getTypeOrder !== 'function') {
+        window._dolOptBeautyLoaded = true;
         window._dolOptBeautyState = null;
         return false;
     }
@@ -2450,7 +2498,7 @@ window.dolOptLoadBeautyState = async function() {
 
         const allMap = new Map(allList.map(item => [item.type, item]));
 
-        if (autoBeautyEnabled && enabledSideMods.size > 0) {
+        if (syncAuto && autoBeautyEnabled && enabledSideMods.size > 0) {
             // 自动启用：属于已启用旁加载模组的美化项移入已启用列表
             const toEnable = [];
             disabledList = disabledList.filter(item => {
@@ -2485,12 +2533,11 @@ window.dolOptLoadBeautyState = async function() {
             allMap: allMap
         };
 
-        if (beautyChanged) {
-            await window.dolOptSaveBeautyState(false);
-        }
-
+        if (beautyChanged && !await window.dolOptSaveBeautyState(false)) throw new Error('美化自动启用保存失败');
+        window._dolOptBeautyLoaded = true;
         return true;
     } catch (e) {
+        if (window._dolOptManagerBusy && syncAuto) throw e;
         console.error('[DolOptimization] 初始化美化管理失败', e);
         window._dolOptBeautyState = null;
         return false;
@@ -2611,63 +2658,67 @@ window.dolOptRenderBeautyUI = function() {
 
 // 美化项排序移动（支持短按步进与长按置顶/置底）
 window.dolOptMoveBeauty = async function(index, deltaOrPosition) {
-    const state = window._dolOptBeautyState;
-    if (!state || !state.enabledList) return;
-    const list = state.enabledList;
-    if (index < 0 || index >= list.length) return;
+    return window.dolOptRunManagerAction(async () => {
+        const state = window._dolOptBeautyState;
+        if (!state || !state.enabledList) return false;
+        const list = state.enabledList;
+        if (index < 0 || index >= list.length) return false;
 
-    let targetIndex = index;
-    if (deltaOrPosition === 'top') {
-        targetIndex = 0;
-    } else if (deltaOrPosition === 'bottom') {
-        targetIndex = list.length - 1;
-    } else if (typeof deltaOrPosition === 'number') {
-        targetIndex = index + deltaOrPosition;
-    }
+        let targetIndex = index;
+        if (deltaOrPosition === 'top') {
+            targetIndex = 0;
+        } else if (deltaOrPosition === 'bottom') {
+            targetIndex = list.length - 1;
+        } else if (typeof deltaOrPosition === 'number') {
+            targetIndex = index + deltaOrPosition;
+        }
 
-    if (targetIndex < 0 || targetIndex >= list.length || targetIndex === index) return;
+        if (targetIndex < 0 || targetIndex >= list.length || targetIndex === index) return false;
 
-    const [item] = list.splice(index, 1);
-    list.splice(targetIndex, 0, item);
+        const [item] = list.splice(index, 1);
+        list.splice(targetIndex, 0, item);
 
-    await window.dolOptSaveBeautyState(false);
-    window.dolOptRenderBeautyUI();
+        if (!await window.dolOptSaveBeautyState(false)) throw new Error('美化配置保存失败');
 
-    const type = item.type;
-    if (deltaOrPosition === 'top') {
-        window.dolOptShowToast(`已将美化包【${type}】置顶（最高覆盖优先级）`, 'success');
-    } else if (deltaOrPosition === 'bottom') {
-        window.dolOptShowToast(`已将美化包【${type}】置底（最低覆盖优先级）`, 'success');
-    }
+
+        const type = item.type;
+        if (deltaOrPosition === 'top') {
+            window.dolOptShowToast(`已将美化包【${type}】置顶（最高覆盖优先级）`, 'success');
+        } else if (deltaOrPosition === 'bottom') {
+            window.dolOptShowToast(`已将美化包【${type}】置底（最低覆盖优先级）`, 'success');
+        }
+    });
 };
 
 // 美化项启用/禁用
 window.dolOptToggleBeauty = async function(typeKey, enable) {
-    const state = window._dolOptBeautyState;
-    if (!state) return;
+    return window.dolOptRunManagerAction(async () => {
+        const state = window._dolOptBeautyState;
+        if (!state) return false;
 
-    const targetItem = state.allMap.get(typeKey);
-    if (!targetItem) return;
+        const targetItem = state.allMap.get(typeKey);
+        if (!targetItem) return false;
 
-    if (!enable && window.dolOptIsAutoBeautyEnabled() && targetItem.isAutoManaged) {
-        window.dolOptShowToast(`美化包【${typeKey}】已跟随旁加载模组自动启用，无需手动调整`, 'warning');
-        return;
-    }
-
-    if (enable) {
-        state.disabledList = state.disabledList.filter(item => item.type !== typeKey);
-        if (!state.enabledList.some(item => item.type === typeKey)) {
-            state.enabledList.push(targetItem);
+        if (!enable && window.dolOptIsAutoBeautyEnabled() && targetItem.isAutoManaged) {
+            window.dolOptShowToast(`美化包【${typeKey}】已跟随旁加载模组自动启用，无需手动调整`, 'warning');
+            return false;
         }
-    } else {
-        state.enabledList = state.enabledList.filter(item => item.type !== typeKey);
-        if (!state.disabledList.some(item => item.type === typeKey)) {
-            state.disabledList.push(targetItem);
-        }
-    }
 
-    await window.dolOptSaveBeautyState();
-    window.dolOptRenderBeautyUI();
+        if (enable) {
+            state.disabledList = state.disabledList.filter(item => item.type !== typeKey);
+            if (!state.enabledList.some(item => item.type === typeKey)) {
+                state.enabledList.push(targetItem);
+            }
+        } else {
+            state.enabledList = state.enabledList.filter(item => item.type !== typeKey);
+            if (!state.disabledList.some(item => item.type === typeKey)) {
+                state.disabledList.push(targetItem);
+            }
+        }
+
+        if (!await window.dolOptSaveBeautyState()) throw new Error('美化配置保存失败');
+
+    });
 };
 
 // 保存美化排序与设置
@@ -2676,13 +2727,15 @@ window.dolOptSaveBeautyState = async function(showSuccess = true) {
     const state = window._dolOptBeautyState;
     if (!bAddon || !state) return false;
 
+    window.dolOptRenderModManageUI();
     try {
         const typeOrder = state.enabledList.map(item => item.type);
+        if (await bAddon.saveOrder(typeOrder) === false) throw new Error('美化配置保存失败');
         bAddon.typeOrderUsed = [...state.enabledList];
-        await bAddon.saveOrder(typeOrder);
         if (showSuccess) window.dolOptShowToast('美化包排序已保存（重新载入后完全生效）', 'success');
         return true;
     } catch (e) {
+        if (window._dolOptManagerBusy) throw e;
         console.error('[DolOptimization] 保存美化配置失败', e);
         window.dolOptShowToast('保存美化配置失败: ' + e.message, 'warning');
         return false;

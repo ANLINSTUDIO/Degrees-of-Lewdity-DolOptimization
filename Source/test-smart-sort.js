@@ -3,6 +3,13 @@ const { webcrypto } = require('node:crypto');
 const fs = require('node:fs');
 const path = require('node:path');
 const vm = require('node:vm');
+let suiteComplete = false;
+process.on('beforeExit', () => {
+    if (!suiteComplete) {
+        console.error('测试未完成：存在未结束的异步用例');
+        process.exitCode = 1;
+    }
+});
 
 let reloads = 0;
 let confirmed = false;
@@ -76,7 +83,133 @@ context.dolOptSaveBeautyState = async () => (++beautySaves, true);
 context.dolOptShowToast = message => toastMessages.push(message);
 context.dolOptOfferReload = message => (reloadOffers++, reloadMessage = message);
 
+async function testManagerPersistence() {
+    const notices = [];
+    let reloadCount = 0, reads = 0, zipReads = 0, writes = 0, imports = 0;
+    let enabled = ['A', 'B'], disabled = ['C'], failWrite = '', failRead = false, releaseSave;
+    let saveGate = null;
+    let zipVersion = '1';
+    const panel = { innerHTML: '', querySelectorAll: () => [], querySelector: () => null };
+    const controls = { disabled: false }, status = { textContent: '' };
+    const stats = { innerHTML: '' };
+    const c = {
+        console: { log() {}, warn() {}, error() {} },
+        setTimeout: () => 0, clearTimeout() {},
+        location: { reload: () => reloadCount++ },
+        document: { getElementById: id => ({ dolOptModManageContainer: panel, dolOptManagerControls: controls, dolOptManagerStatus: status, dolOptEnvInfo: stats })[id] || null },
+        localStorage: { data: {}, getItem(key) { return this.data[key] ?? null; }, setItem(key, value) { this.data[key] = value; } }
+    };
+    c.window = c;
+    vm.runInNewContext(fs.readFileSync(path.join(__dirname, 'javascript/modloader-optimization.js'), 'utf8'), c);
+    c.dolOptShowToast = (message, type) => notices.push({ message, type });
+    c.dolOptConfirm = async () => true;
+    c.dolOptOfferReload = async () => {};
+    const loader = { customStore: {}, constructor: { calcModNameKey: name => name } };
+    c.modLoaderGui = {
+        listSideLoadModNameOnly: async () => { reads++; if (failRead) throw Error('读取失败'); return [...enabled]; },
+        listSideLoadHiddenModNameOnly: async () => [...disabled],
+        loadAndAddMod: async () => { imports++; zipVersion = '2'; },
+        gModUtils: {
+            getModListNameNoAlias: () => ['Core', 'A', 'B'],
+            getModLoader: () => ({ getIndexDBLoader: () => loader }),
+            getIdbKeyValRef: () => ({ get: async () => { zipReads++; return 'zip'; } })
+        }
+    };
+    c.modModLoadController = {
+        checkModZipFileIndexDB: async () => ({ name: 'C', version: zipVersion }),
+        overwriteModIndexDBModList: async list => {
+            writes++;
+            if (saveGate) await saveGate;
+            if (failWrite === 'enabled') throw Error('写入失败');
+            enabled = [...list];
+        },
+        overwriteModIndexDBHiddenModList: async list => {
+            if (failWrite === 'disabled') throw Error('第二份列表写入失败');
+            disabled = [...list];
+        }
+    };
+
+    await Promise.all([c.initModManage(), c.initModManage()]);
+    await c.initModManage();
+    c.dolOptRenderModManageUI();
+    await c.dolOptUpdateGeneralInfo();
+    assert.equal(reads, 1, '重复打开、并发初始化与统计渲染只读取一次列表');
+    assert.equal(zipReads, 1, '禁用档案应复用缓存');
+    assert.ok(panel.innerHTML.includes('刷新列表'));
+
+    saveGate = new Promise(resolve => { releaseSave = resolve; });
+    const pending = c.dolOptToggleSideMod('A', false);
+    assert.equal(c._dolOptModState.sideMods[0].enabled, false, '保存尚未完成时内存配置立即变化');
+    assert.equal(controls.disabled, true, '保存期间禁用冲突控件');
+    assert.match(status.textContent, /正在保存/);
+    assert.ok(panel.innerHTML.includes('btn-enable'), '保存前已渲染新的配置');
+    assert.equal(await c.dolOptMoveSideMod(1, 'top'), false, '连续操作不能交错写入');
+    assert.equal(await c.dolOptHandleAddMod({ files: [{ name: 'C.zip' }], value: '' }), false);
+    assert.equal(imports, 0, '忙碌时不得进入导入存储接口');
+    c.dolOptRestartGame();
+    assert.equal(reloadCount, 0, '保存中禁止重载');
+    releaseSave();
+    await pending;
+    saveGate = null;
+    assert.equal(writes, 1);
+    assert.equal(controls.disabled, false);
+    assert.match(status.textContent, /已保存.*重新载入后生效/);
+
+    const successCount = notices.filter(item => item.type === 'success').length;
+    failWrite = 'enabled';
+    assert.equal(await c.dolOptToggleSideMod('B', false), false);
+    assert.equal(c._dolOptModState.sideMods.find(item => item.name === 'B').enabled, true);
+    assert.equal(notices.filter(item => item.type === 'success').length, successCount, '失败不能追加成功提示');
+    assert.equal(c._dolOptManagerSaveFailed, true);
+    assert.equal(controls.disabled, false, '失败后仍可刷新与重试');
+
+    failWrite = 'disabled';
+    assert.equal(await c.dolOptToggleSideMod('C', true), false);
+    assert.ok(c._dolOptModState.sideEnabled.includes('C'), '部分写入后以数据库实际记录校准，不假装整笔回滚');
+    assert.ok(!c._dolOptModState.sideDisabled.includes('C'));
+    await c.dolOptLoadDisabledModInfo([]);
+    assert.equal(c.dolOptGetModInfo('C').bootJson.version, '1', '刚启用但尚未重载的模组应保留安装包资料');
+    failRead = true;
+    assert.equal(await c.dolOptMoveSideMod(0, 'bottom'), false);
+    assert.equal(c._dolOptManagerStateUncertain, true, '恢复读取也失败时必须标明状态未核实');
+    const blockedWrites = writes;
+    await c.dolOptToggleSideMod('B', false);
+    assert.equal(writes, blockedWrites, '状态未知时不得继续覆盖配置');
+
+    failWrite = ''; failRead = false;
+    enabled = ['B', 'A']; disabled = ['C']; zipVersion = '3';
+    await c.initModManage(true);
+    assert.equal(c._dolOptManagerSaveFailed, false);
+    assert.equal(c._dolOptManagerStateUncertain, false);
+    assert.deepEqual([...c._dolOptModState.sideEnabled], enabled, '主动刷新应尊重外部管理器的新顺序');
+    assert.equal(c.dolOptGetModInfo('C').bootJson.version, '3', '主动刷新应更新同名档案');
+    const cachedReads = reads, cachedZipReads = zipReads;
+    await c.initModManage();
+    assert.equal(reads, cachedReads);
+    assert.equal(zipReads, cachedZipReads);
+
+    await c.dolOptHandleAddMod({ files: [{ name: 'C.zip' }], value: 'C.zip' });
+    assert.equal(c.dolOptGetModInfo('C').bootJson.version, '2', '同名导入必须同步元数据缓存');
+    assert.equal(imports, 1);
+    await c.dolOptDeleteSideMod('C');
+    assert.ok(!c._dolOptDisabledModInfo.has('c'), '删除后移除对应缓存');
+    assert.ok(!c._dolOptModState.sideMods.some(item => item.name === 'C'));
+
+    const originalUsed = [{ type: 'BeautyA' }];
+    c.addonBeautySelectorAddon = {
+        typeOrderUsed: originalUsed,
+        getTypeOrder: () => [...originalUsed, { type: 'BeautyB' }],
+        saveOrder: async () => { throw Error('美化写入失败'); }
+    };
+    await c.dolOptLoadBeautyState(false);
+    assert.equal(await c.dolOptToggleBeauty('BeautyB', true), false);
+    assert.equal(c.addonBeautySelectorAddon.typeOrderUsed, originalUsed, '失败时不得先污染美化插件配置');
+    assert.deepEqual([...c._dolOptBeautyState.enabledList.map(item => item.type)], ['BeautyA']);
+    console.log('管理器缓存、并发、失败恢复、导入与删除回归检查通过');
+}
+
 (async () => {
+    await testManagerPersistence();
     const remoteElement = { dataset: { remote: 'https://example.test/data', replace: 'true' }, style: {}, textContent: '' };
     const asApiContext = {
         console,
@@ -344,7 +477,7 @@ context.dolOptOfferReload = message => (reloadOffers++, reloadMessage = message)
     assert.equal(context.dolOptGetModSubtext('UnknownMod', { bootJson: {} }, false), '');
     assert.equal(
         context.dolOptResolveImportedModName(
-            'Dol-Optimization-v1.1.0.4.zip',
+            'Dol-Optimization-v1.1.0.5.zip',
             ['原版优化', 'WardrobeIncrementalExpansion']
         ),
         '原版优化',
@@ -414,6 +547,7 @@ context.dolOptOfferReload = message => (reloadOffers++, reloadMessage = message)
         listSideLoadModNameOnly: async () => ['RepeatMod', 'repeatmod'],
         listSideLoadHiddenModNameOnly: async () => ['OtherMod', 'othermod']
     });
+    await context.dolOptLoadModManageState(true);
     await context.dolOptUpdateGeneralInfo();
     assert.ok(statsEl.innerHTML.includes('<div class="dol-opt-stat-num gold">2</div>'), '已加载模组统计必须去重');
     assert.ok(statsEl.innerHTML.includes('<div class="dol-opt-stat-num green">1</div>'), '已启用模组统计必须去重');
@@ -446,9 +580,9 @@ context.dolOptOfferReload = message => (reloadOffers++, reloadMessage = message)
     assert.ok(container.innerHTML.includes('智能整理将根据需要自动调整MOD的顺序'), '应包含自然流畅的模组管理提示语');
     assert.ok(css.includes('.dol-opt-sticky-toolbar'), '样式表中应包含吸顶工具栏样式');
 
-    // 5. 校验 boot.json 版本号为 1.1.0.4
+    // 5. 校验 boot.json 版本号为 1.1.0.5
     const bootJson = JSON.parse(fs.readFileSync(path.join(__dirname, 'boot.json'), 'utf8'));
-    assert.equal(bootJson.version, '1.1.0.4', 'boot.json 版本号必须为 1.1.0.4');
+    assert.equal(bootJson.version, '1.1.0.5', 'boot.json 版本号必须为 1.1.0.5');
     assert.ok(bootJson.scriptFileList.includes('javascript/dol-mod-market.js'), 'boot.json 必须注册 dol-mod-market.js');
     assert.ok(css.includes('visibility: hidden'), 'Toast 隐藏状态必须设置 visibility: hidden 彻底杜绝底部穿帮');
     assert.ok(css.includes('dol-opt-screenshot-preview'), '样式表必须包含诊断长图移动端预览样式');
@@ -1758,6 +1892,12 @@ context.dolOptOfferReload = message => (reloadOffers++, reloadMessage = message)
     assert.ok(marketScript.includes('getDownloadUrl(asset.downloadUrl, mirrorId)'), '浏览器下载必须让安装计划中的每个包使用当前线路');
     assert.ok(marketScript.includes('正在自动切换至'), '线路连接异常时必须支持跨镜像自动故障转移切换');
 
+    const successfulImporter = context.dolOptHandleAddMod;
+    context.dolOptHandleAddMod = async () => false;
+    assert.equal(await downloadAndInstallMod({ name: '导入失败模组', githubUrl: 'https://github.com/test/testmod' }, 'ghfast', { askRestart: false }), false);
+    assert.equal(JSON.parse(context.localStorage.getItem('dol_opt_market_confirmed_updates_v1') || '{}')['导入失败模组'], undefined, '导入失败不得写入版本确权');
+    context.dolOptHandleAddMod = successfulImporter;
+
     const singlePackageFetch = context.fetch;
     context.fetch = async url => {
         if (url.includes('api.github.com')) {
@@ -1926,6 +2066,10 @@ context.dolOptOfferReload = message => (reloadOffers++, reloadMessage = message)
     assert.ok(switchedPrompt.message.includes('HTTP 429'), '限流必须给出明确原因');
     assert.ok(switchedFetches.some(url => url.includes('/download?url=')), '选择高速专线后必须立即通过新线路重试');
 
+    const cancelTestSetTimeout = context.setTimeout;
+    const cancelTestClearTimeout = context.clearTimeout;
+    context.setTimeout = setTimeout;
+    context.clearTimeout = clearTimeout;
     let packageRequestStarted;
     const packageStarted = new Promise(resolve => { packageRequestStarted = resolve; });
     let cancelPromptShown = false;
@@ -1950,6 +2094,8 @@ context.dolOptOfferReload = message => (reloadOffers++, reloadMessage = message)
     await packageStarted;
     assert.equal(cancelDownload('可取消模组'), true, '下载中必须可以触发 AbortController');
     assert.equal(await cancelledDownload, false);
+    context.setTimeout = cancelTestSetTimeout;
+    context.clearTimeout = cancelTestClearTimeout;
     assert.equal(cancelPromptShown, false, '用户主动取消不得弹出线路故障对话框');
     assert.ok(marketScript.includes('dol-opt-download-cancel'), '下载进度区必须包含取消下载按钮');
     context.fetch = successfulDownloadFetch;
@@ -2290,7 +2436,7 @@ context.dolOptOfferReload = message => (reloadOffers++, reloadMessage = message)
     assert.equal(typeof context.dolOptInitGlobalDragDrop, 'function', '必须导出 dolOptInitGlobalDragDrop 全局拖拽守护函数');
 
     // 14.13 验证 boot.json 版本号基准与脚本注册
-    assert.equal(bootJson.version, '1.1.0.4', 'boot.json 版本号必须为 1.1.0.4');
+    assert.equal(bootJson.version, '1.1.0.5', 'boot.json 版本号必须为 1.1.0.5');
     assert.ok(bootJson.scriptFileList.includes('javascript/dol-mod-market.js'), 'boot.json 必须注册 dol-mod-market.js');
 
     // 14.14 验证按钮长按手势与防二次短按误触
@@ -2369,7 +2515,8 @@ context.dolOptOfferReload = message => (reloadOffers++, reloadMessage = message)
         context.clearTimeout = savedClearTimeout;
     }
 
-    console.log('Dol-Optimization v1.1.0.4 all tests including Cloudflare identity catalog PASSED!');
+    suiteComplete = true;
+    console.log('Dol-Optimization v1.1.0.5 all tests including Cloudflare identity catalog PASSED!');
 })().catch(error => {
     console.error(error);
     process.exitCode = 1;
