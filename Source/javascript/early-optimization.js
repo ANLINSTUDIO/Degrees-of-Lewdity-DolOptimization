@@ -1,3 +1,11 @@
+window.validArray = function(dict) {
+    if (dict instanceof Object) {
+        return dict && Object.keys(dict).length > 0
+    } else {
+        return dict && dict.length > 0
+    }
+}
+
 window.AsAPI = {
     // 用于在宏被调用后执行额外的函数
     onMacro: function(name, func) {
