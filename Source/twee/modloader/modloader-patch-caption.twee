@@ -1,7 +1,0 @@
-			<<overlayReplace "startFeats">>
-		<</button>>
-	</div>
-	<br><br>
-	<<button Mod管理器>>
-		<<overlayReplace "modloader">>
-	<</button>>
