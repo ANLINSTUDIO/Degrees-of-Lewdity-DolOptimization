@@ -467,41 +467,7 @@ DolOptimization = { ...DolOptimization,
 }
 
 // 【1.0.5】叠加服装部件
-DolOptimization = { ...DolOptimization,
-    // 叠穿图层缓存：按 CanvasModel 实例保存上一轮生成的图层。
-    // 不缓存最终画布，只复用原版 Renderer 写在 layer 上的 image/cachedImage 等运行时缓存。
-    wornStackingLayerCaches: new WeakMap(),
-
-    clearLayerRuntimeCache: function(layer) {
-        delete layer.image;
-        delete layer.imageSrc;
-        delete layer.mask;
-        delete layer.cachedMaskSrc;
-        delete layer.cachedImage;
-        delete layer.cachedProcessing;
-    },
-
-    restoreLayerRuntimeCache: function(layer, previousLayer) {
-        // deepCopyLayer(templateLayer) 会把“当前正常穿着衣物”的缓存也复制进来；
-        // 这些缓存不属于叠穿衣物，必须先清掉。
-        DolOptimization.clearLayerRuntimeCache(layer);
-        if (!previousLayer) return;
-
-        // 把上一轮同一叠穿图层的 Renderer 缓存带到新 layer。
-        // Renderer 自己仍会检查 imageSrc/src 与 cachedProcessing；状态改变时会自动 miss 并重算。
-        for (const key of ['image', 'imageSrc', 'mask', 'cachedMaskSrc', 'cachedImage', 'cachedProcessing']) {
-            if (Object.prototype.hasOwnProperty.call(previousLayer, key)) {
-                layer[key] = previousLayer[key];
-            }
-        }
-    },
-
-    getWornStackingLayerCacheKey: function(slot, item, index, accessory) {
-        // index 放进 key：顺序改变时宁可 cache miss，也不要错误复用另一件衣服的缓存。
-        const identity = item?.index ?? item?.variable ?? item?.name ?? index;
-        return `${slot}|${index}|${String(identity)}|${accessory ? 'acc' : 'main'}`;
-    },
-
+DolOptimization = { ...DolOptimization, 
     wornStackingCompile: function(options) {
         // 1. 调用原版编译，得到所有标准图层
         const layerSpecs = DolOptimization.originalCompile.call(this, options);
@@ -513,8 +479,6 @@ DolOptimization = { ...DolOptimization,
         };
 
         const result = [...layerSpecs];
-        const previousCache = DolOptimization.wornStackingLayerCaches.get(this) || new Map();
-        const nextCache = new Map();
 
         // 2. 遍历 V.wornStacking 的每个槽位
         for (const [slot, items] of Object.entries(V.wornStacking)) {
@@ -570,10 +534,6 @@ DolOptimization = { ...DolOptimization,
                 options.worn[slot] = originalWorn;
                 options.filters[filterKey] = originalFilter;
 
-                // 复用上一轮同一叠穿图层的原版 Renderer 缓存。
-                const mainCacheKey = DolOptimization.getWornStackingLayerCacheKey(slot, item, index, false);
-                DolOptimization.restoreLayerRuntimeCache(newLayer, previousCache.get(mainCacheKey));
-                nextCache.set(mainCacheKey, newLayer);
                 result.push(newLayer);
 
                 // ---------- 配件图层处理（如果存在）----------
@@ -611,16 +571,11 @@ DolOptimization = { ...DolOptimization,
                     options.worn[slot] = originalWorn;
                     options.filters[accFilterKey] = originalAccFilter;
 
-                    const accCacheKey = DolOptimization.getWornStackingLayerCacheKey(slot, item, index, true);
-                    DolOptimization.restoreLayerRuntimeCache(newAccLayer, previousCache.get(accCacheKey));
-                    nextCache.set(accCacheKey, newAccLayer);
                     result.push(newAccLayer);
                 }
             });
         }
 
-        // 只保留本轮仍存在的叠穿图层；脱下/换序后的旧缓存可被 GC 回收。
-        DolOptimization.wornStackingLayerCaches.set(this, nextCache);
         return result;
     },
     // wornStackingCompile: function(options) {

@@ -1,20 +1,16 @@
 {
     "name": "原版优化",
-    "version": "1.1.0.2",
+    "version": "1.1.1",
     "styleFileList": [
-        "stylesheet/dol-optimization.css",
-        "stylesheet/modloader-optimization.css"
+        "stylesheet/dol-optimization.css"
     ],
     "scriptFileList": [
         "javascript/AsAPI.js",
-        "javascript/dol-optimization.js",
-        "javascript/modloader-optimization.js",
-        "javascript/dol-mod-market.js"
+        "javascript/dol-optimization.js"
     ],
     "tweeFileList": [
         "twee/settings.twee",
-        "twee/game.twee",
-        "twee/modloader/modloader.twee"
+        "twee/game.twee"
     ],
     "imgFileList": [
         "img/misc/icon/automaticirrigationmachine.gif",
@@ -49,20 +45,7 @@
                     "tip": "【1.1.0】模组管理器入口",
                     "passage": "overlayReplace",
                     "findString": "<<case \"characteristics\">>",
-                    "replaceFile": "twee/modloader/modloader-patch-base.twee"
-                },
-                {
-                    "tip": "【1.1.0】模组管理器入口",
-                    "passage": "Widgets Clothing Caption",
-                    "findString": "\t\t\t<<overlayReplace \"startFeats\">>\n\t\t<</button>>\n\t</div>",
-                    "replaceFile": "twee/modloader/modloader-patch-caption.twee"
-                },
-                {
-                    "tip": "【1.1.0】侧栏模组管理器入口",
-                    "passage": "StoryCaption",
-                    "findRegex": "<<overlayReplace \\\"saves\\\">>\\r?\\n\\s*<</button>>\\r?\\n\\s*</div>",
-                    "regexFlag": "g",
-                    "replaceFile": "twee/modloader/modloader-patch-story-caption.twee"
+                    "replaceFile": "twee/modloader/modloader-patch-base-tip.twee"
                 },
                 {
                     "tip": "【1.0.3】大大大衣柜升级",
