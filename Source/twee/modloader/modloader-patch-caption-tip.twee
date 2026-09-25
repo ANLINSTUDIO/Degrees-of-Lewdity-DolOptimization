@@ -1,0 +1,9 @@
+			<<overlayReplace "startFeats">>
+		<</button>>
+	</div>
+	<<if !window.modSC2DataManager?.getModLoader()?.getModZip("ModHub")>>
+		<br><br>
+		<<button "<div id='modloader-tip'>Mod管理器</div>">>
+			<<run DolOptimization?.openModHubNotice()>>
+		<</button>>
+	<</if>>

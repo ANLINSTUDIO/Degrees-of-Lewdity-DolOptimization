@@ -1,5 +1,3 @@
-window.DolOptimization = {};
-
 DolOptimization.STORAGE_KEY = 'opt';
 
 

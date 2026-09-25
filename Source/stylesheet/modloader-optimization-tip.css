@@ -1,0 +1,53 @@
+button:has(#modloader-tip) {
+    position: relative;
+    overflow: hidden;
+}
+
+/* 斜向30°、自左向右的无限扫光 */
+button:has(#modloader-tip)::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(120deg,
+        transparent 38%,
+        rgba(255, 255, 255, 0.55) 49%,
+        rgba(255, 252, 224, 0.8) 50%,
+        rgba(255, 255, 255, 0.55) 51%,
+        transparent 62%);
+    background-size: 250% 100%;
+    background-repeat: no-repeat;
+    animation: modloader-tip-shine 2.8s ease-in-out infinite;
+    pointer-events: none;
+    opacity: 0.3;
+}
+
+@keyframes modloader-tip-shine {
+    0%   { background-position: 120% 0; }
+    45%  { background-position: -20% 0; }
+    100% { background-position: -20% 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    #modloader-tip::after {
+        content: none;
+    }
+}
+
+/* 【1.1.1】ModHub 迁移提示弹窗 */
+.modloader-tip-letter {
+    line-height: 2;
+    letter-spacing: 0.02em;
+}
+.modloader-tip-letter p {
+    margin: 0 0 0.8em;
+}
+.modloader-tip-letter .modloader-tip-sign {
+    text-align: right;
+    margin-bottom: 0;
+}
+ul.buttons.modloader-tip-actions {
+    display: flex;
+    justify-content: center;
+    gap: 1.5em;
+    margin-top: 1.4em;
+}
