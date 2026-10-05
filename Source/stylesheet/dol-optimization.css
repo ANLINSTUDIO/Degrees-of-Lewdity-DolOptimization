@@ -3,6 +3,11 @@
     grid-template-columns: unset !important
 }
 
+/* 商店搜索框，样式优化 */
+.searchGroup {
+    width: stretch;
+}
+
 /* 原版优化提供 */
 .fromopt {
     position: fixed;
@@ -166,4 +171,349 @@ label:has(> input.macro-checkbox:checked) + #largerWardrobeValue {
 }
 .datestamp::-webkit-scrollbar {
     height: 1px;
+}
+
+/* 【1.1.1】 maplebirch 提示 */
+.dol-opt-modal-backdrop {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background-color: rgba(0, 0, 0, 0.75);
+    backdrop-filter: blur(2px);
+    z-index: 100000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+    box-sizing: border-box;
+    animation: dolOptFadeIn 0.15s ease-out forwards;
+}
+.dol-opt-modal-dialog {
+    position: relative;
+    width: 100%;
+    min-width: 0;
+    max-width: 440px;
+    box-sizing: border-box;
+    background-color: var(--850, #1a1a1a);
+    border: 1px solid var(--600, #444);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.85);
+    border-radius: 4px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    animation: dolOptScaleIn 0.18s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    font-family: inherit;
+    color: #e0e0e0;
+}
+.dol-opt-modal-backdrop.dol-opt-modal-closing {
+    opacity: 0;
+    transition: opacity 0.18s ease-out;
+}
+.dol-opt-modal-backdrop.dol-opt-modal-closing .dol-opt-modal-dialog {
+    transform: scale(0.95);
+    transition: transform 0.18s ease-out;
+}
+@keyframes dolOptFadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+@keyframes dolOptScaleIn {
+    from {
+        opacity: 0;
+        transform: scale(0.92);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+.dol-opt-modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 16px;
+    background-color: var(--900, #111);
+    border-bottom: 1px solid var(--750, #333);
+}
+.dol-opt-modal-title {
+    min-width: 0;
+    font-size: 1.05em;
+    font-weight: bold;
+    letter-spacing: 0.5px;
+    overflow-wrap: anywhere;
+}
+.dol-opt-modal-close {
+    flex-shrink: 0;
+    background: transparent !important;
+    border: none !important;
+    color: var(--400, #888) !important;
+    font-size: 1.4em !important;
+    line-height: 1 !important;
+    padding: 0 4px !important;
+    cursor: pointer !important;
+    transition: color 0.15s ease !important;
+}
+.dol-opt-modal-close:hover {
+    color: #fff !important;
+}
+.dol-opt-modal-body {
+    padding: 20px 18px;
+    font-size: 0.95em;
+    line-height: 1.6;
+    color: #eee;
+    word-break: break-word;
+}
+.dol-opt-modal-message {
+    color: #ddd;
+}
+.dol-opt-modal-select-wrap {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-top: 16px;
+    color: var(--400, #aaa);
+}
+.dol-opt-modal-select {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 7px 9px;
+    background: var(--900, #111);
+    border: 1px solid var(--600, #444);
+    color: var(--000, #eee);
+}
+.dol-opt-modal-body {
+    overflow-y: auto;
+}
+.dol-opt-modal-select-wrap {
+    padding-top: 14px;
+    border-top: 1px solid var(--650, #3c3c3c);
+}
+.dol-opt-modal-select-wrap > span {
+    color: var(--gold, #d4af37);
+    font-weight: 600;
+}
+.dol-opt-modal-footer {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 12px;
+    padding: 12px 16px;
+    background-color: var(--900, #111);
+    border-top: 1px solid var(--750, #333);
+}
+.dol-opt-modal-footer .macro-button {
+    padding: 6px 16px !important;
+    font-size: 0.9em !important;
+    min-width: 80px !important;
+    white-space: nowrap !important;
+    cursor: pointer !important;
+    border-radius: 3px !important;
+}
+.dol-opt-modal-footer .macro-button:disabled {
+    opacity: 0.45;
+    cursor: not-allowed !important;
+    box-shadow: none !important;
+}
+.dol-opt-modal-footer .macro-button {
+    flex: 1 1 0;
+}
+.dol-opt-modal-btn-cancel {
+    background-color: var(--800, #222) !important;
+    border: 1px solid var(--500, #555) !important;
+    color: #ccc !important;
+}
+.dol-opt-modal-btn-cancel:hover {
+    background-color: var(--750, #333) !important;
+    color: #fff !important;
+    border-color: #888 !important;
+}
+@media (max-width: 600px) {
+    .dol-opt-modal-body {
+        padding: 14px 12px;
+    }
+    .dol-opt-modal-footer {
+        gap: 8px;
+        padding: 10px 12px;
+    }
+}
+
+
+/* 【1.1.1】生成的 #next 底部按钮扫光（配合 dol-optimization.js 的 nextButtonRules，命中“继续/离开”等规则时套用） */
+#nextButton {
+    position: fixed;
+    border: 1px solid var(--300);
+    background-color: var(--850);
+    z-index: 299;
+    right: -20px;
+    bottom: 30%;
+}
+#nextButton > a {
+    color: var(--gold);
+    padding: 10px 50px 10px 20px;
+    display: block;
+}
+a.opt-shine {
+    position: relative;
+    overflow: hidden;
+}
+a.opt-shine::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(120deg,
+        transparent 38%,
+        rgba(255, 255, 255, 0.55) 49%,
+        rgba(255, 252, 224, 0.8) 50%,
+        rgba(255, 255, 255, 0.55) 51%,
+        transparent 62%);
+    background-size: 250% 100%;
+    background-repeat: no-repeat;
+    animation: opt-shine-sweep 2.8s ease-in-out infinite;
+    pointer-events: none;
+}
+@keyframes opt-shine-sweep {
+    0%   { background-position: 120% 0; }
+    45%  { background-position: -20% 0; }
+    100% { background-position: -20% 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+    a.opt-shine::after {
+        content: none;
+    }
+}
+
+/* 1.1.1 可用物品 */
+#ConveniencestoreGoods {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+.csTabs {
+    display: flex;
+    gap: 6px;
+}
+.csTab {
+    flex: 1;
+    padding: 6px;
+    text-align: center;
+    cursor: pointer;
+    background-color: var(--850);
+    border: 3px solid var(--700);
+}
+.csTab.is-active {
+    background-color: var(--700);
+}
+/* 柜台是正前方的主视角，放在页签正中间：货架 | 柜台 | 便利店外。只改视觉次序，DOM 索引不变 */
+.csTab:nth-child(1) { order: 2; }
+.csTab:nth-child(2) { order: 1; }
+.csTab:nth-child(3) { order: 3; }
+/* ===== 三张纸片的空间模型 =====
+   把三个售货区想成摆在同一空间里的三张纸片：柜台在正前方原点、正面对着你；
+   货架在你的左手边、同一景深、朝右转 90°（等于左边的墙）；便利店外在你右手边、离你近 250px、同样朝右转 90°。
+   货架与店外朝向完全相同，柜台则与它们垂直——于是：柜台↔货架 要转身 90°，
+   货架↔店外 压根不用转身，只是平移后退、画面不断缩小，与店内实际走位一致。
+   相机 = 你此刻站在哪张纸片前。实现上把「相机位姿取反」整个挂在 .csSpace 上（见下），
+   纸片只写各自恒定的世界位姿，切换时全世界被同一个相机变换刚性带动。
+     柜台↔货架  转身 90° + 平移                    → 旋转+平移
+     柜台↔店外  转身 90° + 后退                    → 旋转+空间缩小
+     货架↔店外  朝向相同＝不转身，只平移后退缩小      → 纯空间缩小
+   反向切换就是同一套表的倒放，自动「反过来同理」。
+   参数 180% / 90° / 250px / perspective 2250px 经推算验证：340~1000px 宽下非当前纸片
+   不会被看到（转过 90° 后正好侧对相机），且任何纸片都不会冲到相机后面（画面不会炸）。
+   注意：.csPanels 是裁切框，自身绝不能加 transform——加了会把可视区一起搬走（一片空白）并撑宽页面。 */
+.csPanels {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    overflow: hidden;
+    perspective: 2250px;
+    container-type: inline-size; /* 让相机位移的 180cqw 能拿到容器宽（translate 的 % 只认元素自身宽） */
+}
+/* 空间容器：preserve-3d 让三张纸片落在同一 3D 空间。
+   .csPanels 因 overflow:hidden 被浏览器强制拍平（flat），裁切必须留在它身上，3D 交给里层这层容器。
+   相机就挂在 .csSpace 自己身上：data-cur 一变，整个世界被同一个变换刚性带动，
+   等于「你转身走到下一个售货区」——所有东西同步联动，不会各动各的。 */
+.csSpace {
+    position: relative;
+    min-width: 0;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    transform-style: preserve-3d;
+    transition: transform 0.55s ease;
+}
+/* 相机位姿 =「相机位姿取反」：cur=1 站到左手边货架前（世界右移一个间距、再右转回 90°），
+   cur=2 站到右手边店外（左移、后退 250px、右转回 90°）；cur=0（柜台）在原点，无需变换。
+   两条规则的旋转量相同（都 -90°）——所以货架↔店外之间不产生任何旋转，只是平移后退。 */
+.csSpace[data-cur="1"] { transform: rotateY(-91deg) translate3d(180cqw, 0, -28vw); }
+.csSpace[data-cur="2"] { transform: rotateY(-90deg) translate3d(-180cqw, 0, -45vw); }
+.ConveniencestoreGoodsClass {
+    grid-area: 1 / 1;
+    min-width: 0; /* 不加会被 canvas 的 width:100% 撑破格子 */
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    transition: transform 0.55s ease, opacity 0.55s ease;
+}
+/* 纸片恒定的世界位姿：柜台在原点正对你；货架在左手边、朝右转 90°；店外在右手边、近 250px、同转 90°。
+   货架与店外朝向相同 → 两者之间只有平移缩放、没有旋转，只是不断缩小。
+   三对切换的差异化全部由相机那两条规则导出（反向=倒放），纸片自身不再参与任何插值。 */
+.csSpace > .ConveniencestoreGoodsClass:nth-child(2) { transform: translate3d(-180%, 0, 28vw) rotateY(90deg); }
+.csSpace > .ConveniencestoreGoodsClass:nth-child(3) { transform: translate3d(180%, 0, 45vw) rotateY(91deg); }
+/* 店外纸片未激活时收进货架身后：货架视角是沿世界 x 轴看的，把纸片沿 x 滑过货架（x=-300%、z=-200px）
+   深度即变负、被不透明的货架面挡住（比 visibility 干净，无瞬隐瞬现）；四个切换的中间帧都推导过，
+   它最多在画面边缘露出几十像素，不会横穿中心。z 取 -200px 而非 45vw 是为了对齐横向偏移、完全藏进货架投影内 */
+.csSpace > .ConveniencestoreGoodsClass:nth-child(1):not(.is-active) {
+    opacity: 0;
+}
+   .csSpace > .ConveniencestoreGoodsClass:nth-child(3):not(.is-active) {
+    /* transform: translate3d(-300%, 0, -200px) rotateY(91deg); */
+    opacity: 0;
+}
+/* 商品列表原地不动，只跟着连动：开始移动即渐隐，移动结束才渐显 */
+.ConveniencestoreGoodsClass > div {
+    padding: 12px;
+    border: 3px solid var(--700);
+    background: var(--850);
+    opacity: 0;
+    transition: opacity 0.2s ease;
+}
+.ConveniencestoreGoodsClass.is-active > div {
+    opacity: 1;
+    transition: opacity 0.25s ease 0.5s; /* 延迟到纸片移动结束时才渐显（渐隐仍走上面那条 0.2s 不延迟） */
+}
+/* 分层合成的商品陈列图：由 JS 绘制进单个 canvas；canvas 是带固有比例的替换元素，width:100% + height:auto 自动等比定高 */
+.csCanvas {
+    display: block;
+    width: 100%;
+    height: auto;
+}
+@media (min-width: 550px) {
+    .ConveniencestoreGoodsClass {
+        flex-direction: row;
+        align-items: flex-start;
+    }
+    .ConveniencestoreGoodsClass > .csCanvas {
+        flex: 0 0 45%;
+        min-width: 0; /* 不加会被自身 width:100% 通过 min-width:auto 撑满整行，把文字挤成一条 */
+    }
+    .ConveniencestoreGoodsClass > div:last-child {
+        flex: 1;
+        min-width: 0;
+    }
+}
+.ConveniencestoreGood {
+    border: 1px solid var(--700);
+    padding: 5px;
+}
+
+.usableitems {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    padding-top: 1rem;
+}
+.usableitems > div {
+    border: 1px solid var(--700);
+    padding: 5px;
 }

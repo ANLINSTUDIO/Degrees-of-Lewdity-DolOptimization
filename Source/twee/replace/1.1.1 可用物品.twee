@@ -1,0 +1,6 @@
+            <<toggleTab>>
+            <<replace #customOverlayContent>><<journal>><</replace>>
+        <</button>>
+        <<button "可用物品">>
+			<<toggleTab>>
+			<<replace #customOverlayContent>><<usableitems>><</replace>>

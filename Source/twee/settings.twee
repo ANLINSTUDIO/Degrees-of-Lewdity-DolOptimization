@@ -40,7 +40,7 @@
 		<!-- 模组标题与信息 -->
 		<h3>原版优化 <<print window.modSC2DataManager?.getModLoader()?.getModZip("原版优化")?.modInfo?.version ?? "未知版本">></h3>
 		<div class="m-2">
-			<b class="gold">Needmeet 遇欲 & JohnLiao</b> 呈现
+			<b class="gold">Needmeet 遇欲</b> 呈现
 		</div>
 
 		<div class="m-2">
@@ -115,29 +115,73 @@
 			<</button>>
 			<img src="guide/大大大衣柜升级.png">
 		</div>
-		<div class="optimization"> <<if $passage is 'Start'>><div class="disabled"/><</if>>
+		<div class="optimization">
 			<label>
-				<<checkbox "$options.DolOptimization.WornStacking" false true autocheck>>
+				<<checkbox "$options.opt.WornStacking" false true autocheck>>
 				叠加服装部件
 			</label><br>
-			<span class="red">注意: 功能是实验性。大部分的衣物可能不太支持，目前所知内衣、上装、手饰、手持物品均无法进行叠加。可能造成面板报错，谨慎开启。</span>
+			<label>
+				<<checkbox "$options.opt.WornStackingTraits" false true autocheck>>
+				启用特质叠加
+			</label><br>
+			<label>
+				<<checkbox "$options.opt.WornStackingWarmth" false true autocheck>>
+				启用保暖叠加
+			</label><br>
+			<small>特质叠加：叠加服装的特质和暴露度会与主服装一起生效；保暖叠加：叠加服装的保暖值和主服装相加。</small><br>
+			<small class="red">注意: 功能是实验性。个别特殊衣物可能仍无法显示，谨慎开启。</small>
 			<img src="guide/叠加服装部件.png">
 			<div class="alist">
 				<a target="_blank" class="link-external" href='https://tieba.baidu.com/home/main?id=tb.1.cd3433f7.YrE8v7vAxsuld1PmIu9_Ww%3Ft%3D1778860911&fr=pb' tabindex="0">「兄弟我仨人」</a>
 				<a target="_blank" class="link-external" href='https://tieba.baidu.com/home/main?id=tb.1.c5ee8bec.KPmrsbwyRq56_tdZjH_9Nw%3Ft%3D1778860919&fr=pb' tabindex="0">「小鼹鼠.」</a>
 			</div>
 		</div>
-		<div class="optimization"> <<if $passage is 'Start'>><div class="disabled"/><</if>>
+		<!-- <div class="optimization"> <<if $passage is 'Start'>><div class="disabled"/><</if>>
+			棒棒糖美化<br>
+			<small>不同美化包（原版 / Goose）嘴部位置不同，可切换棒棒糖贴图并用 X/Y 偏移微调贴合位置。贴图命名规则：full-美化名.png。</small><br>
+			美化类型：<b><span id="lolloStyle"><<print ($options.DolOptimization.LollipopStyle ?? "") === "-goose" ? "Goose" : "原版">></span></b>
+			<<link "[切换]">>
+				<<replace "#lolloStyle">><<print DolOptimization?.lollipopStyleNext()>><</replace>>
+			<</link>><br>
+			X 偏移：<b><span id="lolloX"><<print $options.DolOptimization.LollipopX ?? 0>></span></b>px
+			<<link "[-]">>
+				<<replace "#lolloX">><<print DolOptimization?.lollipopOffset("x", -5)>><</replace>>
+			<</link>>
+			<<link "[+]">>
+				<<replace "#lolloX">><<print DolOptimization?.lollipopOffset("x", 5)>><</replace>>
+			<</link>>
+			　Y 偏移：<b><span id="lolloY"><<print $options.DolOptimization.LollipopY ?? 0>></span></b>px
+			<<link "[-]">>
+				<<replace "#lolloY">><<print DolOptimization?.lollipopOffset("y", -5)>><</replace>>
+			<</link>>
+			<<link "[+]">>
+				<<replace "#lolloY">><<print DolOptimization?.lollipopOffset("y", 5)>><</replace>>
+			<</link>><br>
+			<span class="red">注意: 负值向左/上移动、正值向右/下移动；切换后贴图消失说明当前美化包缺少按命名规则命名的贴图。</span>
+		</div> -->
+		<div class="optimization">
 			园艺大师 相关设置<br>
 			<label>
-				<<checkbox "$options.DolOptimization.ShowWaterState" false true autocheck>>
+				<<checkbox "$options.opt.ShowWaterState" false true autocheck>>
 				显示孤儿院窗外植圃浇水状态
 			</label><br>
 			<label>
-				<<checkbox "$options.DolOptimization.ShowProcess" false true autocheck>>
+				<<checkbox "$options.opt.ShowProcess" false true autocheck>>
 				显示植圃生长进度
 			</label><br>
 			<img src="guide/园艺大师.png">
+		</div>
+		<div class="optimization">
+			快速继续<br>
+			<small>使用下方关键词匹配正文中的链接，并生成镜像的“快速继续”按钮。</small><br>
+			<label>
+				<<print '<input type="checkbox" tabindex="0" class="macro-checkbox" onchange="DolOptimization.nextButtonToggle(this.checked)"'+(V.options.opt.NextButton === false ? "" : " checked")+'>'>>
+				启用快速继续
+			</label><br>
+			按钮离底部：<input type="number" min="0" max="100" @value="$options.opt.NextButtonBottom ?? 30" onchange="DolOptimization.nextButtonBottom(this)"> %<br>
+			匹配关键词（每行一个，靠前的优先匹配）：<br>
+			<textarea rows="5" style="width: stretch; min-width: auto;" onchange="DolOptimization.nextButtonRulesEdit(this)"><<print $options.opt.NextButtonRules.join("\n")>></textarea><br>
+			<img src="guide/快速继续.png">
 		</div>
 	</div>
 	<div class="settingsGrid">
@@ -166,16 +210,6 @@
 			<a target="_blank" class="link-external" href='https://tieba.baidu.com/home/main?id=tb.1.1003b7ad.5MZbTG9s2a-wxZyCKtsxCw%3Ft%3D1779616769&fr=pb' tabindex="0">「好雪本気」</a>
 		</div>
 	</div>
-	<!-- <div class="settingsGrid">
-		<div class="settingsToggleItem">
-			<input type="button" value="浏览器全屏" onclick='DolOptimization.toggleFullScreen()'/>
-			&nbsp;&nbsp;
-			<label>
-				<<checkbox "$options.DolOptimization.AutoFull" false true autocheck>>
-				自动全屏
-			</label>
-		</div>
-	</div> -->
 	<div style="text-align: center; width: 100%;">如果你也有一些很小的<span class="def">关于原版小优化</span>的建议，欢迎在<a target="_blank" class="link-external" href="https://tieba.baidu.com/p/10567790315?fr=personpage" tabindex="0">发布贴</a>下面留言。</div>
 	<br><br>
 <</widget>>

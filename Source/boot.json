@@ -1,33 +1,61 @@
 {
     "name": "原版优化",
-    "version": "1.1.0.6",
+    "version": "1.1.1",
     "styleFileList": [
         "stylesheet/dol-optimization.css",
         "stylesheet/modloader-optimization-tip.css"
     ],
     "scriptFileList": [
-        "javascript/dol-optimization.js",
+        "javascript/opt-vars.js",
+        "javascript/opt-tools.js",
+        "javascript/opt-inject.js",
+        "javascript/opt-main.js",
+        "javascript/opt-main-onframe.js",
         "javascript/modloader-optimization-tip.js"
     ],
     "scriptFileList_inject_early": [
-        "javascript/early-optimization.js"
+        "javascript/opt-early-inject.js"
     ],
     "tweeFileList": [
         "twee/settings.twee",
         "twee/game.twee"
     ],
     "imgFileList": [
+        "img/clothes/face/lollipop/full-goose.png",
+        "img/clothes/face/lollipop/full.png",
+        "img/clothes/face/lollipop/lollipop.psd",
         "img/misc/icon/automaticirrigationmachine.gif",
         "img/misc/icon/automaticirrigationmachine.png",
+        "img/misc/icon/cigarette.png",
+        "img/misc/icon/clothes/lollipop.png",
         "img/misc/icon/convenience-store.png",
+        "img/misc/icon/energydrink.png",
         "img/misc/icon/fertiliserripening.png",
+        "img/misc/icon/lollipop.png",
         "img/misc/icon/seeds.png",
+        "img/ui/conveniencestore/counter-cigarette.png",
+        "img/ui/conveniencestore/counter-condom.png",
+        "img/ui/conveniencestore/counter-cover.png",
+        "img/ui/conveniencestore/counter.png",
+        "img/ui/conveniencestore/counter.psd",
+        "img/ui/conveniencestore/foodstuff-apple.png",
+        "img/ui/conveniencestore/foodstuff-cover.png",
+        "img/ui/conveniencestore/foodstuff-egg.png",
+        "img/ui/conveniencestore/foodstuff-orange.png",
+        "img/ui/conveniencestore/foodstuff-tomato.png",
+        "img/ui/conveniencestore/foodstuff.png",
+        "img/ui/conveniencestore/foodstuff.psd",
+        "img/ui/conveniencestore/shelf-cover.png",
+        "img/ui/conveniencestore/shelf-energydrink.png",
+        "img/ui/conveniencestore/shelf.png",
+        "img/ui/conveniencestore/shelf.psd",
         "guide/opt-tip.png",
         "guide/“打开关闭导航栏”的黑块箭头.png",
         "guide/叠加服装部件.png",
         "guide/园艺大师.png",
         "guide/处女膜修复.png",
         "guide/大大大衣柜升级.png",
+        "guide/快速继续.png",
         "guide/理发店售卖头发.png",
         "guide/自定义字体.png",
         "guide/衣柜容量自定义.png"
@@ -38,13 +66,6 @@
             "addonName": "TweeReplacerAddon",
             "modVersion": "^1.0.0",
             "params": [
-                {
-                    "tip": "设置",
-                    "passage": "overlayReplace",
-                    "findRegex": "<<optionsinformation>><<\\/replace>>[\\s\\S]*?<<\\/button>>",
-                    "regexFlag": "g",
-                    "replace": "<<optionsinformation>><</replace>>\n\t\t<</button>><<doloptimizationModTab>>"
-                },
                 {
                     "tip": "【1.1.0.6】侧栏模组管理器入口提示",
                     "passage": "StoryCaption",
@@ -57,6 +78,13 @@
                     "passage": "Widgets Clothing Caption",
                     "findString": "\t\t\t<<overlayReplace \"startFeats\">>\n\t\t<</button>>\n\t</div>",
                     "replaceFile": "twee/modloader/modloader-patch-caption-tip.twee"
+                },
+                {
+                    "tip": "设置",
+                    "passage": "overlayReplace",
+                    "findRegex": "<<optionsinformation>><<\\/replace>>[\\s\\S]*?<<\\/button>>",
+                    "regexFlag": "g",
+                    "replace": "<<optionsinformation>><</replace>>\n\t\t<</button>><<doloptimizationModTab>>"
                 },
                 {
                     "tip": "【1.0.3】大大大衣柜升级",
@@ -81,60 +109,6 @@
                     "passage": "Widgets Journal",
                     "findString": "\t\t\t<<if $avery_mansion>>/* Is Avery paying for the PC? */",
                     "replaceFile": "twee/replace/1.0.4 处女膜破坏日志时效性.twee"
-                },
-                {
-                    "tip": "【1.0.5】叠加服装部件 衣柜",
-                    "passage": "Widgets Wardrobe",
-                    "findString": "\t\t<<if $worn[_wardrobe_list].name isnot \"naked\">>",
-                    "replaceFile": "twee/replace/叠加服装部件衣柜.twee"
-                },
-                {
-                    "tip": "【1.0.5】叠加服装部件 衣柜链接",
-                    "passage": "Widgets Wardrobe",
-                    "findString": "\t\t\t\t<<set V[_wear] = _args[1]>>",
-                    "replaceFile": "twee/replace/叠加服装部件衣柜链接.twee"
-                },
-                {
-                    "tip": "【1.0.6】叠加服装部件 套装保存",
-                    "passage": "Widgets Wardrobe",
-                    "findString": "\t\t\t\tgenitals: clone($worn.genitals.name),",
-                    "replaceFile": "twee/replace/叠加服装部件套装保存.twee"
-                },
-                {
-                    "tip": "【1.0.6】叠加服装部件 套装修改",
-                    "passage": "Widgets Outfits",
-                    "findString": "\t\t<<set _outfit to $outfit[$wear_outfit]>>",
-                    "replaceFile": "twee/replace/叠加服装部件套装修改.twee"
-                },
-                {
-                    "tip": "【1.0.6】叠加服装部件 套装载入",
-                    "passage": "Widgets Outfits",
-                    "findString": "\t\t<<if $outfit[$wear_outfit].hairStyle>>",
-                    "replaceFile": "twee/replace/叠加服装部件套装载入.twee"
-                },
-                {
-                    "tip": "【1.0.7】叠加服装部件 全部脱下",
-                    "passage": "Widgets Clothing",
-                    "findString": "\t<<set $_location to _args[0]>>\n\t<<for $_slot range setup.clothingLayer.all>>",
-                    "replace": "\t<<set $_location to _args[0]>>\n\t<<for $_slot range setup.clothingLayer.all>>\n\t<<run DolOptimization?.wornStackingRemoveAll()>>"
-                },
-                {
-                    "tip": "【1.0.7】叠加服装部件 全部脱下",
-                    "passage": "Widgets Clothing",
-                    "findString": "\t<<set $_location to _args[0]>>\n\t<<for $_slot range setup.clothingLayer.all.except(_args[1])>>",
-                    "replace": "\t<<set $_location to _args[0]>>\n\t<<for $_slot range setup.clothingLayer.all.except(_args[1])>>\n\t<<run DolOptimization?.wornStackingRemoveAll()>>"
-                },
-                {
-                    "tip": "【1.0.7】叠加服装部件 区域进入脱下",
-                    "passage": "Widgets Clothing",
-                    "findString": "\t\t<<if $_cursedPrevent isnot true and _strip_restrict isnot 1 and $worn[_undressSlot].cursed isnot 1>>",
-                    "replace": "\t\t<<run DolOptimization?.wornStackingStore(_args[0])>>\n\t\t<<if $_cursedPrevent isnot true and _strip_restrict isnot 1 and $worn[_undressSlot].cursed isnot 1>>"
-                },
-                {
-                    "tip": "【1.0.7】叠加服装部件 区域脱离装备",
-                    "passage": "Widgets Clothing",
-                    "findString": "\t<<set _store_temp to _args[0]>>",
-                    "replace": "\t<<run DolOptimization?.wornStackingRestore(_args[0])>>\n\t<<set _store_temp to _args[0]>>"
                 },
                 {
                     "tip": "【1.0.6】理发店售卖头发",
@@ -224,15 +198,88 @@
                     "tip": "【1.0.8】存档优化",
                     "passage": "overlayReplace",
                     "findString": "<<replace #customOverlayContent>><<saves>><</replace>>",
-                    "replace": "<<replace #customOverlayContent>><<saves>><</replace>><<run setTimeout(() => DolOptimization?.initsave(), DolOptimization.initsavetime??500)>>",
+                    "replace": "<<replace #customOverlayContent>><<saves>><</replace>><<run setTimeout(() => window.DolOptimization?.initsave(), DolOptimization.initsavetime??500)>>",
                     "all": true
                 },
                 {
                     "tip": "【1.0.9】遇欲便利店",
                     "passage": "Domus Street",
                     "findString": "|Orphanage]]>><<pass 1>><</link>>",
-                    "replace": "|Orphanage]]>><<pass 1>><</link>>",
-                    "todo": "|Orphanage]]>><<pass 1>><</link>>\n\t\t\t<br>\n\t\t\t<<icon 'convenience-store.png'>><<link [[便利店 (0:01)|Conveniencestore]]>><<pass 1>><<unset $phase>><</link>>"
+                    "replace": "|Orphanage]]>><<pass 1>><</link>>\n\t\t\t<br>\n\t\t\t<<icon 'convenience-store.png'>><<link [[便利店 (0:01)|Conveniencestore]]>><<pass 1>><<unset $phase>><</link>>"
+                },
+                {
+                    "tip": "【1.1.1】可用物品",
+                    "passage": "overlayReplace",
+                    "findString": "\t\t\t<<toggleTab>>\n\t\t\t<<replace #customOverlayContent>><<journal>><</replace>>",
+                    "replaceFile": "twee/replace/1.1.1 可用物品.twee",
+                    "all": true
+                },
+                {
+                    "tip": "【1.0.5】叠加服装部件 衣柜",
+                    "passage": "Widgets Wardrobe",
+                    "findString": "\t\t<<if $worn[_wardrobe_list].name isnot \"naked\">>",
+                    "replaceFile": "twee/replace/叠加服装部件衣柜.twee"
+                },
+                {
+                    "tip": "【1.0.5】叠加服装部件 衣柜链接",
+                    "passage": "Widgets Wardrobe",
+                    "findString": "\t\t\t\t<<set V[_wear] = _args[1]>>",
+                    "replaceFile": "twee/replace/叠加服装部件衣柜链接.twee"
+                },
+                {
+                    "tip": "【1.0.6】叠加服装部件 套装保存",
+                    "passage": "Widgets Wardrobe",
+                    "findString": "\t\t\t\tgenitals: clone($worn.genitals.name),",
+                    "replaceFile": "twee/replace/叠加服装部件套装保存.twee"
+                },
+                {
+                    "tip": "【1.0.6】叠加服装部件 套装修改",
+                    "passage": "Widgets Outfits",
+                    "findString": "\t\t<<set _outfit to $outfit[$wear_outfit]>>",
+                    "replaceFile": "twee/replace/叠加服装部件套装修改.twee"
+                },
+                {
+                    "tip": "【1.0.6】叠加服装部件 套装载入",
+                    "passage": "Widgets Outfits",
+                    "findString": "\t\t<<if $outfit[$wear_outfit].hairStyle>>",
+                    "replaceFile": "twee/replace/叠加服装部件套装载入.twee"
+                },
+                {
+                    "tip": "【1.0.7】叠加服装部件 全部脱下",
+                    "passage": "Widgets Clothing",
+                    "findString": "\t<<set $_location to _args[0]>>\n\t<<for $_slot range setup.clothingLayer.all>>",
+                    "replace": "\t<<set $_location to _args[0]>>\n\t<<for $_slot range setup.clothingLayer.all>>\n\t<<run window.DolOptimization?.wornStackingRemoveAll()>>"
+                },
+                {
+                    "tip": "【1.0.7】叠加服装部件 全部脱下",
+                    "passage": "Widgets Clothing",
+                    "findString": "\t<<set $_location to _args[0]>>\n\t<<for $_slot range setup.clothingLayer.all.except(_args[1])>>",
+                    "replace": "\t<<set $_location to _args[0]>>\n\t<<for $_slot range setup.clothingLayer.all.except(_args[1])>>\n\t<<run window.DolOptimization?.wornStackingRemoveAll()>>"
+                },
+                {
+                    "tip": "【1.0.7】叠加服装部件 区域进入脱下",
+                    "passage": "Widgets Clothing",
+                    "findString": "\t\t<<if $_cursedPrevent isnot true and _strip_restrict isnot 1 and $worn[_undressSlot].cursed isnot 1>>",
+                    "replace": "\t\t<<run window.DolOptimization?.wornStackingStore(_args[0])>>\n\t\t<<if $_cursedPrevent isnot true and _strip_restrict isnot 1 and $worn[_undressSlot].cursed isnot 1>>"
+                },
+                {
+                    "tip": "【1.0.7】叠加服装部件 区域脱离装备",
+                    "passage": "Widgets Clothing",
+                    "findString": "\t<<set _store_temp to _args[0]>>",
+                    "replace": "\t<<run window.DolOptimization?.wornStackingRestore(_args[0])>>\n\t<<set _store_temp to _args[0]>>"
+                },
+                {
+                    "tip": "【1.1.1】叠加服装部件 侧栏即时刷新",
+                    "passage": "Widgets Wardrobe",
+                    "findString": "<<widget \"updatewardrobe\">>",
+                    "replace": "<<widget \"updatewardrobe\">>\n\t<<run window.DolOptimization?.wornStackingApplyStats()>>"
+                },
+                {
+                    "tip": "【1.1.1】叠加服装部件 遮掩名称取叠加衣物",
+                    "passage": "Widgets Clothing caption text",
+                    "findRegex": "<<faceintegrity>>\\s*\\$worn\\.face\\.(?:name|cn_name_cap)",
+                    "regexFlag": "g",
+                    "replace": "<<print DolOptimization.stackedTraitName(\"face\", \"mask\")>>"
                 }
             ]
         },
@@ -243,16 +290,10 @@
             "params": {
                 "js": [
                     {
-                        "tip": "【1.0.6】生发喷雾增加发质",
-                        "fileName": "time.js",
-                        "from": "count += V.sexStats.pills.pills[\"Hair Growth Formula\"].doseTaken ? 1 : 0;",
-                        "to": "count += V.sexStats.pills.pills[\"Hair Growth Formula\"].doseTaken ? 1 : 0;\nV.hairtexture = Math.clamp(V.hairtexture ? V.hairtexture + 0.05 : 50 + 0.05, 0, 100)"
-                    },
-                    {
-                        "tip": "【1.0.7】每日自动灌溉",
-                        "fileName": "ingame.js",
-                        "from": "\t\t\tif (plot.stage >= 1 && (plot.water === 1 || plot.bed === \"water\")) {",
-                        "to": "\t\t\tif (plot.stage >= 1 && (plot.water === 1 || plot.bed === \"water\" || DolOptimization?.autoIrrigator(location, plot))) {"
+                        "tip": "【1.1.1】脸部服装注册：棒棒糖",
+                        "fileName": "clothing-face.js",
+                        "from": "setup.moddedClothes.face = [];",
+                        "to": "setup.moddedClothes.face = [\n\t\tnew ClothesItem({\n\t\t\tslot: \"face\", name: \"lollipop\", name_cap: \"lollipop\", cn_name_cap: \"棒棒糖\", variable: \"lollipop\",\n\t\t\tstate: 0, state_base: 0, integrity: 5, integrity_max: 5, fabric_strength: 1,\n\t\t\treveal: 1, word: \"a\", plural: 0, colour: 0, colour_options: [], colour_combat: 0,\n\t\t\ttype: [\"normal\"], gender: \"n\", warmth: 0, cost: 200,\n\t\t\tdescription: \"含在嘴里甜甜的棒棒糖。\",\n\t\t\tshop: [], accessory: 0, accessory_colour: 0, accessory_colour_options: [],\n\t\t\taltposition: \"none\", altdisabled: [], cursed: 0, location: 0,\n\t\t\ticonFile: \"lollipop.png\", accIcon: 0, modder: \"DolOptimization\"\n\t\t}),\n\t];"
                     }
                 ]
             }

@@ -3,8 +3,8 @@ button:has(#modloader-tip) {
     overflow: hidden;
 }
 
-/* 斜向30°、自左向右的无限扫光 */
-button:has(#modloader-tip)::after {
+/* 【1.1.1】30°斜向自左向右的无限扫光 —— 侧栏入口按钮专用（keyframes 共用 dol-optimization.css 里的 opt-shine-sweep） */
+#modloader-tip::after {
     content: "";
     position: absolute;
     inset: 0;
@@ -16,15 +16,8 @@ button:has(#modloader-tip)::after {
         transparent 62%);
     background-size: 250% 100%;
     background-repeat: no-repeat;
-    animation: modloader-tip-shine 2.8s ease-in-out infinite;
+    animation: opt-shine-sweep 2.8s ease-in-out infinite;
     pointer-events: none;
-    opacity: 0.3;
-}
-
-@keyframes modloader-tip-shine {
-    0%   { background-position: 120% 0; }
-    45%  { background-position: -20% 0; }
-    100% { background-position: -20% 0; }
 }
 
 @media (prefers-reduced-motion: reduce) {

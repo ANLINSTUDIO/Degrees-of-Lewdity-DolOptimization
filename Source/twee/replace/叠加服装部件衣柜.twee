@@ -2,8 +2,10 @@
 			<<set $wornStacking[_wardrobe_list] to []>>
 		<</if>>
 		叠加装备: <br>
-		<<set _allowStacking to !(["upper", "under_upper", "hands", "handheld"].includes(_wardrobe_list))>>
-		<<if $options.DolOptimization.WornStacking>>
+
+		<!-- "upper", "under_upper", "hands", "handheld" -->
+		<<set _allowStacking to !([].includes(_wardrobe_list))>>
+		<<if $options.DolOptimization?.WornStacking>>
 			<<if $wornStacking[_wardrobe_list].length > 0>>
 				<<for _i to 0; _i < $wornStacking[_wardrobe_list].length; _i++>>
 					<<set _item to $wornStacking[_wardrobe_list][_i]>>
@@ -16,12 +18,24 @@
 					<div class="wardrobeItem wardrobe-action no-numberify">
 						<<clothingicon _item _wardrobe_list>>
 
-						<<capture _item>>
+						<<capture _item _i>>
 							<<set _name to _itemData.cn_name_cap??_itemData.name_cap>>
 							<<link _name>>
-								<<run DolOptimization.wornStackingRemove(_item.index)>>
+								<<run DolOptimization.wornStackingRemove(_item.index, _wardrobe_list)>>
 								<<updatewardrobe undefined undefined>>
 							<</link>>
+							<<if _i gt 0 or $worn[_wardrobe_list].index gt 0>>
+								<<link " ◀">>
+									<<run DolOptimization.wornStackingMove(_i, -1, _wardrobe_list)>>
+									<<updatewardrobe undefined undefined>>
+								<</link>>
+							<</if>>
+							<<if _i lt $wornStacking[_wardrobe_list].length - 1>>
+								<<link " ▶">>
+									<<run DolOptimization.wornStackingMove(_i, 1, _wardrobe_list)>>
+									<<updatewardrobe undefined undefined>>
+								<</link>>
+							<</if>>
 						<</capture>>
 
 						<<if _item.gender is "m">>
@@ -78,12 +92,12 @@
 						<</if>>
 					</div>
 				<</for>><br>
-				<<if _allowStacking>>单击上方服装以<span class="red">卸下叠加服装</span>。<</if>>
+				<<if _allowStacking>>单击上方服装以<span class="red">卸下叠加服装</span>，◀▶调整叠加层级。<</if>>
 			<<else>>
 				<<if _allowStacking>>未装备叠加服装部件。<br><</if>>
 			<</if>>
 			<<if _allowStacking>>
-				单击下方服装以作为<<if $worn[_wardrobe_list].index is 0>><span class="green">主要装备</span><<else>><span class="purple">叠加</span>装备，要装备主要服装请点击"脱掉"按钮<</if>>。叠加服装部件不会叠加属性。
+				单击下方服装以作为<<if $worn[_wardrobe_list].index is 0>><span class="green">主要装备</span><<else>><span class="purple">叠加</span>装备，要装备主要服装请点击"脱掉"按钮<</if>>。
 			<<else>>
 				<span class="red">此服装部位暂不支持叠加，敬请期待后续更新。</span>
 			<</if>>

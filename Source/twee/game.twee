@@ -185,16 +185,16 @@
 
 :: ======= 快速查看花园浇水 ====== [widget]
 <<widget "checkgardenwatered">>
-	<br>
-	<<if $options.DolOptimization.ShowWaterState>>
+	<<if DolOptimization.data.ShowWaterState>>
 		<<set _water_needed to 0>>
 		<<set _plotsHere to $plots["garden"]>>
 		<<if _plotsHere>>
+			<br>
 			<<for _plantbed range _plotsHere>>
 				<<if Weather.precipitation is "rain">>
 					<<set _plantbed.water to 1>>    <!-- 下雨时自动淋湿 -->
 					<<set _water_needed to 2>>
-				<<elseif DolOptimization?.autoIrrigator("garden", _plantbed)>>
+				<<elseif window.DolOptimization?.autoIrrigator("garden", _plantbed)>>
 				<<elseif _plantbed.stage isnot 0 and _plantbed.water isnot 1>>
 					<<set _water_needed to 1>>
 					<<break>>
@@ -303,11 +303,250 @@
 
 
 :: ======= 遇欲便利店 ======= [widget]
-<<widget "ConveniencestoreGoods">>
-	
+<<widget "buyitem">>
+	<<if V[_args[0]] is undefined>>
+		<<set V[_args[0]] to 0>>
+	<</if>>
+	<<set V[_args[0]] += _args[1]>>
 <</widget>>
-:: Conveniencestore
+<<widget "ConveniencestoreGoodItem">>
+	<!-- <<ConveniencestoreGoodItem { icon: "图标执行段", name: "商品名", owned: 已拥有实参, price: 价格, per: 每售卖数量(数字或描述文本), inventory: 每日库存, apply: "售卖执行段", color: "默认语段颜色", unsable: true }>> -->
+	<div class="ConveniencestoreGood">
+		<<set _per to 1>>
+		<<if $daily.conveniencestoregoods is undefined>>
+			<<set $daily.conveniencestoregoods to {}>>
+		<</if>>
+		<<if $daily.conveniencestoregoods[_args[0].name] is undefined>>
+			<<set $daily.conveniencestoregoods[_args[0].name] to _args[0].inventory>>
+		<</if>>
+		<<set _inventory to $daily.conveniencestoregoods[_args[0].name]>>
 
+		<<print _args[0].icon>>
+		_args[0].name
+		<<if typeof _args[0].per is "number">>
+			<<print '×'+_args[0].per>>
+			<<set _per to _args[0].per>>
+		<<elseif typeof _args[0].per is "string">>
+			<<print _args[0].per>>
+		<</if>>
+		| 已拥有:<<print _args[0].owned??"0">> | <span class="gold">￡_args[0].price</span>
+
+		<span style="word-break: keep-all;">
+			<<if _inventory lt _per>>
+				<span class="red">库存不足</span>
+			<<else>>
+				<span class="gold">库存:_inventory</span>
+			<</if>>
+		</span>
+		<<if $money lt _args[0].price*100>>
+			| <span class="red">支付不起</span>
+		<<elseif _inventory lt _per>>
+		<<else>>
+			| <<capture _per>>
+				<<link [[购买|$passage]]>>
+					<<set $daily.conveniencestoregoods[_args[0].name] -= _per>>
+					<<set _default to _args[0].color?[_args[0].icon, _per, _args[0]]:undefined>>
+					<<set $conveniencestoregoodtobuy to [_args[0].name, _args[0].price*100, _args[0].apply, _default]>>
+				<</link>>
+			<</capture>>
+		<</if>>
+	</div>
+<</widget>>
+<<widget "ConveniencestoreGoodsImage">>
+	<!-- 按每日库存把商品分层绘制到单个 canvas（crop 为 2048 画布内可见区左上角，canvas 为可见区尺寸）。绘制逻辑在 javascript/dol-optimization.js 的 conveniencestoreGoodsImage -->
+	<!-- 槽位只给最内/最外两排的左右端点，中间排由双线性插值生成，便于换商品或加品牌时直接复用同一槽位名 -->
+	<!-- <<ConveniencestoreGoodsImage {base: "底图", cover: "玻璃罩", crop: [x, y], canvas: [宽, 高], grids: {"槽位名": {inner: [左端点, 右端点], outer: [左端点, 右端点], cols: 列数, rows: 排数, levels: 层数, levelStep: [x, y]}}, goods: {"商品名": {sprite: "精灵图", per: 每个精灵代表的库存单位数, grid: "槽位名"}}}。per 只在精灵与库存不同单位时不为 1（避孕套精灵以盒为单位、库存以个为单位，1 盒=2 个 → per 2）；与 ConveniencestoreGoodItem 的 per（一次购买数量）含义不同，两者不要混用。 -->
+	<canvas class="csCanvas" @id="'cs_' + _args[0].base" @width="_args[0].canvas[0]" @height="_args[0].canvas[1]"></canvas>
+	<<run window.DolOptimization?.conveniencestoreGoodsImage(_args[0])>>
+<</widget>>
+<<widget "ConveniencestoreGoodsApply">>
+	<<set $phase to "buy">>
+	<<if $conveniencestoregoodtobuy>>
+		<<if $money gte $conveniencestoregoodtobuy[1]>>
+			<<print '<<money -'+$conveniencestoregoodtobuy[1]+'>>'>>
+			“给，这些是你的，要收好它们呀，欢迎下次光临！”遇欲将装了$conveniencestoregoodtobuy[0]的一个塑料袋递给你。
+			<<print $conveniencestoregoodtobuy[2]>>
+			<<if $conveniencestoregoodtobuy[3] isnot undefined>>
+				<<note '+ $conveniencestoregoodtobuy[3][1] $conveniencestoregoodtobuy[0]' $conveniencestoregoodtobuy[3][2].color>>
+				<<print $conveniencestoregoodtobuy[3][0]>>
+				<<if $conveniencestoregoodtobuy[3][2].unsable>>
+					<small class="black">前往 日志>可用物品 以使用</small>
+				<</if>>
+			<</if>>
+			<br><br>
+		<<else>>
+			<span class="red">你支付不起$conveniencestoregoodtobuy[0]的价格。</span><br><br>
+		<</if>>
+	<</if>>
+	<<unset $conveniencestoregoodtobuy>>
+<</widget>>
+
+<<widget "ConveniencestoreGoods">> <div id="ConveniencestoreGoods">
+	<<set _tab to window.DolOptimization?._csTab ?? 0>>
+	<div class="csTabs">
+		<div @class="'csTab' + (_tab === 0 ? ' is-active' : '')">柜台</div>
+		<div @class="'csTab' + (_tab === 1 ? ' is-active' : '')">货架</div>
+		<div @class="'csTab' + (_tab === 2 ? ' is-active' : '')">便利店外</div>
+	</div>
+	<div class="csPanels"> <div class="csSpace" @data-cur="_tab">
+	<div @class="'ConveniencestoreGoodsClass' + (_tab === 0 ? ' is-active' : '')">  <!-- 柜台 -->
+		<<ConveniencestoreGoodsImage {
+			base: "counter.png",
+			cover: "counter-cover.png",
+			crop: [-62, -333],
+			canvas: [1932, 1386],
+			grids: {
+				"抽屉": {inner: [[1563, 1080], [1802, 1051]], outer: [[1563, 1444], [1802, 1415]], cols: 3, rows: 3},
+				"烟柜": {inner: [[1007, 1092], [1251, 1092]], outer: [[973, 1116], [1217, 1116]], cols: 3, rows: 3, levels: 3, levelStep: [0, 158]},
+			},
+			goods: {
+				"避孕套": {sprite: "counter-condom.png", per: 2, grid: "抽屉"},
+				"香烟": {sprite: "counter-cigarette.png", per: 1, grid: "烟柜"},
+			},
+		}>>
+		<div>
+			<<ConveniencestoreGoodItem {
+				icon: "<<condomicon>>",
+				name: "避孕套",
+				owned: $condoms,
+				price: 30,
+				per: 2,
+				inventory: 18,
+				apply: "<<gcondoms 2>><<condomicon>>",
+			}>>
+			<<ConveniencestoreGoodItem {
+				icon: "<<pregnancytesticon>>",
+				name: "验孕棒",
+				owned: $pregnancyTest,
+				price: 15,
+				per: 1,
+				inventory: 5,
+				apply: "<<buyitem pregnancyTest 1>>",
+				color: "pink",
+			}>>
+			<<ConveniencestoreGoodItem {
+				icon: "<<icon 'cigarette.png'>>",
+				name: "香烟",
+				owned: $cigarette,
+				price: 30,
+				per: "一包8支",
+				inventory: 27,
+				apply: "<<buyitem cigarette 8>>",
+				color: "teal",
+				unsable: true,
+			}>>
+			<!-- <<set _lol to V.wardrobe.face.filter(x => x.variable === "lollipop").length + (V.worn.face.variable === "lollipop" ? 1 : 0) + (V.wornStacking.face?.filter(x => x.variable === "lollipop").length ?? 0)>>
+			<<ConveniencestoreGoodItem {
+				icon: "<<icon 'lollipop.png'>>",
+				name: "棒棒糖",
+				owned: _lol,
+				price: 15,
+				per: 1,
+				inventory: 9,
+				apply: "<<run window.DolOptimization?.lollipopBuy()>>",
+				color: "pink",
+			}>> -->
+			<!-- more goods at 柜台 -->
+		</div>
+	</div>
+	<div @class="'ConveniencestoreGoodsClass' + (_tab === 1 ? ' is-active' : '')">  <!-- 货架 -->
+		<<ConveniencestoreGoodsImage {
+			base: "shelf.png",
+			cover: "shelf-cover.png",
+			crop: [-76, -322],
+			canvas: [1927, 1487],
+			grids: {
+				"右下角": {inner: [[871, 1361], [1415, 1361]], outer: [[871, 1422], [1472, 1422]], cols: 9, rows: 3},
+			},
+			goods: {
+				"能量饮料": {sprite: "shelf-energydrink.png", per: 1, grid: "右下角"},
+			},
+		}>>
+		<div>
+			<<ConveniencestoreGoodItem {
+				icon: "<<icon 'energydrink.png'>>",
+				name: "能量饮料",
+				owned: $energydrink,
+				price: 5,
+				per: 1,
+				inventory: 27,
+				apply: "<<buyitem energydrink 1>>",
+				color: "teal",
+				unsable: true,
+			}>>
+			<span class="black">更多商品还得等「遇欲」进货来</span>
+			<!-- more goods at 货架 -->
+		</div>
+	</div>
+	<div @class="'ConveniencestoreGoodsClass' + (_tab === 2 ? ' is-active' : '')"> <!-- 便利店外 -->
+		<<ConveniencestoreGoodsImage {
+			base: "foodstuff.png",
+			cover: "foodstuff-cover.png",
+			crop: [-207, -451],
+			canvas: [1688, 1212],
+			grids: {
+				"番茄": {inner: [[325, 498], [463, 498]], outer: [[367, 783], [560, 783]], cols: 3, rows: 7},
+				"苹果": {inner: [[669, 475], [833, 475]], outer: [[724, 752], [888, 752]], cols: 3, rows: 7},
+				"鸡蛋": {inner: [[1095, 565], [1293, 565]], outer: [[1156, 813], [1354, 813]], cols: 5, rows: 8},
+				"橙子": {inner: [[1446, 505], [1584, 505]], outer: [[1515, 793], [1653, 793]], cols: 3, rows: 7},
+			},
+			goods: {
+				"番茄": {sprite: "foodstuff-tomato.png", per: 1, grid: "番茄"},
+				"苹果": {sprite: "foodstuff-apple.png", per: 1, grid: "苹果"},
+				"鸡蛋": {sprite: "foodstuff-egg.png", per: 1, grid: "鸡蛋"},
+				"橙子": {sprite: "foodstuff-orange.png", per: 1, grid: "橙子"},
+			},
+		}>>
+		<div>
+			<<ConveniencestoreGoodItem {
+				icon: "<<foodstufficon 'chicken_egg'>>",
+				name: "鸡蛋",
+				owned: $foodstuff.chicken_egg.amount,
+				price: 2,
+				per: 4,
+				inventory: 40,
+				apply: "<<set $foodstuff.chicken_egg.amount += 4>>",
+				color: "gold",
+			}>>
+			<<ConveniencestoreGoodItem {
+				icon: "<<foodstufficon 'tomato'>>",
+				name: "番茄",
+				owned: $foodstuff.tomato.amount,
+				price: 2,
+				per: 3,
+				inventory: 21,
+				apply: "<<set $foodstuff.tomato.amount += 3>>",
+				color: "gold",
+			}>>
+			<<ConveniencestoreGoodItem {
+				icon: "<<foodstufficon 'apple'>>",
+				name: "苹果",
+				owned: $foodstuff.apple.amount,
+				price: 1,
+				per: 3,
+				inventory: 21,
+				apply: "<<set $foodstuff.apple.amount += 3>>",
+				color: "gold",
+			}>>
+			<<ConveniencestoreGoodItem {
+				icon: "<<foodstufficon 'orange'>>",
+				name: "橙子",
+				owned: $foodstuff.orange.amount,
+				price: 2,
+				per: 1,
+				inventory: 21,
+				apply: "<<set $foodstuff.orange.amount += 1>>",
+				color: "gold",
+			}>>
+			<!-- more goods at 便利店外 -->
+		</div>
+	</div>
+	<!-- more goods -->
+	</div> </div>
+</div> <</widget>>
+
+
+:: Conveniencestore
 <<if Time.dayState is "night">>
 	你透过玻璃看到便利店里面一片漆黑。
 	<br><br>
@@ -317,41 +556,154 @@
 <<if $conveniencestorestat is undefined>>
 	<<set $conveniencestorestat to 0>>
 <</if>>
-<<if $daily.conveniencestoreenter isnot 1>>
-	<<set $conveniencestorestat++>>
-	<<set $daily.conveniencestoreenter to 1>>
-	"叮咚~" 门口的铃声在你踏进门的一刻响起，随即身旁传来一阵男声："欢迎光临遇欲便利店，有什么我能够帮你的？"
-	<br><br>
+
+<<if DolOptimization.full>>
+	<<npc Needmeet>> <<initnpc Needmeet>>
+<</if>>
+
+<<if $conveniencestoregoodtobuy>>
+	<<ConveniencestoreGoodsApply>>
 <</if>>
 
 <<switch $phase>>
 	<<case undefined>>
 		<<set $phase to 0>>
-		<<set $_showgoods to 1>>
-		<<set $_showgetout to 1>>
+		<<set $conveniencestoreshowgoods to 1>>
+		<<set $conveniencestoreshowgetouts to 1>>
+		<<if $conveniencestorestat is 0>>
+			<div style="max-width: 23em;">
+				<<ConveniencestoreGoodsImage {
+					base: "counter.png",
+					cover: "counter-cover.png",
+					crop: [-62, -333],
+					canvas: [1932, 1386],
+					grids: {
+						"抽屉": {inner: [[1563, 1080], [1802, 1051]], outer: [[1563, 1444], [1802, 1415]], cols: 3, rows: 3},
+						"烟柜": {inner: [[1007, 1092], [1251, 1092]], outer: [[973, 1116], [1217, 1116]], cols: 3, rows: 3, levels: 3, levelStep: [0, 158]},
+					},
+					goods: {
+						"避孕套": {sprite: "counter-condom.png", per: 2, grid: "抽屉"},
+						"香烟": {sprite: "counter-cigarette.png", per: 1, grid: "烟柜"},
+					},
+				}>>
+			</div>
+			<br><br>
+			"啊太好了！又是一名新顾客，我要记在小本本上，"
+			你抬头看去，柜台的健硕男生，一头乌黑短卷发，
+			带着一副黑框眼睛，长得很高脸却特别可爱，
+			一身<<if Time.season is "winter">>干净的白色冲锋衣<<else>>利落的白色上衣<</if>>，
+			手中拿着小本本和笔在写着什么。
+			<br><br>
+			"需要点什么？"他边写边问。
+			<br><br>
+			<<socialiseicon "ask">><<link [[询问有什么|$passage]]>><<set $phase to "askgoods">><</link>><br>
+			<<if C.npc.Needmeet?.love lte 0>>
+				<<socialiseicon "ask">><<link [[询问他在干什么|$passage]]>><<set $phase to "askdoing">><</link>><br>
+			<</if>>
+			<<set $conveniencestoreshowgoods to 0>>
+			<<set $conveniencestoreshowgetouts to 0>>
+		<<else>>
+			"叮咚~" 门口的铃声在你踏进门的一刻响起，随即身旁传来一阵男声："欢迎光临遇欲便利店，有什么我能够帮你的？"<br><br>
+		<</if>>
+	<<case "askgoods">>
+		你四处张望：“我之前没见过你啊，这是新开的店铺？”<br>
+		“嗯，我是最近才搬来这座小镇的，”面前男生害羞的抠了抠脑袋，“我叫 H…… ，啊，你叫我「遇欲」吧。”<br><br>
+		“OK，「遇欲」，那你这里有点什么？”<br>
+		“嗯，我带你看看！”他微笑着回答到。<br><br>
+		<<set $conveniencestoreshowgoods to 1>>
+		<<set $conveniencestoreshowgetouts to 1>>
+		<<if C.npc.Needmeet?.love lte 0>>
+			<<socialiseicon "ask">><<link [[询问他手中的本子|$passage]]>><<set $phase to "askdoing">><</link>><br><br>
+		<</if>>
+	<<case "askdoing">>
+		<<set C.npc.Needmeet.love to 1>>
+		“啊，你说这个啊”。他抬头看向你，露出一抹可爱的微笑，抬手晃了晃手中的小本子。<br>
+		“这个是我的记录本，我会把附近每一个来过的顾客都记录上去，他们每天买点什么，一般什么时候来，什么性格特征啥的，”他说的同时翻了翻手中的本子。<br>
+		本子很厚，但是目前写完的页数并不多。你故意去瞄了一眼，看见每一页上面都写的规规整整、满满当当。<br><br>
+		“哈哈，别管这些了，还是你看看需要点什么，”他笑着扯开了话题。 <br><br>
+		<<if $conveniencestoreshowgoods is 0>>
+			<span class="teal">或许让眼前这个男生更信任你，他会更加敞开心扉。</span><br><br>
+			<<socialiseicon "ask">><<link [[询问有什么|$passage]]>><<set $phase to "askgoods">><</link>><br>
+		<<else>>
+			<span class="teal">或许让「遇欲」更信任你，他会更加敞开心扉。</span><br><br>
+		<</if>>
+	<<default>>
+		"还有什么我能帮你？"「遇欲」微笑着看向你。<br><br>
 <</switch>>
 
-<<if $conveniencestorestat is 1>>
-	<<npc Needmeet>>
-	"啊太好了！又是一名新顾客，我要记在小本本上，"
-	你抬头看去，柜台的健硕男生，一头乌黑短卷发，
-	带着一副黑框眼睛，长得很高脸却特别可爱，
-	一身<<if Time.season is "winter">>干净的白色冲锋衣<<else>>利落的白色上衣<</if>>，
-	手中拿着小本本和笔在写着什么。
-	<br><br>
-	"需要点什么？"他边说边问。
-	<br><br>
-	<<socialiseicon "ask">><<link [[询问有什么|$passage]]>><</link>><br>
-	<<socialiseicon "ask">><<link [[询问他在干什么|$passage]]>><</link>><br>
-	<<set $_showgoods to 0>>
-<</if>>
-
-<<if $_showgoods>>
+<<if $conveniencestoreshowgoods>>
 	<<ConveniencestoreGoods>>
+	<br>
 <</if>>
 
-<<if $_showgetout>>
-	<<getouticon>><<link [[离开|Domus Street]]>><<endevent>><<unset $phase>><</link>>
+<<if $conveniencestoreshowgetouts>>
+	<<getouticon>><<link [[离开|Domus Street]]>><<endevent>>
+		<<unset $phase>>
+		<<unset window.DolOptimization._csTab>>
+	<</link>>
 <</if>>
 
+<<if $daily.conveniencestoreenter isnot 1>>
+	<<set $conveniencestorestat++>>
+	<<set $daily.conveniencestoreenter to 1>>
 <</if>>
+
+<!-- 天黑反tag --> <</if>>
+
+:: UsableItems[widget]
+<<widget "usableitem">>
+	<div>
+		<<icon _args[0]>>_args[1] <<print _args[2]>> <br>
+		<<ind>> 拥有: <<print _args[3]??"0">>_args[4] | 
+		<<if $event !== undefined || $combat === 1 || $masturbating === 1 || $passage.endsWith("Finish")>>
+			<span class="red">无法使用: 处于事件中</span>
+		<<elseif _args[3] and _args[3] gt 0>>
+			<<link [[_args[5]|$passage]]>> <<print _args[7]>> <</link>>
+		<<else>>
+			<span class="red">数量不足: _args[6]</span>
+		<</if>>
+		<<if _args[8]>> <br> 
+			<<ind>><<print _args[8]>>
+		<</if>>
+	</div>
+<</widget>>
+<<widget "usableitems">> <div class="usableitems">
+	<<set _nicotinetext to "<span>不染烟习</span>">>
+	<<if $nicotine gte 95>>
+		<<set _nicotinetext to "<span class='red'>嗜烟如命</span>">>
+	<<elseif $nicotine gte 80>>
+		<<set _nicotinetext to "<span class='purple'>难断烟思</span>">>
+	<<elseif $nicotine gte 60>>
+		<<set _nicotinetext to "<span class='blue'>欲罢不能</span>">>
+	<<elseif $nicotine gte 40>>
+		<<set _nicotinetext to "<span class='lblue'>渐成习惯</span>">>
+	<<elseif $nicotine gte 20>>
+		<<set _nicotinetext to "<span class='teal'>浅尝辄止</span>">>
+	<<elseif $nicotine gt 0>>
+		<<set _nicotinetext to "<span class='green'>兴致寥寥</span>">>
+	<</if>>
+	<<usableitem "cigarette.png" "香烟" "<<lllarousal>><<ltiredness>><<lllstress>><<gnicotine>>" $cigarette "支" "来一根" "来源: 遇欲便利店" "
+		<<set $cigarette -= 1>>
+		<<set _k to ((100 - Math.min(($nicotine??0), 95)) / 100)>>
+		<<set _t to Math.floor(-3000*_k)-1>>
+		<<arousal _t>>
+		<<set _t to Math.floor(-9*_k)-1>>
+		<<tiredness _t>>
+		<<set _t to Math.floor(-23*_k)-1>>
+		<<stress _t>>
+		<<if $nicotine is undefined>>
+			<<set $nicotine to 0>>
+		<</if>>
+		<<set $nicotine += 1>>
+	" "尼古丁依赖: _nicotinetext&nbsp;&nbsp;&nbsp;&nbsp;(尼古丁依赖越大，香烟的效果会越小)">>
+	<<usableitem "energydrink.png" "能量饮料" "<<lpain>><<llltiredness>>" $energydrink "瓶" "饮用" "来源: 遇欲便利店" "
+		<<set $energydrink -= 1>>
+		<<pain -2>>
+		<<tiredness -18>>
+	">>
+	<!-- more usableitems -->
+</div> <</widget>>
+
+<<widget "gnicotine">>
+	<<note "+ 尼古丁依赖" "purple">>
+<</widget>>

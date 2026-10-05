@@ -1,4 +1,4 @@
-		<<run DolOptimization.wornStackingRemoveAll()>>
+		<<run window.DolOptimization?.wornStackingRemoveAll()>>
 		<<if $outfit[$wear_outfit]["stacking"]>>
 			<<for $_slot, $_itemNames range $outfit[$wear_outfit]["stacking"]>>
 				<<for _i to 0; _i lt $_itemNames.length; _i++>>

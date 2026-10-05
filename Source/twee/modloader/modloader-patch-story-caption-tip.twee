@@ -4,6 +4,6 @@
             <<if !window.modSC2DataManager?.getModLoader()?.getModZip("ModHub")>>
 			    <br><br>
                 <<button "<div id='modloader-tip'>Mod管理器</div>">>
-                    <<run DolOptimization?.openModHubNotice()>>
+                    <<run window.DolOptimization?.openModHubNotice()>>
                 <</button>>
             <</if>>
