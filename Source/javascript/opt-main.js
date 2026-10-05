@@ -771,7 +771,7 @@
         // 按 DolOptimization.nextButtonRules 的顺序 includes 匹配，命中第一个就生成一个镜像按钮挂在 passage 末尾（统一套用 #next 样式壳 + opt-shine 扫光）
         ensureNextButton: function() {
             if (document.getElementById("next")) return;
-            const opt = V.options?.DolOptimization;
+            const opt = DolOptimization.data;
             if (opt && opt.NextButton === false) return;
             const passage = document.querySelector(".passage");
             if (!passage) return;
