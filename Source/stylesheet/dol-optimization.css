@@ -496,10 +496,11 @@ a.opt-shine::after {
    它最多在画面边缘露出几十像素，不会横穿中心。z 取 -200px 而非 45vw 是为了对齐横向偏移、完全藏进货架投影内 */
 .csSpace > .ConveniencestoreGoodsClass:nth-child(1):not(.is-active) {
     opacity: 0;
+    pointer-events: none;
 }
-   .csSpace > .ConveniencestoreGoodsClass:nth-child(3):not(.is-active) {
-    /* transform: translate3d(-300%, 0, -200px) rotateY(91deg); */
+.csSpace > .ConveniencestoreGoodsClass:nth-child(3):not(.is-active) {
     opacity: 0;
+    pointer-events: none;
 }
 /* 商品列表原地不动，只跟着连动：开始移动即渐隐，移动结束才渐显 */
 .ConveniencestoreGoodsClass > div {
