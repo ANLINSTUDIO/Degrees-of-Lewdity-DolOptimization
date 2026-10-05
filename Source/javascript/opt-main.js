@@ -9,7 +9,7 @@
         // 初始化 IndexedDB
         initDB: function() {
             return new Promise((resolve, reject) => {
-                const request = indexedDB.open(this.DB_NAME, this.DB_VERSION);
+                const request = indexedDB.open(DolOptimization.DB_NAME, DolOptimization.DB_VERSION);
                 
                 request.onerror = () => reject(request.error);
                 request.onsuccess = () => resolve(request.result);
@@ -26,7 +26,7 @@
         // 保存字体到 IndexedDB
         saveFontToIndexedDB: async function(fontData) {
             try {
-                const db = await this.initDB();
+                const db = await DolOptimization.initDB();
                 
                 return new Promise((resolve, reject) => {
                     const transaction = db.transaction(['fonts'], 'readwrite');
@@ -63,12 +63,12 @@
                 const fontName = localStorage.getItem('DolOptimization_FontName');
                 if (!fontName) return null;
                 
-                const db = await this.initDB();
+                const db = await DolOptimization.initDB();
                 
                 return new Promise((resolve, reject) => {
                     const transaction = db.transaction(['fonts'], 'readonly');
                     const store = transaction.objectStore('fonts');
-                    const request = store.get(this.FONT_NAME);
+                    const request = store.get(DolOptimization.FONT_NAME);
                     
                     request.onsuccess = () => {
                         const result = request.result;
@@ -98,12 +98,12 @@
         // 从 IndexedDB 移除字体
         removeFontFromIndexedDB: async function() {
             try {
-                const db = await this.initDB();
+                const db = await DolOptimization.initDB();
                 
                 return new Promise((resolve, reject) => {
                     const transaction = db.transaction(['fonts'], 'readwrite');
                     const store = transaction.objectStore('fonts');
-                    const request = store.delete(this.FONT_NAME);
+                    const request = store.delete(DolOptimization.FONT_NAME);
                     
                     request.onsuccess = () => {
                         localStorage.removeItem('DolOptimization_FontEnabled');
@@ -132,32 +132,32 @@
 
             try {
                 const fontBuffer = await file.arrayBuffer();
-                const fontFace = new FontFace(this.FONT_NAME, fontBuffer);
+                const fontFace = new FontFace(DolOptimization.FONT_NAME, fontBuffer);
                 await fontFace.load();
                 document.fonts.add(fontFace);
-                document.documentElement.style.fontFamily = `${this.FONT_NAME}, sans-serif`;
+                document.documentElement.style.fontFamily = `${DolOptimization.FONT_NAME}, sans-serif`;
                 
-                const base64Data = await this.fileToBase64Data(file);
+                const base64Data = await DolOptimization.fileToBase64Data(file);
                 const fontData = {
-                    name: this.FONT_NAME,
+                    name: DolOptimization.FONT_NAME,
                     data: base64Data,
                     fileName: file.name,
                     timestamp: Date.now()
                 };
 
-                await this.saveCustomFonts(fontData);
+                await DolOptimization.saveCustomFonts(fontData);
                 
                 DolOptimization.updateFontDisplayName(fontData.fileName);
                 AsAPI.log("原版优化", `已应用字体: ${fontData.fileName}`);
             } catch (error) {
                 AsAPI.error("原版优化", `字体加载失败: ${error}`);
-                this.handleFontLoadError(error);
+                DolOptimization.handleFontLoadError(error);
             }
         },
 
         checkOptimizationCustomFontGlobal: async function(checked) {
             V.options.DolOptimization.OptimizationCustomFontGlobal = checked
-            await this.saveCustomFonts();
+            await DolOptimization.saveCustomFonts();
         },
 
         saveCustomFonts: async function(fontData) {
@@ -168,7 +168,7 @@
             const isGlobal = V.passage === "Start" || (V.options.DolOptimization?.OptimizationCustomFontGlobal ?? false);
             if (isGlobal) {
                 // 使用 IndexedDB 保存全局字体
-                await this.saveFontToIndexedDB(fontData);
+                await DolOptimization.saveFontToIndexedDB(fontData);
                 if (V.options.DolOptimization?.OptimizationCustomFont) {
                     delete V.options.DolOptimization.OptimizationCustomFont;
                 }
@@ -176,7 +176,7 @@
             } else {
                 // 存档字体保持不变
                 V.options.DolOptimization.OptimizationCustomFont = fontData;
-                await this.removeFontFromIndexedDB();
+                await DolOptimization.removeFontFromIndexedDB();
                 AsAPI.log("原版优化", `字体已保存到存档`);
             }
         },
@@ -188,7 +188,7 @@
             
             if (savedFont && savedFont.data) {
                 AsAPI.log("原版优化", '发现存档字体，正在加载...');
-                const success = await this.applyFontFromData(savedFont);
+                const success = await DolOptimization.applyFontFromData(savedFont);
                 if (success) {
                     AsAPI.log("原版优化", '已加载存档字体:'+savedFont.fileName);
                     DolOptimization.updateFontDisplayName(savedFont.fileName);
@@ -204,7 +204,7 @@
             const globalFont = await DolOptimization.loadFontFromIndexedDB();
             
             if (globalFont && globalFont.data) {
-                const success = await this.applyFontFromData(globalFont);
+                const success = await DolOptimization.applyFontFromData(globalFont);
                 if (success) {
                     if (V.options.DolOptimization) {
                         V.options.DolOptimization.OptimizationCustomFontGlobal = true;
@@ -214,7 +214,7 @@
                     return true;
                 } else {
                     AsAPI.error("原版优化", '全局字体已损坏，自动清除');
-                    await this.removeFontFromIndexedDB();
+                    await DolOptimization.removeFontFromIndexedDB();
                 }
             }
             
@@ -231,7 +231,7 @@
                 delete V.options.DolOptimization.OptimizationCustomFont;
             }
             
-            await this.removeFontFromIndexedDB();
+            await DolOptimization.removeFontFromIndexedDB();
             
             if (V.options.DolOptimization) {
                 V.options.DolOptimization.OptimizationCustomFontGlobal = false;
@@ -273,15 +273,15 @@
             if (!fontData || !fontData.data) return false;
             
             try {
-                const fontBuffer = this.base64ToArrayBuffer(fontData.data);
-                const fontFace = new FontFace(this.FONT_NAME, fontBuffer);
+                const fontBuffer = DolOptimization.base64ToArrayBuffer(fontData.data);
+                const fontFace = new FontFace(DolOptimization.FONT_NAME, fontBuffer);
                 await fontFace.load();
                 document.fonts.add(fontFace);
-                document.documentElement.style.fontFamily = `${this.FONT_NAME}, sans-serif`;
+                document.documentElement.style.fontFamily = `${DolOptimization.FONT_NAME}, sans-serif`;
                 return true;
             } catch (error) {
                 console.error('加载字体数据失败:', error);
-                this.handleFontLoadError(error);
+                DolOptimization.handleFontLoadError(error);
                 return false;
             }
         },
@@ -305,7 +305,7 @@
         },
         
         updateFontDisplayName: function(fileName) {
-            this.Current_Font = fileName;
+            DolOptimization.Current_Font = fileName;
             const displayElement = document.querySelector("#custom-font-text");
             if (displayElement) {
                 displayElement.innerText = fileName || "自定义字体";
@@ -771,7 +771,7 @@
         // 按 DolOptimization.nextButtonRules 的顺序 includes 匹配，命中第一个就生成一个镜像按钮挂在 passage 末尾（统一套用 #next 样式壳 + opt-shine 扫光）
         ensureNextButton: function() {
             if (document.getElementById("next")) return;
-            const opt = DolOptimization.data;
+            const opt = V.options?.DolOptimization;
             if (opt && opt.NextButton === false) return;
             const passage = document.querySelector(".passage");
             if (!passage) return;
@@ -799,6 +799,7 @@
             link.textContent = text;
             link.addEventListener("click", (event) => {
                 event.preventDefault();
+                if (longPressed) return;   // 长按触发的松手不转发点击
                 source.click();   // 转发给原文内的链接，复用其原有跳转/逻辑
             });
             link.addEventListener("keydown", (event) => {
@@ -807,10 +808,33 @@
                     source.click();
                 }
             });
+            // 【1.1.1】长按 600ms 临时关闭：按钮右移淡出 + 提示，本次游玩期间不再生成（选项开关重新打开可恢复）
+            let pressTimer = null, longPressed = false;
+            link.addEventListener("pointerdown", () => {
+                longPressed = false;
+                pressTimer = setTimeout(() => {
+                    longPressed = true;
+                    wrap.classList.add("nextButton-hide");
+                    setTimeout(() => wrap.remove(), 400);
+                    DolOptimization.showToast("已临时关闭快速继续按钮");
+                }, 600);
+            });
+            ["pointerup", "pointerleave", "pointercancel"].forEach(type =>
+                link.addEventListener(type, () => clearTimeout(pressTimer)));
             wrap.appendChild(link);
             // 选项可自定义按钮离底部的百分比高度，覆盖 CSS 默认值
             wrap.style.bottom = (opt.NextButtonBottom ?? 30) + "%";
             passage.appendChild(wrap);
+        },
+        // 【1.1.1】轻量提示条（自挂自删，1.6s 后淡出），不依赖 dolOptAlert 模态框
+        showToast: function(msg) {
+            document.getElementById("dolOptToast")?.remove();
+            const toast = document.createElement("div");
+            toast.id = "dolOptToast";
+            toast.textContent = msg;
+            document.body.appendChild(toast);
+            setTimeout(() => toast.classList.add("out"), 1200);
+            setTimeout(() => toast.remove(), 1600);
         },
         // 【1.1.1】快速继续设置：开关即时增删按钮
         nextButtonToggle: function(on) {

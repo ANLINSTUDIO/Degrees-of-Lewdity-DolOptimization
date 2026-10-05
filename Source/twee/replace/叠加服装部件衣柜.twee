@@ -5,7 +5,7 @@
 
 		<!-- "upper", "under_upper", "hands", "handheld" -->
 		<<set _allowStacking to !([].includes(_wardrobe_list))>>
-		<<if $options.DolOptimization?.WornStacking>>
+		<<if window.DolOptimization?.data?.WornStacking>>
 			<<if $wornStacking[_wardrobe_list].length > 0>>
 				<<for _i to 0; _i < $wornStacking[_wardrobe_list].length; _i++>>
 					<<set _item to $wornStacking[_wardrobe_list][_i]>>

@@ -173,7 +173,7 @@
 		</div>
 		<div class="optimization">
 			快速继续<br>
-			<small>使用下方关键词匹配正文中的链接，并生成镜像的“快速继续”按钮。</small><br>
+			<small>使用下方关键词匹配正文中的链接，并生成镜像的“快速继续”按钮。长按按钮可临时关闭。</small><br>
 			<label>
 				<<print '<input type="checkbox" tabindex="0" class="macro-checkbox" onchange="DolOptimization.nextButtonToggle(this.checked)"'+(V.options.opt.NextButton === false ? "" : " checked")+'>'>>
 				启用快速继续

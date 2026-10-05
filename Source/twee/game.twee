@@ -547,6 +547,7 @@
 
 
 :: Conveniencestore
+<<fromopt>>
 <<if Time.dayState is "night">>
 	你透过玻璃看到便利店里面一片漆黑。
 	<br><br>

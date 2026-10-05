@@ -384,6 +384,37 @@ a.opt-shine::after {
     }
 }
 
+/* 【1.1.1】长按临时关闭：向右移出并淡出（按钮在屏幕右缘，故向右滑出） */
+#nextButton.nextButton-hide {
+    transform: translateX(120%);
+    opacity: 0;
+    transition: transform 0.35s ease-in, opacity 0.35s ease-in;
+}
+/* 【1.1.1】轻量提示条 */
+#dolOptToast {
+    position: fixed;
+    left: 50%;
+    bottom: 12%;
+    transform: translateX(-50%);
+    z-index: 100001;
+    padding: 8px 18px;
+    background-color: var(--850);
+    border: 1px solid var(--600);
+    color: var(--gold);
+    border-radius: 4px;
+    white-space: nowrap;
+    animation: dolOptToastIn 0.2s ease-out forwards;
+    transition: opacity 0.4s ease;
+    pointer-events: none;
+}
+#dolOptToast.out {
+    opacity: 0;
+}
+@keyframes dolOptToastIn {
+    from { opacity: 0; transform: translateX(-50%) translateY(8px); }
+    to { opacity: 1; transform: translateX(-50%) translateY(0); }
+}
+
 /* 1.1.1 可用物品 */
 #ConveniencestoreGoods {
     display: flex;
