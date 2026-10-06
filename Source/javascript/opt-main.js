@@ -52,7 +52,7 @@
                     };
                 });
             } catch (error) {
-                console.error('保存字体到 IndexedDB 失败:', error);
+                AsAPI.log("原版优化", '保存字体到 IndexedDB 失败:'+error, "gold", "red");
                 throw error;
             }
         },
@@ -90,7 +90,7 @@
                     };
                 });
             } catch (error) {
-                console.error('从 IndexedDB 加载字体失败:', error);
+                AsAPI.log("原版优化", '从 IndexedDB 加载字体失败:'+error, "gold", "red");
                 return null;
             }
         },
@@ -117,7 +117,7 @@
                     };
                 });
             } catch (error) {
-                console.error('从 IndexedDB 移除字体失败:', error);
+                AsAPI.log("原版优化", '从 IndexedDB 移除字体失败:'+error, "gold", "red");
             }
         },
         
@@ -264,7 +264,7 @@
                 }
                 return bytes.buffer;
             } catch (error) {
-                console.error('Base64 转换失败:', error);
+                AsAPI.log("原版优化", 'Base64 转换失败:'+error, "gold", "red");
                 throw new Error('Invalid font data in ArrayBuffer.');
             }
         },
@@ -280,7 +280,7 @@
                 document.documentElement.style.fontFamily = `${DolOptimization.FONT_NAME}, sans-serif`;
                 return true;
             } catch (error) {
-                console.error('加载字体数据失败:', error);
+                AsAPI.log("原版优化", '加载字体数据失败:'+error, "gold", "red");
                 DolOptimization.handleFontLoadError(error);
                 return false;
             }
@@ -300,7 +300,7 @@
             } else if (typeof window.dolOptShowToast === 'function') {
                 window.dolOptShowToast(msg, 'warning');
             } else {
-                console.warn('[DolOptimization]', msg);
+                AsAPI.log("原版优化", `[handleFontLoadError] ${msg}`, "gold", "yellow");
             }
         },
         
@@ -475,10 +475,10 @@
         },
         wornStackingRemoveAll: function() {
             if (!validArray(V.wornStacking)) {
-                console.log("全部叠加脱下", "[失效]", V.wornStacking);
+                AsAPI.log("原版优化", "全部叠加脱下 [失效] "+V.wornStacking, "gold", "yellow");
                 return
             };
-            console.log("全部叠加脱下", V.wornStacking);
+            AsAPI.log("原版优化", "全部叠加脱下 "+V.wornStacking, "gold", "yellow");
             for (const [slot, items] of Object.entries(V.wornStacking)) {
                 items.forEach((item, index) => {
                     V.wardrobe[slot].push(item);
@@ -489,18 +489,17 @@
         },
         wornStackingStore: function(location) {
             if (location == "wardrobe" || Object.keys(V.wardrobes).includes(location) || !validArray(V.wornStacking)) {
-                console.log("存储叠加数据", "[失效]", location, V.wornStacking);
+                AsAPI.log("原版优化", "存储叠加数据 [失效] "+location+" "+V.wornStacking, "gold");
                 return
             };
-            console.log("存储叠加数据", location, V.wornStacking);
+            AsAPI.log("原版优化", "存储叠加数据 "+location+" "+V.wornStacking, "gold");
             V.store.stacking ??= {};
             V.store.stacking[location] = V.wornStacking;
             V.wornStacking = {};
         },
         wornStackingRestore: function(location) {
-            V.store.stacking ??= {};
-            console.log("恢复叠加数据", V.store.stacking[location]);
             if (V.store.stacking && V.store.stacking[location]) {
+                AsAPI.log("原版优化", "恢复叠加数据 "+V.store.stacking[location], "gold");
                 V.wornStacking = V.store.stacking[location];
                 delete V.store.stacking[location];
             }
@@ -602,7 +601,7 @@
                     let saveItem = null
                     if (saveId) saveItem = await idb.getItem(saveId);
                     if (saveItem) {
-                        console.log(`[DolOptimization-initsave] Loaded: saveId=${saveId}`, saveItem);
+                        AsAPI.log("原版优化", `[initsave] Loaded: saveId=${saveId}`, "gold");
                         const title = group.querySelector(".saveDetails > span");
                         if (title) {
                             title.className = "saveTitle";
@@ -651,7 +650,7 @@
                                                         }
                                                         DolOptimization.saveSettings();
                                                     } catch (err) {
-                                                        console.error("保存描述失败", err);
+                                                        AsAPI.log("原版优化", "保存描述失败", "gold", "red");
                                                     }
                                                 }
                                                 title.innerText = newText || originalDescText;   // 新描述为空则回退原始描述

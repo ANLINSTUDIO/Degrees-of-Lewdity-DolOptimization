@@ -128,7 +128,7 @@
         }
     });
     $(document).on(":oncloseoverlay", function (e, overlay) {
-        console.log("oncloseoverlay, ", overlay)
+        AsAPI.log("原版优化", "页面关闭，数据保存", "gold")
         if (overlay === "options") {
             DolOptimization.rv(true);
             DolOptimization.saveSettings();

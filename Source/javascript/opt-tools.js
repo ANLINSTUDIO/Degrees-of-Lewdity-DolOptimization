@@ -33,7 +33,7 @@
                 const saved = localStorage.getItem(DolOptimization.STORAGE_KEY);
                 DolOptimization.data = saved ? JSON.parse(saved) : {};
             } catch (e) {
-                console.warn('[Optimization] 读取 localstorage 失败', e);
+                AsAPI.log("原版优化", '[Optimization] 读取 localstorage 失败', "gold", "yellow");
                 DolOptimization.data = {};
             }
         },
@@ -42,7 +42,7 @@
                 const data = JSON.stringify(DolOptimization.data);
                 localStorage.setItem(DolOptimization.STORAGE_KEY, data);
             } catch (e) {
-                console.warn('[Optimization] 保存 localstorage 失败', e);
+                AsAPI.log("原版优化", '[Optimization] 保存 localstorage 失败', "gold", "yellow");
             }
         },
         applySettings: function(reload=false) {
