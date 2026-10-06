@@ -348,6 +348,7 @@ label:has(> input.macro-checkbox:checked) + #largerWardrobeValue {
     z-index: 299;
     right: -20px;
     bottom: 30%;
+    user-select: none
 }
 #nextButton > a {
     color: var(--gold);
@@ -388,7 +389,12 @@ a.opt-shine::after {
 #nextButton.nextButton-hide {
     transform: translateX(120%);
     opacity: 0;
-    transition: transform 0.35s ease-in, opacity 0.35s ease-in;
+    transition: transform 0.35s ease-in, opacity 0.15s ease-in;
+}
+#nextButton > .customOverlayClose {
+    scale: 0.5;
+    top: 0;
+    right: 15px;
 }
 /* 【1.1.1】轻量提示条 */
 #dolOptToast {

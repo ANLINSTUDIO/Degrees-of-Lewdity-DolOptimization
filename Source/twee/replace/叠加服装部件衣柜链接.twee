@@ -2,6 +2,8 @@
 					<<set V[_wear] = _args[1]>>
 				<<else>>
 					<<set _item to _selectedWardrobe[_wardrobe_list][_args[1]]>>
+					<<set $wornStacking ??= {}>>
+					<<set $wornStacking[_wardrobe_list] ??= []>>
 					<<run $wornStacking[_wardrobe_list].push(clone(_item))>>
 					<<set _selectedWardrobe[_wardrobe_list].deleteAt(_args[1])>>
 				<</if>>

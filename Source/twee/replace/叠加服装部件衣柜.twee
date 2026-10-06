@@ -1,6 +1,8 @@
+		<<set $wornStacking ??= {}>>
 		<<if $wornStacking[_wardrobe_list] is undefined>>
 			<<set $wornStacking[_wardrobe_list] to []>>
 		<</if>>
+	
 		叠加装备: <br>
 
 		<!-- "upper", "under_upper", "hands", "handheld" -->
@@ -48,9 +50,9 @@
 						<<if _item.colour and _item.colour isnot 0>>
 							<span @class="_item.colour?.replace(' ','-')">
 								<<if _item.pattern and ![0, "plain"].includes(_item.pattern) and _itemData.pattern_options?.length > 1>>
-									(_item.colour _item.pattern)
+									(<<print setup.colourName?.(_item.colour)??_item.colour>> _item.pattern)
 								<<else>>
-									(_item.colour)
+									(<<print setup.colourName?.(_item.colour)??_item.colour>>)
 								<</if>>
 							</span>
 						<<elseif _item.pattern and _item.pattern isnot 0 and _itemData.pattern_options?.length > 1>>

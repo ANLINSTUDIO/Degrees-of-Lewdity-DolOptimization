@@ -1,6 +1,6 @@
 (() => {
     // 【1.1.1】遇欲便利店
-    DolOptimization.full = !!window.modUtils.getMod('maplebirch');
+    DolOptimization.full = !!window.modSC2DataManager.getModLoader().getModZip("maplebirch");
     if (!DolOptimization.full) {
         setTimeout(() => {
             const message = `原版优化从此版本开始部分依赖秋枫白桦框架，请确保安装其并将本模组置于框架下方。

@@ -276,7 +276,7 @@
         'OptModalert',
         {
             async afterInjectEarlyLoad() {
-                if (!window.modUtils.getMod('maplebirch')) {
+                if (!window.modSC2DataManager.getModLoader().getModZip("maplebirch")) {
                     await waitForUserResponse({
 						title: '需求秋枫白桦框架',
 						html: `

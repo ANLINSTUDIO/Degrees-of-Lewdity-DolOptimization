@@ -363,7 +363,7 @@
             const layerSpecs = DolOptimization.originalCompile.call(this, options);
             if (options.lights || !V.wornStacking) return layerSpecs;
             if (options.root == "img/sex/") return layerSpecs;
-            if (!V.options.DolOptimization.WornStacking) {
+            if (!DolOptimization.data.WornStacking) {
                 DolOptimization.wornStackingRemoveAll(); 
                 return layerSpecs
             };
@@ -475,10 +475,10 @@
         },
         wornStackingRemoveAll: function() {
             if (!validArray(V.wornStacking)) {
-                // console.log("全部叠加脱下", "[失效]", V.wornStacking);
+                console.log("全部叠加脱下", "[失效]", V.wornStacking);
                 return
             };
-            // console.log("全部叠加脱下", V.wornStacking);
+            console.log("全部叠加脱下", V.wornStacking);
             for (const [slot, items] of Object.entries(V.wornStacking)) {
                 items.forEach((item, index) => {
                     V.wardrobe[slot].push(item);
@@ -489,16 +489,16 @@
         },
         wornStackingStore: function(location) {
             if (location == "wardrobe" || Object.keys(V.wardrobes).includes(location) || !validArray(V.wornStacking)) {
-                // console.log("存储叠加数据", "[失效]", location, V.wornStacking);
+                console.log("存储叠加数据", "[失效]", location, V.wornStacking);
                 return
             };
-            // console.log("存储叠加数据", location, V.wornStacking);
+            console.log("存储叠加数据", location, V.wornStacking);
             V.store.stacking ??= {};
             V.store.stacking[location] = V.wornStacking;
             V.wornStacking = {};
         },
         wornStackingRestore: function(location) {
-            // console.log("恢复叠加数据", V.store.stacking[location]);
+            console.log("恢复叠加数据", V.store.stacking[location]);
             if (V.store.stacking && V.store.stacking[location]) {
                 V.wornStacking = V.store.stacking[location];
                 delete V.store.stacking[location];
@@ -800,11 +800,25 @@
             link.addEventListener("click", (event) => {
                 event.preventDefault();
                 if (longPressed) return;   // 长按触发的松手不转发点击
+                if (!document.body.contains(source)) {
+                    wrap.remove();
+                    DolOptimization.ensureNextButton();
+                    let newbtn = document.getElementById("nextButton");
+                    if (newbtn && newbtn.innerText === text) newbtn.firstChild.click();
+                    return;
+                }
                 source.click();   // 转发给原文内的链接，复用其原有跳转/逻辑
             });
             link.addEventListener("keydown", (event) => {
                 if (event.key === "Enter" || event.key === " ") {
                     event.preventDefault();
+                    if (!document.body.contains(source)) {
+                        wrap.remove();
+                        DolOptimization.ensureNextButton();
+                        let newbtn = document.getElementById("nextButton");
+                        if (newbtn && newbtn.innerText === text) newbtn.firstChild.click();
+                        return;
+                    }
                     source.click();
                 }
             });
@@ -822,6 +836,14 @@
             ["pointerup", "pointerleave", "pointercancel"].forEach(type =>
                 link.addEventListener(type, () => clearTimeout(pressTimer)));
             wrap.appendChild(link);
+            const close = document.createElement("div");
+            close.className = "customOverlayClose";
+            close.addEventListener("click", () => {
+                wrap.classList.add("nextButton-hide");
+                setTimeout(() => wrap.remove(), 400);
+                DolOptimization.showToast("已临时关闭快速继续按钮");
+            });
+            wrap.appendChild(close);
             // 选项可自定义按钮离底部的百分比高度，覆盖 CSS 默认值
             wrap.style.bottom = (opt.NextButtonBottom ?? 30) + "%";
             passage.appendChild(wrap);
