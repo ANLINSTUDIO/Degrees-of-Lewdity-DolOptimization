@@ -837,12 +837,15 @@
                 link.addEventListener(type, () => clearTimeout(pressTimer)));
             wrap.appendChild(link);
             const close = document.createElement("div");
-            close.className = "customOverlayClose";
+            close.id = "nextButtonClose";
             close.addEventListener("click", () => {
                 wrap.classList.add("nextButton-hide");
                 setTimeout(() => wrap.remove(), 400);
                 DolOptimization.showToast("已临时关闭快速继续按钮");
             });
+            const closediv = document.createElement("div");
+            closediv.className = "customOverlayClose";
+            close.appendChild(closediv);
             wrap.appendChild(close);
             // 选项可自定义按钮离底部的百分比高度，覆盖 CSS 默认值
             wrap.style.bottom = (opt.NextButtonBottom ?? 30) + "%";

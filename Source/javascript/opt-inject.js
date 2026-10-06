@@ -12,7 +12,7 @@
         // 【1.1.1】初始化快速继续选项（默认开、离底 30%、关键词用 opt-vars.js 默认表）
         value("NextButton", true);
         value("NextButtonBottom", 30);
-        value("NextButtonRules", DolOptimization.nextButtonRules.slice());
+        value("NextButtonRules", null);
     }
 
     DolOptimization.onPassageRender = function (ev) {

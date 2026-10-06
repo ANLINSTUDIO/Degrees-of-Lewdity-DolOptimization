@@ -180,7 +180,7 @@
 			</label><br>
 			按钮离底部：<input type="number" min="0" max="100" @value="$options.opt.NextButtonBottom ?? 30" onchange="DolOptimization.nextButtonBottom(this)"> %<br>
 			匹配关键词（每行一个，靠前的优先匹配）：<br>
-			<textarea rows="5" style="width: stretch; min-width: auto;" onchange="DolOptimization.nextButtonRulesEdit(this)"><<print $options.opt.NextButtonRules.join("\n")>></textarea><br>
+			<textarea rows="5" style="width: stretch; min-width: auto;" onchange="DolOptimization.nextButtonRulesEdit(this)"><<print $options.opt.NextButtonRules?$options.opt.NextButtonRules.join("\n"):DolOptimization.nextButtonRules.join("\n")>></textarea><br>
 			<img src="guide/快速继续.png">
 		</div>
 	</div>

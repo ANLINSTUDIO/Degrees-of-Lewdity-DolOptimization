@@ -391,10 +391,20 @@ a.opt-shine::after {
     opacity: 0;
     transition: transform 0.35s ease-in, opacity 0.15s ease-in;
 }
-#nextButton > .customOverlayClose {
+
+#nextButton > #nextButtonClose {
+    position: absolute;
     scale: 0.5;
+    transform-origin: top right;
+    top: 5px;
+    right: 22px;
+    width: 50px;
+    height: 50px;
+    cursor: pointer;
+}
+#nextButton > #nextButtonClose > .customOverlayClose {
     top: 0;
-    right: 15px;
+    right: 0;
 }
 /* 【1.1.1】轻量提示条 */
 #dolOptToast {
