@@ -498,6 +498,7 @@
             V.wornStacking = {};
         },
         wornStackingRestore: function(location) {
+            V.store.stacking ??= {};
             console.log("恢复叠加数据", V.store.stacking[location]);
             if (V.store.stacking && V.store.stacking[location]) {
                 V.wornStacking = V.store.stacking[location];

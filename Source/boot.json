@@ -1,6 +1,6 @@
 {
     "name": "原版优化",
-    "version": "1.1.1.3",
+    "version": "1.1.1.4",
     "styleFileList": [
         "stylesheet/dol-optimization.css",
         "stylesheet/modloader-optimization-tip.css"
@@ -101,7 +101,7 @@
                 {
                     "tip": "【1.0.4】处女膜修复 剧烈运动破坏",
                     "passage": "Widgets",
-                    "findString": "\t<<set $physique = Math.clamp($physique, 0, $physiquesize)>>\n\t<<set Weather.BodyTemperature.addActivity(\"physique\")>>",
+                    "findString": "Weather.BodyTemperature.addActivity(\"physique\")>>",
                     "replaceFile": "twee/replace/1.0.4 剧烈运动破坏修复处女膜.twee"
                 },
                 {
