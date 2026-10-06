@@ -31,10 +31,15 @@
         },
         // 用于加载远程数据并显示在元素中
         loadRemote: function() {
+            const allowedRemoteHosts = ['sb.alseece.top'];
             queueMicrotask(() => { 
                 document.querySelectorAll('[data-remote]').forEach(async element => {
                     try {
-                    const response = await fetch(element.dataset.remote, {
+                    const remoteUrl = new URL(element.dataset.remote, window.location.href);
+                    if (remoteUrl.protocol !== 'https:' || !allowedRemoteHosts.includes(remoteUrl.hostname)) {
+                        throw new Error('Untrusted remote URL blocked');
+                    }
+                    const response = await fetch(remoteUrl.href, {
                         mode: 'cors',
                         credentials: 'omit'
                     });
