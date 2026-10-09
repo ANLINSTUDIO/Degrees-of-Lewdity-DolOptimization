@@ -435,6 +435,28 @@
 				color: "teal",
 				unsable: true,
 			}>>
+			<<ConveniencestoreGoodItem {
+				icon: "<<icon 'stay-sober-pill.png'>>",
+				name: "醒酒药",
+				owned: $staysoberpill,
+				price: 30,
+				per: 1,
+				inventory: 4,
+				apply: "<<buyitem staysoberpill>>",
+				color: "purple",
+				unsable: true,
+			}>>
+			<<ConveniencestoreGoodItem {
+				icon: "<<icon 'stay-frigidity-pill.png'>>",
+				name: "降火药",
+				owned: $stayfrigiditypill,
+				price: 30,
+				per: 1,
+				inventory: 4,
+				apply: "<<buyitem stayfrigiditypill>>",
+				color: "pink",
+				unsable: true,
+			}>>
 			<!-- <<set _lol to V.wardrobe.face.filter(x => x.variable === "lollipop").length + (V.worn.face.variable === "lollipop" ? 1 : 0) + (V.wornStacking.face?.filter(x => x.variable === "lollipop").length ?? 0)>>
 			<<ConveniencestoreGoodItem {
 				icon: "<<icon 'lollipop.png'>>",
@@ -701,6 +723,12 @@
 		<<set $energydrink -= 1>>
 		<<pain -2>>
 		<<tiredness -18>>
+	">>
+	<<usableitem "stay-sober-pill.png" "醒酒药" "<<note '--- 醉酒' 'purple'>><<gggtiredness>>" $staysoberpill "瓶" "服用" "来源: 遇欲便利店" "
+		<<drunk -300>><<tiredness 18>>
+	">>
+	<<usableitem "stay-frigidity-pill.png" "降火药" "<<note '--- 春药' 'pink'>><<gggtiredness>>" $stayfrigiditypill "瓶" "服用" "来源: 遇欲便利店" "
+		<<drugs -300>><<tiredness 18>>
 	">>
 	<!-- more usableitems -->
 </div> <</widget>>
