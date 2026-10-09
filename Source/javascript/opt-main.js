@@ -508,7 +508,7 @@
         // 这样原版各处直接读 V.worn[slot].type / .reveal / .warmth 的判断都会一并生效
         wornStackingStattedSlots: new Set(),
         wornStackingApplyStats: function() {
-            const opt = V.options?.DolOptimization;
+            const opt = window.DolOptimization?.data;
             if (!opt) return;
             // 只处理有叠加衣物的槽位和上次改动过的槽位；每次都从原版 setup 数据重建，反复调用不会累加
             const slots = new Set(DolOptimization.wornStackingStattedSlots);
@@ -952,7 +952,7 @@
     // DolOptimization = { ...DolOptimization,
     //     lollipopBuy: function() {
     //         // 叠加是实验功能，买棒棒糖即代表要用到它，自动打开
-    //         V.options.DolOptimization.WornStacking = true;
+    //         V.options.opt.WornStacking = true;
     //         const item = setup.clothes.face.find(x => x.variable === "lollipop");
     //         if (!item) return;
     //         // 面部空着直接穿，已有装备则进叠加层
