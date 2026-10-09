@@ -307,7 +307,7 @@
 	<<if V[_args[0]] is undefined>>
 		<<set V[_args[0]] to 0>>
 	<</if>>
-	<<set V[_args[0]] += _args[1]>>
+	<<set V[_args[0]] += (_args[1] ?? 1)>>
 <</widget>>
 <<widget "ConveniencestoreGoodItem">>
 	<!-- <<ConveniencestoreGoodItem { icon: "图标执行段", name: "商品名", owned: 已拥有实参, price: 价格, per: 每售卖数量(数字或描述文本), inventory: 每日库存, apply: "售卖执行段", color: "默认语段颜色", unsable: true }>> -->
@@ -421,7 +421,7 @@
 				price: 15,
 				per: 1,
 				inventory: 5,
-				apply: "<<buyitem pregnancyTest 1>>",
+				apply: "<<buyitem pregnancyTest>>",
 				color: "pink",
 			}>>
 			<<ConveniencestoreGoodItem {
@@ -492,7 +492,7 @@
 				price: 5,
 				per: 1,
 				inventory: 27,
-				apply: "<<buyitem energydrink 1>>",
+				apply: "<<buyitem energydrink>>",
 				color: "teal",
 				unsable: true,
 			}>>

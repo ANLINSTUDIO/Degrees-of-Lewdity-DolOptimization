@@ -1,6 +1,6 @@
 :: Setting DolOptimization [widget]
 
-<<widget fromopt>>
+<<widget "fromopt">>
 	<<if _fromopt isnot 1>>
 		<<set _fromopt to 1>>
 		<div class="fromopt" onclick='Wikifier.wikifyEval(`<<overlayReplace "options">> <<replace #customOverlayContent>><<doloptimizationModSetting>><</replace>>`)'>
@@ -8,7 +8,7 @@
 		</div>
 	<</if>>
 <</widget>>
-<<widget fromoptP>>
+<<widget "fromoptP">>
 	<<if _fromopt isnot 1>>
 		<<set _fromopt to 1>>
 		<div class="fromopt" onclick='Wikifier.wikifyEval(`<<overlayReplace "options">> <<replace #customOverlayContent>><<doloptimizationModSetting>><</replace>>`)'>
