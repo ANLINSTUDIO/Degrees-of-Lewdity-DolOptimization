@@ -1,6 +1,6 @@
 {
     "name": "原版优化",
-    "version": "1.1.1.4",
+    "version": "1.1.1.5",
     "styleFileList": [
         "stylesheet/dol-optimization.css",
         "stylesheet/modloader-optimization-tip.css"
@@ -33,6 +33,8 @@
         "img/misc/icon/fertiliserripening.png",
         "img/misc/icon/lollipop.png",
         "img/misc/icon/seeds.png",
+        "img/misc/icon/stay-frigidity-pill.png",
+        "img/misc/icon/stay-sober-pill.png",
         "img/ui/conveniencestore/counter-cigarette.png",
         "img/ui/conveniencestore/counter-condom.png",
         "img/ui/conveniencestore/counter-cover.png",
@@ -48,17 +50,7 @@
         "img/ui/conveniencestore/shelf-cover.png",
         "img/ui/conveniencestore/shelf-energydrink.png",
         "img/ui/conveniencestore/shelf.png",
-        "img/ui/conveniencestore/shelf.psd",
-        "guide/opt-tip.png",
-        "guide/“打开关闭导航栏”的黑块箭头.png",
-        "guide/叠加服装部件.png",
-        "guide/园艺大师.png",
-        "guide/处女膜修复.png",
-        "guide/大大大衣柜升级.png",
-        "guide/快速继续.png",
-        "guide/理发店售卖头发.png",
-        "guide/自定义字体.png",
-        "guide/衣柜容量自定义.png"
+        "img/ui/conveniencestore/shelf.psd"
     ],
     "addonPlugin": [
         {
@@ -290,12 +282,13 @@
             "params": {
                 "js": [
                     {
-                        "tip": "【1.1.1】脸部服装注册：棒棒糖",
+                        "tip": "【1.1.1】脸部服装注册: 棒棒糖",
                         "fileName": "clothing-face.js",
                         "from": "setup.moddedClothes.face = [];",
                         "to": "setup.moddedClothes.face = [\n\t\tnew ClothesItem({\n\t\t\tslot: \"face\", name: \"lollipop\", name_cap: \"lollipop\", cn_name_cap: \"棒棒糖\", variable: \"lollipop\",\n\t\t\tstate: 0, state_base: 0, integrity: 5, integrity_max: 5, fabric_strength: 1,\n\t\t\treveal: 1, word: \"a\", plural: 0, colour: 0, colour_options: [], colour_combat: 0,\n\t\t\ttype: [\"normal\"], gender: \"n\", warmth: 0, cost: 200,\n\t\t\tdescription: \"含在嘴里甜甜的棒棒糖。\",\n\t\t\tshop: [], accessory: 0, accessory_colour: 0, accessory_colour_options: [],\n\t\t\taltposition: \"none\", altdisabled: [], cursed: 0, location: 0,\n\t\t\ticonFile: \"lollipop.png\", accIcon: 0, modder: \"DolOptimization\"\n\t\t}),\n\t];"
                     }
-                ]
+                ],
+                "twee": []
             }
         },
         {
