@@ -52,7 +52,7 @@
                     };
                 });
             } catch (error) {
-                AsAPI.log("原版优化", '保存字体到 IndexedDB 失败:'+error, "gold", "red");
+                asi.log("原版优化", '保存字体到 IndexedDB 失败:'+error, "gold", "red");
                 throw error;
             }
         },
@@ -90,7 +90,7 @@
                     };
                 });
             } catch (error) {
-                AsAPI.log("原版优化", '从 IndexedDB 加载字体失败:'+error, "gold", "red");
+                asi.log("原版优化", '从 IndexedDB 加载字体失败:'+error, "gold", "red");
                 return null;
             }
         },
@@ -117,7 +117,7 @@
                     };
                 });
             } catch (error) {
-                AsAPI.log("原版优化", '从 IndexedDB 移除字体失败:'+error, "gold", "red");
+                asi.log("原版优化", '从 IndexedDB 移除字体失败:'+error, "gold", "red");
             }
         },
         
@@ -148,9 +148,9 @@
                 await DolOptimization.saveCustomFonts(fontData);
                 
                 DolOptimization.updateFontDisplayName(fontData.fileName);
-                AsAPI.log("原版优化", `已应用字体: ${fontData.fileName}`);
+                asi.log("原版优化", `已应用字体: ${fontData.fileName}`);
             } catch (error) {
-                AsAPI.error("原版优化", `字体加载失败: ${error}`);
+                asi.error("原版优化", `字体加载失败: ${error}`);
                 DolOptimization.handleFontLoadError(error);
             }
         },
@@ -172,12 +172,12 @@
                 if (V.options.DolOptimization?.OptimizationCustomFont) {
                     delete V.options.DolOptimization.OptimizationCustomFont;
                 }
-                AsAPI.log("原版优化", `字体已保存到全局（IndexedDB）`);
+                asi.log("原版优化", `字体已保存到全局（IndexedDB）`);
             } else {
                 // 存档字体保持不变
                 V.options.DolOptimization.OptimizationCustomFont = fontData;
                 await DolOptimization.removeFontFromIndexedDB();
-                AsAPI.log("原版优化", `字体已保存到存档`);
+                asi.log("原版优化", `字体已保存到存档`);
             }
         },
         
@@ -187,15 +187,15 @@
             const savedFont = V?.options?.DolOptimization?.OptimizationCustomFont;
             
             if (savedFont && savedFont.data) {
-                AsAPI.log("原版优化", '发现存档字体，正在加载...');
+                asi.log("原版优化", '发现存档字体，正在加载...');
                 const success = await DolOptimization.applyFontFromData(savedFont);
                 if (success) {
-                    AsAPI.log("原版优化", '已加载存档字体:'+savedFont.fileName);
+                    asi.log("原版优化", '已加载存档字体:'+savedFont.fileName);
                     DolOptimization.updateFontDisplayName(savedFont.fileName);
                     if (V.options.DolOptimization?.OptimizationCustomFontGlobal) await DolOptimization.saveCustomFonts(savedFont);  // 点击了应用到全局但是没有选择字体
                     return true;
                 } else {
-                AsAPI.error("原版优化", '存档字体已损坏，自动清除');
+                asi.error("原版优化", '存档字体已损坏，自动清除');
                     DolOptimization.unsetCustomFont();
                 }
             }
@@ -209,11 +209,11 @@
                     if (V.options.DolOptimization) {
                         V.options.DolOptimization.OptimizationCustomFontGlobal = true;
                     }
-                    AsAPI.log("原版优化", '已加载全局字体:', globalFont.fileName);
+                    asi.log("原版优化", '已加载全局字体:', globalFont.fileName);
                     DolOptimization.updateFontDisplayName(globalFont.fileName);
                     return true;
                 } else {
-                    AsAPI.error("原版优化", '全局字体已损坏，自动清除');
+                    asi.error("原版优化", '全局字体已损坏，自动清除');
                     await DolOptimization.removeFontFromIndexedDB();
                 }
             }
@@ -237,7 +237,7 @@
                 V.options.DolOptimization.OptimizationCustomFontGlobal = false;
             }
             
-            AsAPI.log("原版优化", '字体设置已清除');
+            asi.log("原版优化", '字体设置已清除');
             DolOptimization.updateFontDisplayName(null);
         },
         
@@ -264,7 +264,7 @@
                 }
                 return bytes.buffer;
             } catch (error) {
-                AsAPI.log("原版优化", 'Base64 转换失败:'+error, "gold", "red");
+                asi.log("原版优化", 'Base64 转换失败:'+error, "gold", "red");
                 throw new Error('Invalid font data in ArrayBuffer.');
             }
         },
@@ -280,7 +280,7 @@
                 document.documentElement.style.fontFamily = `${DolOptimization.FONT_NAME}, sans-serif`;
                 return true;
             } catch (error) {
-                AsAPI.log("原版优化", '加载字体数据失败:'+error, "gold", "red");
+                asi.log("原版优化", '加载字体数据失败:'+error, "gold", "red");
                 DolOptimization.handleFontLoadError(error);
                 return false;
             }
@@ -300,7 +300,7 @@
             } else if (typeof window.dolOptShowToast === 'function') {
                 window.dolOptShowToast(msg, 'warning');
             } else {
-                AsAPI.log("原版优化", `[handleFontLoadError] ${msg}`, "gold", "yellow");
+                asi.log("原版优化", `[handleFontLoadError] ${msg}`, "gold", "yellow");
             }
         },
         
@@ -474,11 +474,11 @@
             [list[position], list[target]] = [list[target], list[position]];
         },
         wornStackingRemoveAll: function() {
-            if (!validArray(V.wornStacking)) {
-                AsAPI.log("原版优化", "全部叠加脱下 [失效] "+V.wornStacking, "gold", "yellow");
+            if (!asi.isvalid(V.wornStacking)) {
+                asi.log("原版优化", "全部叠加脱下 [失效] "+V.wornStacking, "gold", "yellow");
                 return
             };
-            AsAPI.log("原版优化", "全部叠加脱下 "+V.wornStacking, "gold", "yellow");
+            asi.log("原版优化", "全部叠加脱下 "+V.wornStacking, "gold", "yellow");
             for (const [slot, items] of Object.entries(V.wornStacking)) {
                 items.forEach((item, index) => {
                     V.wardrobe[slot].push(item);
@@ -488,18 +488,18 @@
             DolOptimization.wornStackingApplyStats();
         },
         wornStackingStore: function(location) {
-            if (location == "wardrobe" || Object.keys(V.wardrobes).includes(location) || !validArray(V.wornStacking)) {
-                AsAPI.log("原版优化", "存储叠加数据 [失效] "+location+" "+V.wornStacking, "gold");
+            if (location == "wardrobe" || Object.keys(V.wardrobes).includes(location) || !asi.isvalid(V.wornStacking)) {
+                asi.log("原版优化", "存储叠加数据 [失效] "+location+" "+V.wornStacking, "gold");
                 return
             };
-            AsAPI.log("原版优化", "存储叠加数据 "+location+" "+V.wornStacking, "gold");
+            asi.log("原版优化", "存储叠加数据 "+location+" "+V.wornStacking, "gold");
             V.store.stacking ??= {};
             V.store.stacking[location] = V.wornStacking;
             V.wornStacking = {};
         },
         wornStackingRestore: function(location) {
             if (V.store.stacking && V.store.stacking[location]) {
-                AsAPI.log("原版优化", "恢复叠加数据 "+V.store.stacking[location], "gold");
+                asi.log("原版优化", "恢复叠加数据 "+V.store.stacking[location], "gold");
                 V.wornStacking = V.store.stacking[location];
                 delete V.store.stacking[location];
             }
@@ -601,7 +601,7 @@
                     let saveItem = null
                     if (saveId) saveItem = await idb.getItem(saveId);
                     if (saveItem) {
-                        AsAPI.log("原版优化", `[initsave] Loaded: saveId=${saveId}`, "gold");
+                        asi.log("原版优化", `[initsave] Loaded: saveId=${saveId}`, "gold");
                         const title = group.querySelector(".saveDetails > span");
                         if (title) {
                             title.className = "saveTitle";
@@ -650,7 +650,7 @@
                                                         }
                                                         DolOptimization.saveSettings();
                                                     } catch (err) {
-                                                        AsAPI.log("原版优化", "保存描述失败", "gold", "red");
+                                                        asi.log("原版优化", "保存描述失败", "gold", "red");
                                                     }
                                                 }
                                                 title.innerText = newText || originalDescText;   // 新描述为空则回退原始描述

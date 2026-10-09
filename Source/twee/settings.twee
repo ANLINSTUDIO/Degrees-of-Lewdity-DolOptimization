@@ -55,7 +55,7 @@
 			<div style="text-align: start;" 
 			data-remote="https://sb.alseece.top/2/value.php?key=DoL-Optimization-Notice"
 			data-replace="true">正在获取公告</div>
-			<<run AsAPI.loadRemote()>>
+			<<run asi.loadRemote()>>
 		</div>
 		<div class="m-2">
 			<p class="gold m-0">百度贴吧发布帖</p>

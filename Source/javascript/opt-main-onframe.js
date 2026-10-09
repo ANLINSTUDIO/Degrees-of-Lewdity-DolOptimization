@@ -8,7 +8,7 @@
                 若你发现本模组的其他不依赖框架的功能失效，请尝试将本模组顺序提升。
             `;
             if (typeof window.dolOptAlert === 'function') window.dolOptAlert(message, '依赖提示');
-            AsAPI.log("原版优化", "需要秋枫白桦框架，请确保安装并将本模组置于框架下方", "gold", "red");
+            asi.log("原版优化", "需要秋枫白桦框架，请确保安装并将本模组置于框架下方", "gold", "red");
         }, 100);
         return;
     }

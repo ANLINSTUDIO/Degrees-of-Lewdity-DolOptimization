@@ -1,19 +1,14 @@
 (() => {
     window.DolOptimization = {};
 
-    window.AsAPI = {
-        // 用于在宏被调用后执行额外的函数
-        onMacro: function(name, func) {
-            let originalMacro = Macro.get(name);
-            if (originalMacro) {
-                let oldHandler = originalMacro.handler;
-                Macro.delete(name);
-                Macro.add(name, {
-                    handler: function () {
-                        oldHandler.apply(this, arguments);
-                        setTimeout(func, 10);
-                    }
-                });
+    /* AsAPI: Start @early inject */
+    window.AsAPI = { ...window.AsAPI,  // early inject
+        // 用于检查对象或数组是否有效
+        isvalid: function(dict) {
+            if (dict instanceof Object) {
+                return dict && Object.keys(dict).length > 0
+            } else {
+                return dict && dict.length > 0
             }
         },
         // 用于在故事字幕中添加内容
@@ -27,7 +22,7 @@
                     container.insertAdjacentElement('afterbegin', newCaption);
                 }
                 document.getElementById("ui-bar").classList.remove("stowed");
-            }, 10);
+            });
         },
         // 用于加载远程数据并显示在元素中
         loadRemote: function() {
@@ -40,13 +35,14 @@
                     });
                     const data = await response.json();
                     if (!data.error) {
-                        element.textContent = String(data.value ?? '');
+                        let content = data.value;
                         if (element.dataset.replace === 'true') {
-                            element.style.whiteSpace = 'pre-line';
+                        content = content.replaceAll('\n', '<br>');
                         }
+                        element.innerHTML = content;
                     }
                     } catch (error) {
-                    element.textContent = element.dataset.error || '加载失败';
+                    element.innerHTML = element.dataset.error || '加载失败';
                     }
                 });
             });
@@ -69,16 +65,8 @@
             }
             return friendlyTimeText
         },
-        // 当没有 event 时重新加载当前 passage
-        reload: function() {
-            if (!V.event) {
-                Engine.play(passage());
-                return true;
-            }
-            return false;
-        },
         // 颜色打印
-        log: function(title, content, title_color = 'green', content_color = 'white') {
+        log: function(title, content, title_color = 'green', content_color = 'white', func = 'log') {
             let text = "";
             const styles = [];
             if (title) {
@@ -89,21 +77,26 @@
                 text += ` ${content}`;
                 styles.push(`color: ${content_color};`);
             }
-            console.log(text, ...styles);
+            console[func](text, ...styles);
         },
-        // 错误警告
-        error: function(title, content) {
-            this.log(title, content, 'yellow', 'red');
-        }
+        // 警告
+        warn: function(title, content, title_color = 'green') { this.log(title, content, title_color, 'yellow', "warn") },
+        // 错误
+        error: function(title, content, title_color = 'green') { this.log(title, content, title_color, 'red', "error") },
+        // Debug
+        debug: function(title, content, title_color = 'yellow') { if (AsAPI.debugon) this.log(title, content, title_color, 'gray', "warn") },
+        debugon: false,
+        // 当没有 event 时重新加载当前 passage
+        reload: function() {
+            if (!V.event) {
+                SugarCube.Engine.play(V.passage);
+                return true;
+            }
+            return false;
+        },
     }
-
-    window.validArray = function(dict) {
-        if (dict instanceof Object) {
-            return dict && Object.keys(dict).length > 0
-        } else {
-            return dict && dict.length > 0
-        }
-    }
+    Object.defineProperty(window, 'asi', { get() { return window.AsAPI; }, configurable: true });
+    /* AsAPI: End @early inject */
 
     /**
      * 游戏原生暗黑风格确认模态框（替代浏览器原生突兀白底 confirm）
