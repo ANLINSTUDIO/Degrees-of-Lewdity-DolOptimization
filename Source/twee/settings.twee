@@ -32,7 +32,7 @@
 
 		<!-- 未启用图包警告 -->
 		<div class="opt-settings-tipimg">
-			<img src='guide/opt-tip.png' onerror="javascript:this.parentElement.style.display='block'">
+			<img src='img/guide/opt-tip.png' onerror="javascript:this.parentElement.style.display='block'">
 			请前往 [Mod管理器] > [Mod Config] > [BeautySelectorAddon 启用及排序管理], 将本模组提供的图像包启用, <b>否则将会大幅降低本模组体验！</b>
 			启用后<b>无需重新载入</b>，重新打开此选项页面即可。
 		</div>
@@ -72,7 +72,7 @@
 			<label><<radiovar "$options.opt.UiBarToggle" "back">><<run DolOptimization.applySettings()>><</radiovar>> 回溯</label> |
 			<label><<radiovar "$options.opt.UiBarToggle" "hide">><<run DolOptimization.applySettings()>><</radiovar>> 隐藏</label>
 
-			<img src="guide/“打开关闭导航栏”的黑块箭头.png">
+			<img src="img/guide/“打开关闭导航栏”的黑块箭头.png">
 			<div class="alist">
 				<a target="_blank" class="link-external" href='https://tieba.baidu.com/home/main?id=tb.1.b040b4ea.W-Ia-FiFJRnpGK2yEvLkxg%3Ft%3D1773825545&fr=pb' tabindex="0">「離地三尺一條河」</a>
 				<a target="_blank" class="link-external" href='https://tieba.baidu.com/home/main?id=tb.1.4515509a.HMRwrMmE3gOEM7NFLLQNbg%3Ft%3D1778597577&fr=pb' tabindex="0">「◆冬至蝉鸣◆」</a>
@@ -94,7 +94,7 @@
 				<</if>>
 				应用到全局<<if $passage is "Start">><span class="tooltip-anchor linkBlue" tooltip="在首页时，应用到全局会被锁定">(?)</span><</if>>
 			</label>
-			<img src="guide/自定义字体.png">
+			<img src="img/guide/自定义字体.png">
 			<a target="_blank" class="link-external" href='https://tieba.baidu.com/home/main?id=tb.1.f77fed2a.NDdy5-IAKW62SdnYGmq04g%3Ft%3D1773829759&fr=pb' tabindex="0">「尼落·忍者」</a>
 		</div>
 		<div class="optimization"> <<if $passage is 'Start'>><div class="disabled"/><</if>>
@@ -103,7 +103,7 @@
 				衣柜容量自定义 <span class="red">(作弊)</span>
 			</label>
 			<input type="number" id="largerWardrobeValue" min="1" @value="$options.DolOptimization.LargerWardrobeValue ?? $wardrobe.space" onchange="DolOptimization.largerWardrobe(this)">
-			<img src="guide/衣柜容量自定义.png">
+			<img src="img/guide/衣柜容量自定义.png">
 		</div>
 		<div class='optimization'> <<if $passage is 'Start'>><div class="disabled"/><</if>>
 			<label>
@@ -113,7 +113,7 @@
 			<<button [["重置升级等级"|$passage]]>>
 				<<unset $options.DolOptimization.LargerWardrobeExpandedValue>>
 			<</button>>
-			<img src="guide/大大大衣柜升级.png">
+			<img src="img/guide/大大大衣柜升级.png">
 		</div>
 		<div class="optimization">
 			<label>
@@ -130,7 +130,7 @@
 			</label><br>
 			<small>特质叠加：叠加服装的特质和暴露度会与主服装一起生效；保暖叠加：叠加服装的保暖值和主服装相加。</small><br>
 			<small class="red">注意: 功能是实验性。个别特殊衣物可能仍无法显示，谨慎开启。</small>
-			<img src="guide/叠加服装部件.png">
+			<img src="img/guide/叠加服装部件.png">
 			<div class="alist">
 				<a target="_blank" class="link-external" href='https://tieba.baidu.com/home/main?id=tb.1.cd3433f7.YrE8v7vAxsuld1PmIu9_Ww%3Ft%3D1778860911&fr=pb' tabindex="0">「兄弟我仨人」</a>
 				<a target="_blank" class="link-external" href='https://tieba.baidu.com/home/main?id=tb.1.c5ee8bec.KPmrsbwyRq56_tdZjH_9Nw%3Ft%3D1778860919&fr=pb' tabindex="0">「小鼹鼠.」</a>
@@ -169,7 +169,7 @@
 				<<checkbox "$options.opt.ShowProcess" false true autocheck>>
 				显示植圃生长进度
 			</label><br>
-			<img src="guide/园艺大师.png">
+			<img src="img/guide/园艺大师.png">
 		</div>
 		<div class="optimization">
 			快速继续<br>
@@ -181,7 +181,7 @@
 			按钮离底部：<input type="number" min="0" max="100" @value="$options.opt.NextButtonBottom ?? 30" onchange="DolOptimization.nextButtonBottom(this)"> %<br>
 			匹配关键词（每行一个，靠前的优先匹配）：<br>
 			<textarea rows="5" style="width: stretch; min-width: auto;" onchange="DolOptimization.nextButtonRulesEdit(this)"><<print $options.opt.NextButtonRules?$options.opt.NextButtonRules.join("\n"):DolOptimization.nextButtonRules.join("\n")>></textarea><br>
-			<img src="guide/快速继续.png">
+			<img src="img/guide/快速继续.png">
 		</div>
 	</div>
 	<div class="settingsGrid">
@@ -191,14 +191,14 @@
 				处女膜修复
 			</label><br>
 			<small>你可以在医院处修复处女膜。</small><br>
-			<img src="guide/处女膜修复.png">
+			<img src="img/guide/处女膜修复.png">
 		</div>
 		<div class='optimization'>
 			<label>
 				理发店售卖头发
 			</label><br>
 			<small>你可以在理发店剪下并出售你的头发。在属性栏可以看到你的发质。使用生发配方会增加发质，使用发胶会降低发质。</small><br>
-			<img src="guide/理发店售卖头发.png">
+			<img src="img/guide/理发店售卖头发.png">
 			<a target="_blank" class="link-external" href='https://tieba.baidu.com/home/main?id=tb.1.d4b6efc.7_Xn8IJOrS0i6BeCVwXnbw%3Ft%3D1753267139&fr=pb' tabindex="0">「叶叶的柠檬精」</a>
 		</div>
 		<div class='optimization'>
@@ -206,7 +206,7 @@
 				园艺大师
 			</label><br>
 			<small>你可以可以在孤儿院的大厅和卧室看到花坛中是否已经浇水。花园可以查看种子生长的进度。加入了催熟肥，使用后缩短种子成熟时间并且增加少量土壤质量。加入了自动灌溉机，一次补充后可以支持20次的灌溉次数。可以在购物中心一楼农资店购买。</small><br>
-			<img src="guide/园艺大师.png">
+			<img src="img/guide/园艺大师.png">
 			<a target="_blank" class="link-external" href='https://tieba.baidu.com/home/main?id=tb.1.1003b7ad.5MZbTG9s2a-wxZyCKtsxCw%3Ft%3D1779616769&fr=pb' tabindex="0">「好雪本気」</a>
 		</div>
 	</div>
