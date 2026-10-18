@@ -1,0 +1,12 @@
+
+	<<destinationpoolchangingroom>>
+
+	<br>
+	<<swimmingicon>><<link [[练习游泳 (0:30)|$passage]]>>
+		<<pass 30>>
+		<<water>>
+		<<physique 3>><<swimmingskilluse>>
+		<<stress 4>>
+		<<tiredness 4>>
+	<</link>><<gstress>><<gswimming>><<gtiredness>>
+	<<fromoptP>>
