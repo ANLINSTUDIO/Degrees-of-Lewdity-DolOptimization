@@ -26,20 +26,48 @@
 				<<pass 5>>
 			<</link>>
 		<</capture>>
-		<<gbeauty>><<washText "face">>
-		<<if $skin.forehead.pen>>
-			<<set _penText = {pen: '笔迹', lipstick: '口红印', mud: '泥土'}>>
-			<<if _penText[$skin.forehead.pen]>>
-				<<note '洗掉额头上的' + _penText[$skin.forehead.pen] 'green'>>
-			<</if>>
-		<</if>>
-		<<if $makeup.lipstick != 0 or $makeup.eyeshadow != 0 or $makeup.blusher != 0 or ($makeup.mascara != 0 and !$makeup.mascara.includes('waterproof')) or $makeup.concealer != 0>>
-			<<note "卸妆" "red">>
-		<</if>>
 	<<else>>
 		<<set $mildywash to 0>>
 		<<icon 'mildywash.png'>>使用洗面奶洗脸 | <span class="red">数量不足: 来源: 遇欲便利店</span>
-	<</if>><br>
+	<</if>>
+	<<gbeauty>><<washText "face">>
+	<<if $skin.forehead.pen>>
+		<<set _penText = {pen: '笔迹', lipstick: '口红印', mud: '泥土'}>>
+		<<if _penText[$skin.forehead.pen]>>
+			<<note '洗掉额头上的' + _penText[$skin.forehead.pen] 'green'>>
+		<</if>>
+	<</if>>
+	<<if $makeup.lipstick != 0 or $makeup.eyeshadow != 0 or $makeup.blusher != 0 or ($makeup.mascara != 0 and !$makeup.mascara.includes('waterproof')) or $makeup.concealer != 0>>
+		<<note "卸妆!" "red">>
+	<</if>>
+	<br>
+
+	<<set _carekey to 'shampoo-'+Time.dayState>>
+	<<set _times to $shampoo * 20>>
+	<<if $daily.care.includes(_carekey)>>
+		<<icon 'shampoo.png'>>使用洗发水洗头 (剩余_times次) | <span class="green">刚才已经用过</span>
+	<<elseif $shampoo and $shampoo gt 0>>
+		<<capture _carekey>>
+			<<icon 'shampoo.png'>><<link [[使用洗发水洗头 (剩余_times次) (0:05)|$passage]]>>
+				<<bodyliquid "hair" "semen" -5>>
+				<<bodyliquid "hair" "goo" -5>>
+				<<bodyliquid "hair" "nectar" -5>>
+				<<set $beauty to Math.min($beauty + 15, $beautymax)>>
+				<<set $shampoo to (Math.floor($shampoo * 20) - 1) / 20>>
+				<<set $daily.care.push(_carekey)>>
+				<<set $hairtexture = Math.clamp((V.hairtexture || 50) + 3, 0, 100);>>
+				<<set $swimmingskill += 4>>
+				<<set $swimmingskill to Math.clamp($swimmingskill, 0, 1000)>>
+				<<pass 5>>
+			<</link>>
+		<</capture>>
+	<<else>>
+		<<set $shampoo to 0>>
+		<<icon 'shampoo.png'>>使用洗发水洗头 | <span class="red">数量不足: 来源: 遇欲便利店</span>
+	<</if>>
+	<<gbeauty>><<washText "hair">><<note "+发质" "green">><<gswimming>>
+	<br>
+
 	<br>
 <</widget>>
 

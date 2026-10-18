@@ -554,6 +554,17 @@
 				color: "teal",
 				unsable: "浴室",
 			}>>
+			<<ConveniencestoreGoodItem {
+				icon: "<<icon 'shampoo.png'>>",
+				name: "洗发水",
+				owned: $mildywash,
+				price: 30,
+				per: 1,
+				inventory: 6,
+				apply: "<<buyitem shampoo>>",
+				color: "teal",
+				unsable: "浴室",
+			}>>
 			<span class="black">更多商品还得等「遇欲」进货来</span>
 			<!-- more goods at 货架 -->
 		</div>
