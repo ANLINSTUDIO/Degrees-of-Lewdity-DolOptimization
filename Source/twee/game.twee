@@ -369,7 +369,9 @@
 			<<if $conveniencestoregoodtobuy[3] isnot undefined>>
 				<<note '+ $conveniencestoregoodtobuy[3][1] $conveniencestoregoodtobuy[0]' $conveniencestoregoodtobuy[3][2].color>>
 				<<print $conveniencestoregoodtobuy[3][0]>>
-				<<if $conveniencestoregoodtobuy[3][2].unsable>>
+				<<if typeof $conveniencestoregoodtobuy[3][2].unsable is "string">>
+					<small class="black">前往 <<print $conveniencestoregoodtobuy[3][2].unsable>> 以使用</small>
+				<<elseif $conveniencestoregoodtobuy[3][2].unsable is true>>
 					<small class="black">前往 日志>可用物品 以使用</small>
 				<</if>>
 			<</if>>
@@ -495,6 +497,17 @@
 				apply: "<<buyitem energydrink>>",
 				color: "teal",
 				unsable: true,
+			}>>
+			<<ConveniencestoreGoodItem {
+				icon: "<<icon 'mildywash.png'>>",
+				name: "洗面奶",
+				owned: $mildywash,
+				price: 30,
+				per: 1,
+				inventory: 6,
+				apply: "<<buyitem mildywash>>",
+				color: "teal",
+				unsable: "浴室",
 			}>>
 			<span class="black">更多商品还得等「遇欲」进货来</span>
 			<!-- more goods at 货架 -->

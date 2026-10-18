@@ -1,0 +1,21 @@
+
+	<br>
+	<<mirror>>
+	洗护用品<br>
+	<<set $daily.care ??= []>>
+	<<set _key to 'mildywash-'+Time.dayState>>
+	<<set _times to $mildywash * 10>>
+	<<if $daily.care.includes(_key)>>
+		<<icon 'mildywash.png'>>使用洗面奶洗脸 (剩余_times次) | <span class="green">刚才已经用过</span>
+	<<elseif $mildywash and $mildywash gt 0>>
+		<<set $daily.care.push(_key)>>
+		<<icon 'mildywash.png'>><<link [[使用洗面奶洗脸 (剩余_times次) (0:05)|$passage]]>><<set $beauty to Math.min($beauty + 15, $beautymax)>><<pass 5>><</link>><<gbeauty>>
+		<<set $mildywash to (Math.floor($mildywash * 10) - 1) / 10>>
+	<<else>>
+		<<set $mildywash to 0>>
+		<<icon 'mildywash.png'>>使用洗面奶洗脸 | <span class="red">数量不足: 来源: 遇欲便利店</span>
+	<</if>><br>
+	<br>
+<</widget>>
+
+<<widget "shaveOptions">>

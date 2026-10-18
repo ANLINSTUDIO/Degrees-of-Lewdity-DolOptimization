@@ -41,6 +41,7 @@
     "img/misc/icon/energydrink.png",
     "img/misc/icon/fertiliserripening.png",
     "img/misc/icon/lollipop.png",
+    "img/misc/icon/mildywash.png",
     "img/misc/icon/seeds.png",
     "img/misc/icon/stay-frigidity-pill.png",
     "img/misc/icon/stay-sober-pill.png",
@@ -278,6 +279,25 @@
           "findRegex": "<<faceintegrity>>\\s*\\$worn\\.face\\.(?:name|cn_name_cap)",
           "regexFlag": "g",
           "replace": "<<print DolOptimization.stackedTraitName(\"face\", \"mask\")>>"
+        },
+        {
+          "tip": "【1.1.2】学校泳池练习",
+          "passage": "School Pool",
+          "findString": "\n\t<<destinationpoolchangingroom>>\n",
+          "replaceFile": "twee/replace/1.1.2 学校泳池练习.twee",
+          "_atool": true
+        },
+        {
+          "passage": "Hallways",
+          "findString": "s]]>><</link>>\n\t\t<br>",
+          "replaceFile": "twee/replace/1.1.2 学校游荡.twee",
+          "_atool": true
+        },
+        {
+          "passage": "Widgets Pubic Hair",
+          "findString": "\n<</widget>>\n\n<<widget \"shaveOptions\">>",
+          "replaceFile": "twee/replace/1.1.2 洗护用品.twee",
+          "_atool": true
         }
       ]
     },
