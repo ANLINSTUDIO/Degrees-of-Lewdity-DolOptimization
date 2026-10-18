@@ -1,16 +1,37 @@
 
 	<br>
-	<<mirror>>
 	洗护用品<br>
 	<<set $daily.care ??= []>>
-	<<set _key to 'mildywash-'+Time.dayState>>
+	<<set _carekey to 'mildywash-'+Time.dayState>>
 	<<set _times to $mildywash * 10>>
-	<<if $daily.care.includes(_key)>>
+	<<if $daily.care.includes(_carekey)>>
 		<<icon 'mildywash.png'>>使用洗面奶洗脸 (剩余_times次) | <span class="green">刚才已经用过</span>
 	<<elseif $mildywash and $mildywash gt 0>>
-		<<set $daily.care.push(_key)>>
-		<<icon 'mildywash.png'>><<link [[使用洗面奶洗脸 (剩余_times次) (0:05)|$passage]]>><<set $beauty to Math.min($beauty + 15, $beautymax)>><<pass 5>><</link>><<gbeauty>>
-		<<set $mildywash to (Math.floor($mildywash * 10) - 1) / 10>>
+		<<capture _carekey>>
+			<<icon 'mildywash.png'>><<link [[使用洗面奶洗脸 (剩余_times次) (0:05)|$passage]]>>
+				<<bodyliquid "face" "semen" -5>>
+				<<bodyliquid "face" "goo" -5>>
+				<<bodyliquid "face" "nectar" -5>>
+				<<if $skin.forehead.pen is "pen" or $skin.forehead.pen is "lipstick" or $skin.forehead.pen is "mud">>
+					<<bodywriting_clear forehead>>
+				<</if>>
+				<<washmakeup>>
+				<<set $beauty to Math.min($beauty + 15, $beautymax)>>
+				<<set $mildywash to (Math.floor($mildywash * 10) - 1) / 10>>
+				<<set $daily.care.push(_carekey)>>
+				<<pass 5>>
+			<</link>>
+		<</capture>>
+		<<gbeauty>><<washText "face">>
+		<<if $skin.forehead.pen>>
+			<<set _penText = {pen: '笔迹', lipstick: '口红印', mud: '泥土'}>>
+			<<if _penText[$skin.forehead.pen]>>
+				<<note '洗掉额头上的' + _penText[$skin.forehead.pen] 'green'>>
+			<</if>>
+		<</if>>
+		<<if $makeup.lipstick != 0 or $makeup.eyeshadow != 0 or $makeup.blusher != 0 or ($makeup.mascara != 0 and !$makeup.mascara.includes('waterproof')) or $makeup.concealer != 0>>
+			<<note "卸妆" "red">>
+		<</if>>
 	<<else>>
 		<<set $mildywash to 0>>
 		<<icon 'mildywash.png'>>使用洗面奶洗脸 | <span class="red">数量不足: 来源: 遇欲便利店</span>

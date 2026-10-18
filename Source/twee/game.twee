@@ -749,3 +749,50 @@
 <<widget "gnicotine">>
 	<<note "+ 尼古丁依赖" "purple">>
 <</widget>>
+
+<<widget "washText">>
+	<<set _LBpart = {
+		anus: '肛门', bottom: '屁股', chest: '胸部', face: '脸',
+		feet: '脚', hair: '头发', leftarm: '左臂', mouth: '嘴',
+		neck: '脖子', penis: '阴茎', rightarm: '右臂', thigh: '大腿',
+		tummy: '肚子', vagina: '阴道', vaginaoutside: '阴唇'
+	}>>
+	<<set _LBliquid = {goo: '粘液', semen: '精液', nectar: '花蜜'}>>
+	<<set _keys = _args>>
+
+	<<set _hit = {}>>
+	<<set _liquids = []>>
+	<<for _p range _keys>>
+		<<set _src = $player.bodyliquid[_p]>>
+		<<if _src isnot undefined>>
+			<<set _hit[_p] = []>>
+			<<for _k range ['goo', 'semen', 'nectar']>>
+				<<if _src[_k] and _src[_k] !== 0>>
+					<<run _hit[_p].push(_k)>>
+					<<if _liquids.indexOf(_k) === -1>>
+						<<run _liquids.push(_k)>>
+					<</if>>
+				<</if>>
+			<</for>>
+		<</if>>
+	<</for>>
+
+	<<set _parts = []>>
+	<<for _p range _keys>>
+		<<if _hit[_p] and _hit[_p].length>>
+			<<run _parts.push(_p)>>
+		<</if>>
+	<</for>>
+
+	<<if _parts.length and _liquids.length>>
+		<<set _partNames = _parts.map(function(p){ return _LBpart[p] || p; }).join('和')>>
+		<<set _liquidNames = _liquids.map(function(k){ return _LBliquid[k]; }).join('和')>>
+		<<set _text = _partNames + '上的' + _liquidNames>>
+	<<else>>
+		<<set _text = ''>>
+	<</if>>
+
+	<<if _text>>
+		<<note '洗掉_text' 'green'>>
+	<</if>>
+<</widget>>
