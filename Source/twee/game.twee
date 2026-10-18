@@ -841,3 +841,14 @@
 		<<note '洗掉_text' 'green'>>
 	<</if>>
 <</widget>>
+
+:: ======= 洗护用品 =======
+:: Bathroom Mirror
+<<effects>>
+
+<<bathroomicon>><<link [[离开|Bathroom]]>><<unset $mirrorMenu>><<unset $bodywritingSet>><<postMirror>><</link>>
+<br>
+
+<<mirror>>
+<br><br>
+<<fromopt>>

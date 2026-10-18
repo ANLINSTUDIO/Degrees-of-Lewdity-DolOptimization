@@ -2,6 +2,10 @@
 	<br>
 	洗护用品<br>
 	<<set $daily.care ??= []>>
+	<<fromoptP>>
+
+	<<icon 'mirror-bathroom.png'>>[[镜子|Bathroom Mirror]]<br>
+
 	<<set _carekey to 'mildywash-'+Time.dayState>>
 	<<set _times to $mildywash * 20>>
 	<<if $daily.care.includes(_carekey)>>
