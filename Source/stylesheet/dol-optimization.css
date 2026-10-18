@@ -419,7 +419,7 @@ a.opt-shine::after {
     color: var(--gold);
     border-radius: 4px;
     white-space: nowrap;
-    animation: dolOptToastIn 0.2s ease-out forwards;
+    animation: dolOptToastIn 0.2s ease-out;
     transition: opacity 0.4s ease;
     pointer-events: none;
 }

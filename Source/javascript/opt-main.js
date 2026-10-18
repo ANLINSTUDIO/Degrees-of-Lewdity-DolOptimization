@@ -773,6 +773,7 @@
             if (document.getElementById("next")) return;
             const opt = DolOptimization.data;
             if (opt && opt.NextButton === false) return;
+            if (opt.NextButtonBlacklist.includes(V.passage)) return;
             const passage = document.querySelector(".passage");
             if (!passage) return;
             const links = [...passage.querySelectorAll('a[role="link"]')];
@@ -841,7 +842,15 @@
             close.addEventListener("click", () => {
                 wrap.classList.add("nextButton-hide");
                 setTimeout(() => wrap.remove(), 400);
-                DolOptimization.showToast("已临时关闭快速继续按钮");
+                V.nextbuttonclosed ??= [];
+                if (V.nextbuttonclosed.includes(V.passage)) {
+                    DolOptimization.data.NextButtonBlacklist.push(V.passage)
+                    DolOptimization.showToast("已将此页面加入快速继续黑名单");
+                } else {
+                    V.nextbuttonclosed = [V.passage, ...V.nextbuttonclosed];
+                    V.nextbuttonclosed.splice(3);
+                    DolOptimization.showToast("已临时关闭快速继续按钮");
+                }
             });
             const closediv = document.createElement("div");
             closediv.className = "customOverlayClose";
@@ -876,6 +885,13 @@
         nextButtonRulesEdit: function(target) {
             const rules = target.value.split(/\r?\n/).map(s => s.trim()).filter(Boolean);
             if (rules.length) V.options.opt.NextButtonRules = rules;
+            document.getElementById("nextButton")?.remove();
+            setTimeout(DolOptimization.ensureNextButton);
+        },
+        // 【1.1.1】快速继续黑名单
+        nextButtonBlacklistEdit: function(target) {
+            const rules = target.value.split(/\r?\n/).map(s => s.trim()).filter(Boolean);
+            DolOptimization.data.NextButtonBlacklist = rules;
             document.getElementById("nextButton")?.remove();
             setTimeout(DolOptimization.ensureNextButton);
         }

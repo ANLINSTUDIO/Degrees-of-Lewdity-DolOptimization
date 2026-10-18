@@ -13,6 +13,7 @@
         value("NextButton", true);
         value("NextButtonBottom", 30);
         value("NextButtonRules", null);
+        value("NextButtonBlacklist", []);
     }
 
     DolOptimization.onPassageRender = function (ev) {
