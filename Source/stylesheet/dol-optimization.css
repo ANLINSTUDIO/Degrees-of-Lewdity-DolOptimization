@@ -565,3 +565,15 @@ a.opt-shine::after {
     border: 1px solid var(--700);
     padding: 5px;
 }
+
+.buyMultipleInput > .macro-numberslider {
+    display: flex;
+}
+
+.buyMultipleInput > .macro-numberslider > input {
+    flex: 1;
+}
+
+.buy > .disabled {
+    pointer-events: none;
+}

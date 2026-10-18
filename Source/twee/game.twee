@@ -302,12 +302,17 @@
 <<getouticon>><<link [[离开|Shopping Centre]]>><</link>>
 
 
+:: ======= 学校优化 =======
+:: Teacher's office
+
+
+
 :: ======= 遇欲便利店 ======= [widget]
 <<widget "buyitem">>
 	<<if V[_args[0]] is undefined>>
 		<<set V[_args[0]] to 0>>
 	<</if>>
-	<<set V[_args[0]] += (_args[1] ?? 1)>>
+	<<set V[_args[0]] += (_args[1] ?? 1) * _buynum>>
 <</widget>>
 <<widget "ConveniencestoreGoodItem">>
 	<!-- <<ConveniencestoreGoodItem { icon: "图标执行段", name: "商品名", owned: 已拥有实参, price: 价格, per: 每售卖数量(数字或描述文本), inventory: 每日库存, apply: "售卖执行段", color: "默认语段颜色", unsable: true }>> -->
@@ -329,7 +334,7 @@
 		<<elseif typeof _args[0].per is "string">>
 			<<print _args[0].per>>
 		<</if>>
-		| 已拥有:<<print _args[0].owned??"0">> | <span class="gold">￡_args[0].price</span>
+		| <span class="gold">￡_args[0].price</span>
 
 		<span style="word-break: keep-all;">
 			<<if _inventory lt _per>>
@@ -338,16 +343,52 @@
 				<span class="gold">库存:_inventory</span>
 			<</if>>
 		</span>
+
+		<br>
+		已拥有:<<print _args[0].owned??"0">> 
+
 		<<if $money lt _args[0].price*100>>
 			| <span class="red">支付不起</span>
 		<<elseif _inventory lt _per>>
 		<<else>>
-			| <<capture _per>>
-				<<link [[购买|$passage]]>>
-					<<set $daily.conveniencestoregoods[_args[0].name] -= _per>>
-					<<set _default to _args[0].color?[_args[0].icon, _per, _args[0]]:undefined>>
-					<<set $conveniencestoregoodtobuy to [_args[0].name, _args[0].price*100, _args[0].apply, _default]>>
-				<</link>>
+			<<set _name to _args[0].name>>
+			<<set _price to _args[0].price>>
+			<<set _times to 1>>
+			| <<capture _name _price _per>>
+				<label @id='"buy-"+_name' class="no-numberify buy"><<link [[购买|$passage]]>>
+					<<set _cost to _args[0].price*_times>>
+					<<if $money lt _cost * 100 or $daily.conveniencestoregoods[_name] lt _per*_times>>
+					<<else>>
+						<<set $daily.conveniencestoregoods[_name] -= _per*_times>>
+						<<set _default to _args[0].color?[_args[0].icon, _args[0], _args[0].quantifier??""]:undefined>>
+						<<set $conveniencestoregoodtobuy to [_name, _args[0].price*100, _args[0].apply, _default, _per, _times]>>
+					<</if>>
+				<</link>></label>
+				<label class="no-numberify buyMultiple"><<link 批量购买>>
+					<<set _times to 1>>
+					<<run $(".buyMultipleInput").empty()>>
+					<<set _id to "#buyMultiple-"+_name>>
+					<<replace _id>><<numberslider "_times" _times 1 10 1>><</replace>>
+					<<run $(() => {
+						$(".buy > a").text("购买");
+						$(".buy > a").removeClass("disabled");
+						$(".buyCost").attr('style', 'display: none');
+						$('.buyMultipleInput input').on('input change', (el) => {
+							let data = el.currentTarget?.parentElement?.parentElement?.dataset;
+							if (data.name) {
+								let cost = data.price * _times;
+								$(`#buy-${data.name} > a`).text("购买×" + data.per*_times);
+								$(`#buy-${data.name} > a`).toggleClass('disabled', $money < cost * 100 || $daily.conveniencestoregoods[data.name] < data.per*_times);
+								$(`#buyCost-${data.name}`).attr('style', '');
+								$(`#buyCost-${data.name}`).text("￡"+cost);
+							}
+						});
+						$('.buyMultipleInput input').trigger('input')
+					})>>
+				<</link>></label>
+				<span @id='"buyCost-"+_name' class="buyCost gold" style="display: none">￡_price</span>
+				<br>
+				<div @id='"buyMultiple-"+_name' class="buyMultipleInput" @data-name='_name' @data-price='_price' @data-per='_per'></div>
 			<</capture>>
 		<</if>>
 	</div>
@@ -362,16 +403,19 @@
 <<widget "ConveniencestoreGoodsApply">>
 	<<set $phase to "buy">>
 	<<if $conveniencestoregoodtobuy>>
-		<<if $money gte $conveniencestoregoodtobuy[1]>>
-			<<print '<<money -'+$conveniencestoregoodtobuy[1]+'>>'>>
+		<<set _per to $conveniencestoregoodtobuy[4]??1>>
+		<<set _times to $conveniencestoregoodtobuy[5]??1>>
+		<<set _buynum to _per*_times>>
+		<<if $money gte $conveniencestoregoodtobuy[1] * _times>>
+			<<print '<<money -'+$conveniencestoregoodtobuy[1]*_times+'>>'>>
 			“给，这些是你的，要收好它们呀，欢迎下次光临！”遇欲将装了$conveniencestoregoodtobuy[0]的一个塑料袋递给你。
 			<<print $conveniencestoregoodtobuy[2]>>
 			<<if $conveniencestoregoodtobuy[3] isnot undefined>>
-				<<note '+ $conveniencestoregoodtobuy[3][1] $conveniencestoregoodtobuy[0]' $conveniencestoregoodtobuy[3][2].color>>
+				<<note '+ _buynum $conveniencestoregoodtobuy[3][2] $conveniencestoregoodtobuy[0]' $conveniencestoregoodtobuy[3][1].color>>
 				<<print $conveniencestoregoodtobuy[3][0]>>
-				<<if typeof $conveniencestoregoodtobuy[3][2].unsable is "string">>
-					<small class="black">前往 <<print $conveniencestoregoodtobuy[3][2].unsable>> 以使用</small>
-				<<elseif $conveniencestoregoodtobuy[3][2].unsable is true>>
+				<<if typeof $conveniencestoregoodtobuy[3][1].unsable is "string">>
+					<small class="black">前往 <<print $conveniencestoregoodtobuy[3][1].unsable>> 以使用</small>
+				<<elseif $conveniencestoregoodtobuy[3][1].unsable is true>>
 					<small class="black">前往 日志>可用物品 以使用</small>
 				<</if>>
 			<</if>>
@@ -414,7 +458,7 @@
 				price: 30,
 				per: 2,
 				inventory: 18,
-				apply: "<<gcondoms 2>><<condomicon>>",
+				apply: "<<gcondoms _buynum>><<condomicon>>",
 			}>>
 			<<ConveniencestoreGoodItem {
 				icon: "<<pregnancytesticon>>",
@@ -435,6 +479,7 @@
 				inventory: 27,
 				apply: "<<buyitem cigarette 8>>",
 				color: "teal",
+				quantifier: "包",
 				unsable: true,
 			}>>
 			<<ConveniencestoreGoodItem {
