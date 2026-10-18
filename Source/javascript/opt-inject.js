@@ -6,7 +6,7 @@
         value("ShowWaterState", true);
         value("ShowProcess", true);
         // 【1.1.1】初始化叠加服装变量
-        value("WornStacking", true);
+        value("WornStacking", false);
         value("WornStackingTraits", true);
         value("WornStackingWarmth", true);
         // 【1.1.1】初始化快速继续选项（默认开、离底 30%、关键词用 opt-vars.js 默认表）
