@@ -1,6 +1,7 @@
 {
   "name": "原版优化",
   "version": "1.1.1.5",
+  "packName": "Dol-Optimization-v${version}",
   "styleFileList": [
     "stylesheet/dol-optimization.css",
     "stylesheet/modloader-optimization-tip.css"
