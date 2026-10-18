@@ -3,7 +3,7 @@
 	洗护用品<br>
 	<<set $daily.care ??= []>>
 	<<set _carekey to 'mildywash-'+Time.dayState>>
-	<<set _times to $mildywash * 10>>
+	<<set _times to $mildywash * 20>>
 	<<if $daily.care.includes(_carekey)>>
 		<<icon 'mildywash.png'>>使用洗面奶洗脸 (剩余_times次) | <span class="green">刚才已经用过</span>
 	<<elseif $mildywash and $mildywash gt 0>>
@@ -17,7 +17,7 @@
 				<</if>>
 				<<washmakeup>>
 				<<set $beauty to Math.min($beauty + 15, $beautymax)>>
-				<<set $mildywash to (Math.floor($mildywash * 10) - 1) / 10>>
+				<<set $mildywash to (Math.floor($mildywash * 20) - 1) / 20>>
 				<<set $daily.care.push(_carekey)>>
 				<<pass 5>>
 			<</link>>
