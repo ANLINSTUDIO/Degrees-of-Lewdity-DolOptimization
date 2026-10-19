@@ -891,7 +891,7 @@
         // 【1.1.1】快速继续黑名单
         nextButtonBlacklistEdit: function(target) {
             const rules = target.value.split(/\r?\n/).map(s => s.trim()).filter(Boolean);
-            DolOptimization.data.NextButtonBlacklist = rules;
+            if (rules.length) V.options.opt.NextButtonBlacklist = rules;
             document.getElementById("nextButton")?.remove();
             setTimeout(DolOptimization.ensureNextButton);
         }
