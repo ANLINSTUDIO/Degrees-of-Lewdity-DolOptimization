@@ -863,3 +863,128 @@
 <<mirror>>
 <br><br>
 <<fromopt>>
+
+:: ======= 衣柜过滤菜单 ====== [widget]
+<<widget "wardrobeFiltersMenu">>
+<<set _wfilterSlot to _args[0]>>
+<<if $shopClothingFilter is undefined>><<set $shopClothingFilter to {}>><</if>>
+<div class="filters-div" onclick="event.stopPropagation()">
+	<div id="filter-buttons" class="filter-buttons-div">
+		<div class="filter-button button-apply div-link">
+			<<link "Apply and Close">>
+				<<set $shopClothingFilter.active to true>>
+				<<replace '#wardrobeList'>><<wardrobeContents>><</replace>>
+			<</link>>
+		</div>
+		<div class="filter-button button-reset div-link">
+			<<link "Reset All and Close">>
+				<<shopClothingFilterReset>>
+				<<set $shopClothingFilter.search to "">>
+				<<replace '#wardrobeList'>><<wardrobeContents>><</replace>>
+			<</link>>
+		</div>
+		<div class="filter-button button-toggle-traits div-link">
+			<<link "Select / Deselect All Traits">>
+				<<run toggleAllTraitsFilter()>>
+			<</link>>
+		</div>
+	</div>
+	<div class="filters">
+		<div id="filter-gender" class="filter-block">
+			<<if typeof $shopClothingFilter.gender isnot "object">><<set $shopClothingFilter.gender = { female: true, neutral: true, male: true }>><</if>>
+			<span class="bold gold">Gender</span>
+			<label><<checkbox "$shopClothingFilter.gender.female" false true autocheck>> Female</label>
+			<label><<checkbox "$shopClothingFilter.gender.neutral" false true autocheck>> Unisex</label>
+			<label><<checkbox "$shopClothingFilter.gender.male" false true autocheck>> Male</label>
+		</div>
+
+		<div id="filter-reveal" class="filter-block">
+			<<filterreveal>>
+		</div>
+
+		<div id="filter-warmth" class="filter-block">
+			<<if $shopClothingFilter.warmth is undefined>><<set $shopClothingFilter.warmth = { from: 0, to: 50 }>><</if>>
+			<span class="bold gold">Warmth</span>
+			<div class="filter-warmth-fromto">
+				<label>from <<numberbox "$shopClothingFilter.warmth.from" $shopClothingFilter.warmth.from>></label>
+				<label>to <<numberbox "$shopClothingFilter.warmth.to" $shopClothingFilter.warmth.to>></label>
+			</div>
+		</div>
+
+		<div id="filter-search" class="filter-block">
+			<<if $shopClothingFilter.search is undefined>><<set $shopClothingFilter.search to "">><</if>>
+			<span class="bold gold">Name</span>
+			<label>search <<textbox "$shopClothingFilter.search" "">></label>
+		</div>
+
+		<div id="filter-sort" class="filter-block">
+			<<if $shopClothingFilter.sorting is undefined>><<set $shopClothingFilter.sorting = { prop: "price", order: 'asc', enabled: false }>><</if>>
+			<span class="bold gold">Sorting</span>
+			<div class="filter-sorting">
+				<label>
+					by
+					<<listbox "$shopClothingFilter.sorting.prop" autoselect>>
+						<<option "Price" "price">>
+						<<option "Protection" "protection">>
+						<<option "Reveal" "reveal">>
+						<<option "Warmth" "warmth">>
+					<</listbox>>
+				</label>
+				<label>
+					order
+					<<listbox "$shopClothingFilter.sorting.order" autoselect>>
+						<<option "Ascending" "asc">>
+						<<option "Descending" "desc">>
+					<</listbox>>
+				</label>
+				<label>
+					<<checkbox "$shopClothingFilter.sorting.enabled" false true autocheck>>
+					Enable
+				</label>
+			</div>
+		</div>
+
+		<div id="filter-outfit" class="filter-block">
+			<<if $shopClothingFilter.outfit is undefined>><<set $shopClothingFilter.outfit = { index: "none" }>><</if>>
+			<<if $shopClothingFilter.outfit.index isnot "none" and $shopClothingFilter.outfit.index gte $outfit.length>><<set $shopClothingFilter.outfit.index = "none">><</if>>
+			<span class="bold gold">Filter outfit</span>
+			<div class="filter-outfit">
+				<label>
+				Outfit:
+				<<listbox "$shopClothingFilter.outfit.index" autoselect>>
+					<<optionsfrom getFilterOutfitOptions()>>
+				<</listbox>>
+				</label>
+			</div>
+		</div>
+
+		<div id="filter-traits" class="filter-block">
+			<<if $shopClothingFilter.traits is undefined>><<set $shopClothingFilter.traits to []>><</if>>
+			<span class="bold gold">Traits</span>
+			<div class="traits-list">
+				<<set _traitsHere to [...new Set((setup.clothes[_wfilterSlot] ?? []).flatMap(x => x.type ?? []))]>>
+				<<for _trait range _traitsHere.sort()>>
+					<<set _traitObj to setup.shopDetails[_trait]>>
+					<div class="filters-trait-row">
+						<label>
+							<<set _checked to $shopClothingFilter.traits.includes(_trait) ? 'checked="checked"' : ''>>
+							<<clothingtrait _trait 'display_normal'>>
+							<<if !_traitObj or !_traitObj.desc>>
+								<<print '<input type="checkbox" value="' + _trait + '" ' + _checked + ' onclick="window.shopClothingFilterToggleTrait(this.value)">'>>
+								<<print _traitObj ? _traitObj.name : _trait>>
+							<<else>>
+								<<set _traitDesc to `<span class="black">` + _traitObj.desc + `</span>`>>
+								<<set _traitDetails to `<i class="green normal">` + (_traitObj.details isnot "none" ? " " + _traitObj.details : "") + `</i>`>>
+								<<set $_tooltip to _traitDesc + "<br>" + _traitDetails>>
+								<div class="tooltip-anchor" @tooltip="$_tooltip">
+									_traitObj.name
+								</div>
+							<</if>>
+						</label>
+					</div>
+				<</for>>
+			</div>
+		</div>
+	</div>
+</div>
+<</widget>>

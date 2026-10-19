@@ -1071,4 +1071,40 @@
     //         }
     //     };
     // })(Renderer.ImageLoader);
+
+    // 【1.1.2】衣柜过滤：复用原版服装过滤接口（applyClothingShopFilters），返回通过过滤的“原始下标”数组
+    // 必须以原始下标返回，衣柜靠 V["wear_"+slot] 存下标来装备物品
+    DolOptimization = { ...DolOptimization,
+        wardrobeVisibleIndices: function (list, slot) {
+            const indices = [];
+            if (!Array.isArray(list)) return indices;
+
+            const f = V.shopClothingFilter;
+            if (!f || !f.active) {
+                for (let i = 0; i < list.length; i++) indices.push(i);
+                return indices;
+            }
+
+            // 原型链包装：不改动原物品对象，补 slot 供 getClothingCost 使用，并记录原始下标
+            const wrapped = list.map((item, i) => {
+                const w = Object.create(item);
+                w.slot = slot;
+                w._widx = i;
+                return w;
+            });
+
+            const filtered = applyClothingShopFilters(wrapped);
+
+            const query = shopSearchReplacer(String(f.search ?? "")).toLowerCase();
+            for (const w of filtered) {
+                if (query) {
+                    const data = setup.clothes[slot]?.[clothesIndex(slot, w)];
+                    const names = [w.name, data?.name_cap, data?.cn_name_cap];
+                    if (!names.some(n => n && String(n).toLowerCase().includes(query))) continue;
+                }
+                indices.push(w._widx);
+            }
+            return indices;
+        },
+    };
 })();

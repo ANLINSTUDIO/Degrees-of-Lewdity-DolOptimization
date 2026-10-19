@@ -1,0 +1,15 @@
+		<br><br>
+		<!-- Filters -->
+		<div class="filters-button no-numberify div-link">
+			Filters
+			<<link "">>
+				<<replace '#wardrobe-filters'>><<wardrobeFiltersMenu $lastWardrobeSlot>><</replace>>
+				<<run linkifyDivs('#wardrobe-filters')>>
+				<<toggleclass '#wardrobe-filters' 'hidden'>>
+			<</link>>
+		</div>
+		<div id="wardrobe-filters" class="no-click-overlay no-numberify hidden" onclick="$(this).addClass('hidden')">
+			<!-- Don't load filters menu right away to not slow down wardrobe loading -->
+		</div>
+		<br><br>
+		Currently equipped:

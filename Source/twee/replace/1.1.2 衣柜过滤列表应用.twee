@@ -1,0 +1,5 @@
+		<<set _visibleItemIndices to DolOptimization.wardrobeVisibleIndices(_selectedWardrobe[_wardrobe_list], _wardrobe_list)>>
+		<<for _fi to 0; _fi lt _visibleItemIndices.length; _fi++>>
+			<<set _i to _visibleItemIndices[_fi]>>
+			<<set _item to _selectedWardrobe[_wardrobe_list][_i]>>
+			<<set _itemData to setup.clothes[_wardrobe_list][clothesIndex(_wardrobe_list,_item)]>>
