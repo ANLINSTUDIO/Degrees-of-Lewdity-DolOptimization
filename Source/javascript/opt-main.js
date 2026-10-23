@@ -910,7 +910,7 @@
             setTimeout(DolOptimization.ensureNextButton);
         }
     }
-
+    
 
     // 【1.1.1】遇欲便利店
     // 柜台/货架/便利店外 三个陈列区的 tab 切换（容器每次渲染都会重建，故用 document 级委派只绑一次）
@@ -924,6 +924,14 @@
         // data-cur 一改，三张纸片各自按空间模型落到新位置，动画天然按「从哪到哪」分化；旧纸片必须摘掉 is-active，否则它的商品列表会一直压在新列表上
         const $space = $tab.parent().next().children().attr("data-cur", i); // .csSpace：preserve-3d 空间容器，三张纸片的相机变换都看它的 data-cur
         $space.children().removeClass("is-active").eq(i).addClass("is-active");
+
+        // 清空批量
+        T.times = 1;
+        $(".buyMultipleInput").empty();
+        $(".buy > a").text("购买");
+        $(".buy > a").removeClass("disabled");
+        $(".buyCost").attr('style', 'display: none');
+        
     });
     // 展开槽位：{inner, outer, cols, rows, levels, levelStep}
     // inner/outer 是最内（最远）排与最外（最近）排的左右端点，中间列与中间排用双线性插值生成
