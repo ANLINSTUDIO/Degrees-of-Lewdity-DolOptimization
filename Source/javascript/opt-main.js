@@ -1476,7 +1476,10 @@
             diff.className = "dolQsDiff";
             const values = r.meta?.values;
             if (values) {
-                const chips = DolOptimization.quickSaveMetrics.filter(m => values[m.key] !== current[m.key]);
+                // 旧存档可能缺少后来新增的数值键，undefined 参与减法会得到 NaN，故要求两侧都是有效数字
+                const chips = DolOptimization.quickSaveMetrics.filter(m =>
+                    Number.isFinite(values[m.key]) && Number.isFinite(current[m.key]) && values[m.key] !== current[m.key]
+                );
                 if (chips.length) {
                     chips.forEach(m => {
                         const d = values[m.key] - current[m.key];
