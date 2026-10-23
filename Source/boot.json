@@ -107,12 +107,6 @@
           "replaceFile": "twee/replace/1.0.4 剧烈运动破坏修复处女膜.twee"
         },
         {
-          "tip": "【1.0.4】处女膜修复 剧烈运动破坏 日志时效性",
-          "passage": "Widgets Journal",
-          "findString": "\t\t\t<<if $avery_mansion>>/* Is Avery paying for the PC? */",
-          "replaceFile": "twee/replace/1.0.4 处女膜破坏日志时效性.twee"
-        },
-        {
           "tip": "【1.0.6】理发店售卖头发",
           "passage": "Hairdressers",
           "findString": "|Hairdressers Seat]]>><</link>>",

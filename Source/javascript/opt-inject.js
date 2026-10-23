@@ -99,6 +99,10 @@
         // 保存
         DolOptimization.saveSettings();
     };
+    DolOptimization.om$journal = function() {
+        // 【1.0.4】处女膜修复 剧烈运动破坏 日志时效性
+        setTimeout(DolOptimization.hymenreconstructioncount);
+    }
     DolOptimization.of$tendingDay = function() {
         // 【1.0.7】自动灌溉
         for (const [location, plots] of Object.entries(V.plots ?? {})) {

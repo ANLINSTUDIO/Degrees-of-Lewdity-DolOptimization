@@ -325,6 +325,19 @@
         }
     }
 
+    // 【1.0.4】处女膜修复 剧烈运动破坏 日志时效性
+    DolOptimization.hymenreconstructioncount = function() {
+        if (V.player.vaginaExist && V.player.virginity.vaginal === true && V.hymenreconstructioncount) {
+            const Uls = document.getElementsByClassName("journal")
+            if (Uls && Uls.length > 1) {
+                const ul_time_sensitive = Uls[1];
+                const hymenreconstructioncount = document.createElement("li");
+                hymenreconstructioncount.innerHTML = `你最近在医院修复过处女膜，医生提醒你<span class="red">${V.hymenreconstructioncount}</span>天内不要进行剧烈运动。`;
+                ul_time_sensitive.prepend(hymenreconstructioncount);
+            }
+        }
+    }
+
 
     // 【1.0.5】叠加服装部件
     DolOptimization = { ...DolOptimization,

@@ -66,7 +66,7 @@
 <<fromopt>>
 <<set $player.virginity.vaginal to true>>
 <<if $player.virginity.temple isnot false>><<set $player.virginity.temple to true>><</if>>
-<<if $player.virginityDetails.vaginal>><<unset $player.virginityDetails.vaginal>><</if>>
+<<if $player.virginityDetails?.vaginal>><<unset $player.virginityDetails.vaginal>><</if>>
 <<set $hymenreconstructioncount to 7>>
 
 你从昏迷中苏醒过来，周遭还是原来的房间。一切都似乎没有什么两样，除了你感觉你的<<pussy>>稍微有点疼痛。哈珀进入了房间。
