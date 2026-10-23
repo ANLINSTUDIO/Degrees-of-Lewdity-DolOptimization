@@ -673,6 +673,10 @@ a.opt-shine::after {
     padding: 6px 8px;
     font-size: 0.9em;
 }
+/* 最新条：金色边框 */
+.dolQsRow.latest {
+    border-color: var(--gold);
+}
 .dolQsRowTop {
     display: flex;
     align-items: center;

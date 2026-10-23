@@ -1369,7 +1369,7 @@
             rect = rect || { right: 0, top: 0, height: 0 };
             const current = DolOptimization.quickSaveValues();
             let saves = [];
-            try { saves = (await DolOptimization.quickSaveAll()).sort((a, b) => (a.date || 0) - (b.date || 0)); } catch (e) {}
+            try { saves = (await DolOptimization.quickSaveAll()).sort((a, b) => (b.date || 0) - (a.date || 0)); } catch (e) {}
             const panel = document.createElement("div");
             panel.id = "dolQsPanel";
             const header = document.createElement("div");
@@ -1390,7 +1390,12 @@
                 empty.textContent = "还没有快速存档";
                 list.appendChild(empty);
             } else {
-                saves.forEach(r => list.appendChild(DolOptimization.quickSavePanelRow(r, current)));
+                // 已按时间从新到旧排序；第一条为最新，加金色边框
+                saves.forEach((r, i) => {
+                    const row = DolOptimization.quickSavePanelRow(r, current);
+                    if (i === 0) row.classList.add("latest");
+                    list.appendChild(row);
+                });
             }
             panel.append(header, list);
             document.body.appendChild(panel);
@@ -1450,6 +1455,8 @@
                 try { await DolOptimization.quickSaveDelete(r.slot); } catch (e) {}
                 const list = row.parentElement;
                 row.remove();
+                // 删掉的是最新一条时，把金色边框交给新的第一条
+                list?.querySelector(".dolQsRow")?.classList.add("latest");
                 if (list && !list.children.length) {
                     const empty = document.createElement("div");
                     empty.className = "dolQsEmpty";
