@@ -557,7 +557,7 @@
 			<<ConveniencestoreGoodItem {
 				icon: "<<icon 'shampoo.png'>>",
 				name: "洗发水",
-				owned: $mildywash,
+				owned: $shampoo,
 				price: 30,
 				per: 1,
 				inventory: 6,
