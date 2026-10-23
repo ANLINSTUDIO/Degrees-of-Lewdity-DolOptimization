@@ -14,6 +14,9 @@
         value("NextButtonBottom", 30);
         value("NextButtonRules", null);
         value("NextButtonBlacklist", []);
+        // 【快速存档】侧边栏快速存档/载入（默认开、最多 5 个槽位）
+        value("QuickSaveEnabled", true);
+        value("QuickSaveMax", 5);
     }
 
     DolOptimization.onPassageRender = function (ev) {

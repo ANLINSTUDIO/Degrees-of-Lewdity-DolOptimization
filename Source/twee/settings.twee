@@ -185,6 +185,16 @@
 			<textarea rows="3" style="width: stretch; min-width: auto;" onchange="DolOptimization.nextButtonBlacklistEdit(this)"><<print $options.opt.NextButtonBlacklist?$options.opt.NextButtonBlacklist.join("\n"):"">></textarea><br>
 			<img src="img/guide/快速继续.png">
 		</div>
+		<div class="optimization">
+			快速存档<br>
+			<small>在侧边栏“存”按钮上单击可快速存档，长按可载入最近一次快速存档，鼠标右键或向右滑动可呼出快速存档列表。</small><br>
+			<label>
+				<<print '<input type="checkbox" tabindex="0" class="macro-checkbox" onchange="DolOptimization.quickSaveToggle(this.checked)"'+(V.options.opt.QuickSaveEnabled === false ? "" : " checked")+'>'>>
+				启用快速存档
+			</label><br>
+			最多槽位：<input type="number" min="1" max="20" @value="$options.opt.QuickSaveMax ?? 5" onchange="DolOptimization.quickSaveMax(this)"> 个<br>
+			<small>快捷键F1快速存档，F2快速读档，F3打开面板</small><br>
+		</div>
 	</div>
 	<div class="settingsGrid">
 		<div class="settingsHeader options">内容预览</div>

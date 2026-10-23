@@ -317,7 +317,15 @@
             "to": "setup.moddedClothes.face = [\n\t\tnew ClothesItem({\n\t\t\tslot: \"face\", name: \"lollipop\", name_cap: \"lollipop\", cn_name_cap: \"棒棒糖\", variable: \"lollipop\",\n\t\t\tstate: 0, state_base: 0, integrity: 5, integrity_max: 5, fabric_strength: 1,\n\t\t\treveal: 1, word: \"a\", plural: 0, colour: 0, colour_options: [], colour_combat: 0,\n\t\t\ttype: [\"normal\"], gender: \"n\", warmth: 0, cost: 200,\n\t\t\tdescription: \"含在嘴里甜甜的棒棒糖。\",\n\t\t\tshop: [], accessory: 0, accessory_colour: 0, accessory_colour_options: [],\n\t\t\taltposition: \"none\", altdisabled: [], cursed: 0, location: 0,\n\t\t\ticonFile: \"lollipop.png\", accIcon: 0, modder: \"DolOptimization\"\n\t\t}),\n\t];"
           }
         ],
-        "twee": []
+        "twee": [
+          {
+            "_tip": "移动端保存按钮",
+            "_atool": true,
+            "from": "<</widget>>\n\n<<widget \"mobileStatsColor\">>",
+            "to": "\t<div class=\"stat save div-link\">\n\t\t<<sidebarSave>>\n\t</div>\n<</widget>>\n\n<<widget \"mobileStatsColor\">>",
+            "passageName": "mobileStats"
+          }
+        ]
       }
     },
     {

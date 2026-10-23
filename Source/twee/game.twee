@@ -988,3 +988,10 @@
 	</div>
 </div>
 <</widget>>
+
+:: ======= 快速存档 ======= [widget]
+<<widget "sidebarSave">>
+	<<if DolOptimization.cv("QuickSaveEnabled", true) !== false>>
+		<mouse class="tooltip-centertop">存<span>单击：快速存档<br>长按：载入最近一次快速存档</span></mouse>
+	<</if>>
+<</widget>>

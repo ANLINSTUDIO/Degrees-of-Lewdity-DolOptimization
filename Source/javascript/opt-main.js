@@ -3,7 +3,7 @@
     DolOptimization = { ...DolOptimization,
         FONT_NAME: "OptimizationCustomFont",
         DB_NAME: 'DolOptimizationDB',
-        DB_VERSION: 1,
+        DB_VERSION: 2,
         Current_Font: null,
         
         // 初始化 IndexedDB
@@ -18,6 +18,10 @@
                     const db = event.target.result;
                     if (!db.objectStoreNames.contains('fonts')) {
                         db.createObjectStore('fonts', { keyPath: 'name' });
+                    }
+                    // 【快速存档】快速存档记录存储：key 为槽位号
+                    if (!db.objectStoreNames.contains('quicksaves')) {
+                        db.createObjectStore('quicksaves', { keyPath: 'slot' });
                     }
                 };
             });
@@ -861,11 +865,21 @@
             passage.appendChild(wrap);
         },
         // 【1.1.1】轻量提示条（自挂自删，1.6s 后淡出），不依赖 dolOptAlert 模态框
-        showToast: function(msg) {
+        // anchor 可以是元素（取实时 rect），也可以是已有的 rect 对象（页面重渲染后按钮已消失时用）
+        showToast: function(msg, anchor) {
             document.getElementById("dolOptToast")?.remove();
             const toast = document.createElement("div");
             toast.id = "dolOptToast";
             toast.textContent = msg;
+            let rect = anchor && anchor.getBoundingClientRect
+                ? anchor.getBoundingClientRect()
+                : (anchor && "right" in anchor ? anchor : null);
+            // 按钮已脱离 DOM 时 rect 会全为 0，此时放弃锚定，避免弹到屏幕顶端
+            if (rect && (rect.right || rect.top || rect.height)) {
+                toast.classList.add("anchor");
+                toast.style.left = (rect.right + 6) + "px";
+                toast.style.top = (rect.top + rect.height / 2) + "px";
+            }
             document.body.appendChild(toast);
             setTimeout(() => toast.classList.add("out"), 1200);
             setTimeout(() => toast.remove(), 1600);
@@ -1072,6 +1086,424 @@
     //     };
     // })(Renderer.ImageLoader);
 
+
+    
+    // 【快速存档】侧边栏“存”按钮：单击快速存档 / 长按载入最近一次
+    // 快速存档与普通存档完全独立：用游戏原生 Save.serialize / Save.deserialize 生成内容，
+    // 存放在模组自己的 IndexedDB（quicksaves）里，标识为 "Q"+序号，绝不触碰游戏 0-8 号存档槽。
+    DolOptimization = { ...DolOptimization,
+        QuickSaveStore: "quicksaves",
+        quickSaveEnabled: function() {
+            return DolOptimization.cv("QuickSaveEnabled", true) !== false;
+        },
+        quickSaveSlotCount: function() {
+            return Math.min(Math.max(parseInt(DolOptimization.cv("QuickSaveMax", 5)) || 5, 1), 20);
+        },
+        quickSaveAll: async function() {
+            const db = await DolOptimization.initDB();
+            return new Promise((resolve, reject) => {
+                const req = db.transaction(DolOptimization.QuickSaveStore, "readonly").objectStore(DolOptimization.QuickSaveStore).getAll();
+                req.onsuccess = () => { resolve(req.result || []); db.close(); };
+                req.onerror = () => { reject(req.error); db.close(); };
+            });
+        },
+        quickSavePut: async function(record) {
+            const db = await DolOptimization.initDB();
+            return new Promise((resolve, reject) => {
+                const tx = db.transaction(DolOptimization.QuickSaveStore, "readwrite");
+                tx.objectStore(DolOptimization.QuickSaveStore).put(record);
+                tx.oncomplete = () => { resolve(); db.close(); };
+                tx.onerror = () => { reject(tx.error); db.close(); };
+            });
+        },
+        // 【快速存档】记录并对比的数值字典（顺序即悬浮窗内的展示顺序）；bad=true 表示数值越高越糟，用于差异配色
+        quickSaveMetrics: [
+            { key: "money", label: "金钱" },
+            
+            { key: "pain", label: "疼痛", bad: true },
+            { key: "arousal", label: "性奋", bad: true },
+            { key: "tiredness", label: "疲劳", bad: true },
+            { key: "stress", label: "压力", bad: true },
+            { key: "trauma", label: "创伤", bad: true },
+            { key: "control", label: "自控" },
+            { key: "drunk", label: "醉酒", bad: true },
+            { key: "drugged", label: "春药", bad: true },
+            { key: "hallucinogen", label: "致幻", bad: true },
+
+            { key: "purity", label: "纯洁" },
+            { key: "beauty", label: "容貌" },
+            { key: "physique", label: "体能" },
+            { key: "willpower", label: "意志" },
+            { key: "awareness", label: "意识" },
+            { key: "promiscuity", label: "淫乱" },
+            { key: "exhibitionism", label: "暴露" },
+            { key: "deviancy", label: "异种" },
+            
+            { key: "skulduggery", label: "诡术" },
+            { key: "danceskill", label: "舞蹈" },
+            { key: "swimmingskill", label: "游泳" },
+            { key: "athletics", label: "运动" },
+            { key: "tending", label: "护理" },
+            { key: "housekeeping", label: "家务" },
+
+            { key: "seductionskill", label: "魅惑" },
+            { key: "chestskill", label: "胸部" },
+            { key: "bottomskill", label: "臀部" },
+            { key: "vaginalskill", label: "阴道" },
+            { key: "penileskill", label: "阴茎" },
+            { key: "thighskill", label: "大腿" },
+            { key: "oralskill", label: "口腔" },
+            { key: "handskill", label: "手部" },
+            { key: "analskill", label: "肛门" },
+            { key: "feetskill", label: "足部" },
+        ],
+        // 读取当前游戏中的数值快照
+        quickSaveValues: function() {
+            const out = {};
+            DolOptimization.quickSaveMetrics.forEach(m => { out[m.key] = Math.round(Number(V[m.key]) || 0); });
+            return out;
+        },
+        // 游戏内时间字符串（复用游戏自身的日期/时间格式化）
+        quickSaveGameTime: function() {
+            try {
+                const d = window.Time?.date;
+                if (!d) return "";
+                return window.getFormattedDate(d, true) + " " + window.getTimeString(d.hour, d.minute);
+            } catch (e) { return ""; }
+        },
+        // 段落名 + 正文开头约 80 字预览
+        quickSavePreview: function() {
+            const text = document.querySelector(".passage")?.innerText?.replace(/\s+/g, " ").trim() || "";
+            return text.slice(0, 80);
+        },
+        quickSaveMeta: function() {
+            return {
+                passage: V.passage,
+                preview: DolOptimization.quickSavePreview(),
+                time: DolOptimization.quickSaveGameTime(),
+                values: DolOptimization.quickSaveValues(),
+            };
+        },
+        // 单击：快速存档
+        quickSave: async function(anchor) {
+            if (!DolOptimization.quickSaveEnabled()) return DolOptimization.showToast("快速存档已关闭", anchor);
+            if (V.ironmanmode) return DolOptimization.showToast("铁人模式不支持快速存档", anchor);
+            let slot;
+            try {
+                const max = DolOptimization.quickSaveSlotCount();
+                const used = (await DolOptimization.quickSaveAll()).filter(s => s.slot < max);
+                if (used.length < max) {
+                    // 还有空槽：占用第一个空槽
+                    slot = 0;
+                    while (used.some(s => s.slot === slot)) slot++;
+                } else {
+                    // 槽位已满：覆盖时间最久的一条
+                    slot = used.reduce((a, b) => (a.date <= b.date ? a : b)).slot;
+                }
+            } catch (e) {
+                return DolOptimization.showToast("快速存档失败", anchor);
+            }
+            const data = window.SerializeGame?.({ saveId: "Q" + (slot + 1), saveName: V.saveName ?? "" });
+            if (!data) return DolOptimization.showToast("当前场景无法存档", anchor);
+            try {
+                await DolOptimization.quickSavePut({ slot: slot, id: "Q" + (slot + 1), data: data, date: Date.now(), meta: DolOptimization.quickSaveMeta() });
+                DolOptimization.showToast("已快速存档 Q" + (slot + 1), anchor);
+            } catch (e) {
+                DolOptimization.showToast("快速存档失败", anchor);
+            }
+        },
+        // 长按：载入最近一次快速存档
+        quickSaveLoad: async function(anchor) {
+            if (!DolOptimization.quickSaveEnabled()) return DolOptimization.showToast("快速存档已关闭", anchor);
+            let latest;
+            try {
+                const saves = await DolOptimization.quickSaveAll();
+                if (!saves.length) return DolOptimization.showToast("还没有快速存档", anchor);
+                latest = saves.reduce((a, b) => (a.date >= b.date ? a : b));
+            } catch (e) {
+                return DolOptimization.showToast("快速存档载入失败", anchor);
+            }
+            // 先抓按钮位置：DeserializeGame 会重渲染页面导致按钮脱离 DOM，之后再取 rect 会全为 0
+            const rect = anchor?.getBoundingClientRect?.();
+            const meta = window.DeserializeGame?.(latest.data);
+            if (!meta) return DolOptimization.showToast("快速存档载入失败", rect);
+            DolOptimization.showToast("已载入快速存档 " + latest.id, rect);
+        },
+        // 设置：开关（关闭时同时隐藏侧边栏按钮）
+        quickSaveToggle: function(on) {
+            V.options.opt.QuickSaveEnabled = !!on;
+            const btn = document.querySelector("#mobileStats .stat.save");
+            if (btn) btn.style.display = on ? "" : "none";
+        },
+        // 设置：最多槽位（1-20）
+        quickSaveMax: function(target) {
+            V.options.opt.QuickSaveMax = Math.min(Math.max(parseInt(target.value) || 5, 1), 20);
+            target.value = V.options.opt.QuickSaveMax;
+        },
+        // 删除某个快速存档槽
+        quickSaveDelete: function(slot) {
+            return DolOptimization.initDB().then(db => new Promise((resolve, reject) => {
+                const tx = db.transaction(DolOptimization.QuickSaveStore, "readwrite");
+                tx.objectStore(DolOptimization.QuickSaveStore).delete(slot);
+                tx.oncomplete = () => { resolve(); db.close(); };
+                tx.onerror = () => { reject(tx.error); db.close(); };
+            }));
+        },
+        // 【快速存档】悬浮窗：像 toast 一样锚定在按钮旁，按保存顺序列出快速存档并展示与“当前游戏状态”的数值差异
+        openQuickSavePanel: async function(rect) {
+            DolOptimization.closeQuickSavePanel(true);
+            rect = rect || { right: 0, top: 0, height: 0 };
+            const current = DolOptimization.quickSaveValues();
+            let saves = [];
+            try { saves = (await DolOptimization.quickSaveAll()).sort((a, b) => (a.date || 0) - (b.date || 0)); } catch (e) {}
+            const panel = document.createElement("div");
+            panel.id = "dolQsPanel";
+            const header = document.createElement("div");
+            header.className = "dolQsHeader";
+            const title = document.createElement("span");
+            title.className = "dolQsTitle";
+            title.textContent = "快速存档 | " + V.passage;   // 标题显示所在段落名称
+            const close = document.createElement("span");
+            close.className = "dolQsClose";
+            close.textContent = "×";
+            close.onclick = () => DolOptimization.closeQuickSavePanel();
+            header.append(title, close);
+            const list = document.createElement("div");
+            list.className = "dolQsList";
+            if (!saves.length) {
+                const empty = document.createElement("div");
+                empty.className = "dolQsEmpty";
+                empty.textContent = "还没有快速存档";
+                list.appendChild(empty);
+            } else {
+                saves.forEach(r => list.appendChild(DolOptimization.quickSavePanelRow(r, current)));
+            }
+            panel.append(header, list);
+            document.body.appendChild(panel);
+            // 锚定到按钮右侧竖直，并按视口边界收拢
+            const pw = panel.offsetWidth, ph = panel.offsetHeight;
+            let left = rect.right + 6;
+            if (left + pw > window.innerWidth - 8) left = Math.max(8, window.innerWidth - 8 - pw);
+            let top = rect.top;
+            if (top < 8) top = 8;
+            if (top + ph > window.innerHeight - 8) top = Math.max(8, window.innerHeight - 8 - ph);
+            panel.style.left = left + "px";
+            panel.style.top = top + "px";
+            // 点击面板以外关闭；延后绑定，避免打开手势的 pointerup 立刻触发
+            setTimeout(() => {
+                DolOptimization._qsOutside = (e) => {
+                    if (!panel.contains(e.target)) DolOptimization.closeQuickSavePanel();
+                };
+                document.addEventListener("pointerdown", DolOptimization._qsOutside);
+            }, 0);
+        },
+        // 关闭悬浮窗（instant=true 时不做渐隐动画，直接移除）
+        closeQuickSavePanel: function(instant) {
+            if (DolOptimization._qsOutside) {
+                document.removeEventListener("pointerdown", DolOptimization._qsOutside);
+                DolOptimization._qsOutside = null;
+            }
+            const panel = document.getElementById("dolQsPanel");
+            if (!panel) return;
+            if (instant || panel._closing) { panel.remove(); return; }
+            panel._closing = true;
+            panel.classList.add("out");
+            setTimeout(() => panel.remove(), 300);
+        },
+        // 【快速存档】悬浮窗单行：ID / 游戏时间 / 段落名 / 正文预览 / 差异提醒 + 载入、删除
+        quickSavePanelRow: function(r, current) {
+            const row = document.createElement("div");
+            row.className = "dolQsRow";
+            const top = document.createElement("div");
+            top.className = "dolQsRowTop";
+            const id = document.createElement("span");
+            id.className = "dolQsId";
+            id.textContent = r.id;
+            const time = document.createElement("span");
+            time.className = "dolQsTime";
+            time.textContent = r.meta?.time || new Date(r.date).toLocaleString();
+            const passage = document.createElement("span");
+            passage.className = "dolQsPassage";
+            passage.textContent = r.meta?.passage || "";
+            const load = document.createElement("button");
+            load.className = "dolQsBtn dolQsLoad";
+            load.textContent = "载入";
+            load.onclick = () => { DolOptimization.closeQuickSavePanel(true); window.DeserializeGame(r.data); };
+            const del = document.createElement("button");
+            del.className = "dolQsBtn dolQsDel";
+            del.textContent = "删除";
+            del.onclick = async () => {
+                try { await DolOptimization.quickSaveDelete(r.slot); } catch (e) {}
+                const list = row.parentElement;
+                row.remove();
+                if (list && !list.children.length) {
+                    const empty = document.createElement("div");
+                    empty.className = "dolQsEmpty";
+                    empty.textContent = "还没有快速存档";
+                    list.appendChild(empty);
+                }
+            };
+            top.append(passage, time, id, load, del);
+            row.appendChild(top);
+            if (r.meta?.preview) {
+                const preview = document.createElement("div");
+                preview.className = "dolQsPreview";
+                preview.textContent = r.meta.preview;
+                row.appendChild(preview);
+            }
+            const diff = document.createElement("div");
+            diff.className = "dolQsDiff";
+            const values = r.meta?.values;
+            if (values) {
+                const chips = DolOptimization.quickSaveMetrics.filter(m => values[m.key] !== current[m.key]);
+                if (chips.length) {
+                    chips.forEach(m => {
+                        const d = values[m.key] - current[m.key];
+                        const good = m.bad ? d < 0 : d > 0;
+                        const chip = document.createElement("span");
+                        chip.className = "dolQsChip " + (good ? "good" : "bad");
+                        if (m.key === "money") {
+                            chip.textContent = `${m.label} ${d > 0 ? "+" : ""}£${Math.round(d)/100}`;
+                        } else {
+                            chip.textContent = `${m.label} ${d > 0 ? "+" : ""}${d}`;
+                        }
+                        diff.appendChild(chip);
+                    });
+                } else {
+                    diff.classList.add("same");
+                    diff.textContent = "与当前状态一致";
+                }
+            } else {
+                diff.classList.add("same");
+                diff.textContent = "旧存档（无对比数据）";
+            }
+            row.appendChild(diff);
+            return row;
+        }
+    };
+
+    // 【快速存档】侧边栏“存”按钮：单击 = 快速存档 / 长按 = 载入最近一次 / （鼠标）向右拖动或右键 = 呼出悬浮窗
+    // （侧边栏会重渲染，故用 document 级委派只绑一次）
+    let qsTimer = null, qsLong = false, qsTarget = null, qsX = 0, qsY = 0;
+    $(document).on("pointerdown", "#mobileStats .stat.save", function(event) {
+        if (event.button === 2) {   // 鼠标右键：呼出悬浮窗
+            clearTimeout(qsTimer);
+            qsTimer = null;
+            qsTarget = null;
+            DolOptimization.openQuickSavePanel(this.getBoundingClientRect());
+            return;
+        }
+        if (event.button !== 0) return;   // 仅左键/触摸
+        clearTimeout(qsTimer);
+        qsLong = false;
+        qsTarget = this;
+        qsX = event.clientX;
+        qsY = event.clientY;
+        this.classList.add("qs-pressing");
+        qsTimer = setTimeout(() => {
+            qsLong = true;
+            this.classList.remove("qs-pressing");
+            qsTarget = null;
+            DolOptimization.quickSaveLoad(this);
+        }, 500);
+    });
+    $(document).on("pointermove", function(event) {
+        if (!qsTarget) return;
+        if (event.pointerType !== "mouse") return;   // 触摸端的滑动改由下方 touch 事件处理
+        // 向右拖动超过阈值、且竖直方向偏移不大时，判定为“呼出悬浮窗”，同时取消长按计时
+        if (event.clientX - qsX > 40 && Math.abs(event.clientY - qsY) < 30) {
+            clearTimeout(qsTimer);
+            qsTimer = null;
+            const btn = qsTarget;
+            qsTarget = null;
+            btn.classList.remove("qs-pressing");
+            DolOptimization.openQuickSavePanel(btn.getBoundingClientRect());
+        }
+    });
+    $(document).on("pointerup", function() {
+        clearTimeout(qsTimer);
+        qsTimer = null;
+        if (!qsTarget) return;
+        const btn = qsTarget;
+        qsTarget = null;
+        btn.classList.remove("qs-pressing");
+        if (!qsLong) DolOptimization.quickSave(btn);
+    });
+    $(document).on("pointercancel", function() {
+        clearTimeout(qsTimer);
+        qsTimer = null;
+        if (qsTarget) qsTarget.classList.remove("qs-pressing");
+        qsTarget = null;
+    });
+    // 长按可能弹出系统菜单，拦截之
+    $(document).on("contextmenu", "#mobileStats .stat.save", function(event) {
+        event.preventDefault();
+    });
+    // 【快速存档】触摸端：游戏把“向右滑动展开侧边栏”绑在 document 冒泡阶段的 touchstart/touchmove 上，
+    // 这里在捕获阶段先拦截：若触摸起点在“存”按钮上，就阻断该钩子（避免展开侧边栏），并自行识别右划呼出悬浮窗。
+    let qsTouchEl = null, qsTouchX = 0, qsTouchY = 0;
+    const qsTouchStart = function(event) {
+        const el = event.target?.closest?.("#mobileStats .stat.save");
+        qsTouchEl = el || null;
+        if (!el) return;
+        qsTouchX = event.touches[0].clientX;
+        qsTouchY = event.touches[0].clientY;
+        event.stopPropagation();
+    };
+    const qsTouchMove = function(event) {
+        if (!qsTouchEl) return;
+        event.stopPropagation();
+        if (event.touches[0].clientX - qsTouchX > 40 && Math.abs(event.touches[0].clientY - qsTouchY) < 30) {
+            const btn = qsTouchEl;
+            qsTouchEl = null;
+            clearTimeout(qsTimer);
+            qsTimer = null;
+            if (qsTarget) {
+                qsTarget.classList.remove("qs-pressing");
+                qsTarget = null;
+            }
+            DolOptimization.openQuickSavePanel(btn.getBoundingClientRect());
+        }
+    };
+    const qsTouchEnd = function() { qsTouchEl = null; };
+    document.addEventListener("touchstart", qsTouchStart, true);
+    document.addEventListener("touchmove", qsTouchMove, true);
+    document.addEventListener("touchend", qsTouchEnd, true);
+    document.addEventListener("touchcancel", qsTouchEnd, true);
+    // 【快速存档】键盘快捷键：F1 快速存档 / F2 快速载入（需 1 秒内连按两次，防误触）/ F3 在鼠标处打开悬浮窗
+    let qsKeyArmed = false, qsKeyTimer = null, qsMouseX = 0, qsMouseY = 0;
+    document.addEventListener("mousemove", function(event) {
+        qsMouseX = event.clientX;
+        qsMouseY = event.clientY;
+    });
+    document.addEventListener("keydown", function(event) {
+        if (event.key !== "F1" && event.key !== "F2" && event.key !== "F3") return;
+        event.preventDefault();   // 屏蔽浏览器默认（F1 帮助 / F3 查找等）
+        if (event.repeat) return;   // 忽略按住不放的自动重复，避免误触发
+        if (event.key === "F1") {
+            DolOptimization.quickSave();
+            return;
+        }
+        if (event.key === "F3") {
+            // 以鼠标位置为锚点打开面板（rect.right/top 即光标坐标）
+            DolOptimization.openQuickSavePanel({ right: qsMouseX, top: qsMouseY, height: 0 });
+            return;
+        }
+        // F2：首次按下仅提示，1 秒内再按一次才真正载入
+        if (qsKeyArmed) {
+            qsKeyArmed = false;
+            clearTimeout(qsKeyTimer);
+            DolOptimization.quickSaveLoad();
+            return;
+        }
+        qsKeyArmed = true;
+        clearTimeout(qsKeyTimer);
+        qsKeyTimer = setTimeout(function() { qsKeyArmed = false; }, 1000);
+        DolOptimization.showToast("再按一次 F2 载入最近一次快速存档");
+    });
+
+
+    
     // 【1.1.2】衣柜过滤：复用原版服装过滤接口（applyClothingShopFilters），返回通过过滤的“原始下标”数组
     // 必须以原始下标返回，衣柜靠 V["wear_"+slot] 存下标来装备物品
     DolOptimization = { ...DolOptimization,
