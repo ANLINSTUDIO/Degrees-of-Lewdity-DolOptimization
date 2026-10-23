@@ -200,7 +200,7 @@
           "tip": "【1.0.8】存档优化",
           "passage": "overlayReplace",
           "findString": "<<replace #customOverlayContent>><<saves>><</replace>>",
-          "replace": "<<replace #customOverlayContent>><<saves>><</replace>><<run setTimeout(() => window.DolOptimization?.initsave(), DolOptimization.initsavetime??500)>>",
+          "replace": "<<replace #customOverlayContent>><<saves>><</replace>><<run setTimeout(() => window.DolOptimization?.initsave())>>",
           "all": true
         },
         {

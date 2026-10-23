@@ -594,155 +594,261 @@
 
     // 【1.0.8】存档优化
     DolOptimization = { ...DolOptimization,
-        initsavetime: 300,
-        initsave: async function() {
+        initsave: function() {
             DolOptimization.data.customdesc ??= {};
-            const saveList = document.getElementById("saveList");
-            if (saveList && idb) {
-                const saveGroups = saveList.querySelectorAll(".saveGroup");
-                for (const group of saveGroups) {
-                    const saveId = parseInt(group.querySelector(".saveId")?.innerText);
-                    let saveItem = null
-                    if (saveId) saveItem = await idb.getItem(saveId);
-                    if (saveItem) {
-                        asi.log("原版优化", `[initsave] Loaded: saveId=${saveId}`, "gold");
-                        const title = group.querySelector(".saveDetails > span");
-                        if (title) {
-                            title.className = "saveTitle";
-                            const originalDescText = title.innerText;   // 保存原始文本
-                            title.onclick = function(e) {
-                                // 防止同一个标题被重复点击
-                                if (title._editing) return;
-                                title._editing = true;
-                                
-                                const originalText = title.innerText;   // 保存原始文本
-                                const input = document.createElement("input");
-                                input.type = "text";
-                                input.placeholder = originalDescText;
-                                input.value = title.innerText == originalDescText ? "" : title.innerText;
-                                input.className = "saveTitleInput";
 
-                                // 用 input 替换 span
-                                title.replaceWith(input);
-                                input.focus();
+            // ===== 幂等处理单个 saveGroup（原 for 循环体，作用域内变量全部保留）=====
+            DolOptimization._initOneSaveGroup = async function(group) {
+                if (group._dolSaveInited) return;      // 已处理过，跳过（幂等守卫）
+                group._dolSaveInited = true;
 
-                                // 失去焦点时处理
-                                input.addEventListener("blur", async () => {
-                                    const newText = input.value.trim();
+                const saveId = parseInt(group.querySelector(".saveId")?.innerText);
+                let saveItem = null;
+                if (saveId) saveItem = await idb.getItem(saveId);
+                // 异步回来后节点可能已被重建/移除
+                if (!saveItem || !group.isConnected) return;
 
-                                    // 如果内容改变，弹出确认对话框
-                                    if (newText != (DolOptimization.data.customdesc[saveId]?.desc ?? "")) {
-                                        const V_ = saveItem.data.delta[0].variables;
+                asi.log("原版优化", `[initsave] Loaded: saveId=${saveId}`, "gold");
 
-                                        // 对话框处理标志，确保只处理一次
-                                        let dialogResolved = false;
-                                        const resolveDialog = (save) => {
-                                            if (dialogResolved) return;
-                                            dialogResolved = true;
+                const title = group.querySelector(".saveDetails > span");
+                if (title) {
+                    title.className = "saveTitle";
+                    const originalDescText = title.innerText;   // 保存原始文本
+                    title.onclick = function(e) {
+                        // 防止同一个标题被重复点击
+                        if (title._editing) return;
+                        title._editing = true;
 
-                                            if (save) {
-                                                // 保存到 IndexedDB
-                                                if (idb && saveId) {
-                                                    try {
-                                                        if (newText) {
-                                                            DolOptimization.data.customdesc[saveId] = {
-                                                                desc: newText,
-                                                                timestamp: saveItem.data.delta[0].variables.timeStamp
-                                                            };
-                                                        } else {
-                                                            delete DolOptimization.data.customdesc[saveId];
-                                                        }
-                                                        DolOptimization.saveSettings();
-                                                    } catch (err) {
-                                                        asi.log("原版优化", "保存描述失败", "gold", "red");
-                                                    }
+                        const originalText = title.innerText;   // 保存原始文本
+                        const input = document.createElement("input");
+                        input.type = "text";
+                        input.placeholder = originalDescText;
+                        input.value = title.innerText == originalDescText ? "" : title.innerText;
+                        input.className = "saveTitleInput";
+
+                        // 用 input 替换 span
+                        title.replaceWith(input);
+                        input.focus();
+
+                        // 失去焦点时处理
+                        input.addEventListener("blur", async () => {
+                            const newText = input.value.trim();
+
+                            // 如果内容改变，弹出确认对话框
+                            if (newText != (DolOptimization.data.customdesc[saveId]?.desc ?? "")) {
+                                const V_ = saveItem.data.delta[0].variables;
+
+                                // 对话框处理标志，确保只处理一次
+                                let dialogResolved = false;
+                                const resolveDialog = (save) => {
+                                    if (dialogResolved) return;
+                                    dialogResolved = true;
+
+                                    if (save) {
+                                        // 保存到 IndexedDB
+                                        if (idb && saveId) {
+                                            try {
+                                                if (newText) {
+                                                    DolOptimization.data.customdesc[saveId] = {
+                                                        desc: newText,
+                                                        timestamp: saveItem.data.delta[0].variables.timeStamp
+                                                    };
+                                                } else {
+                                                    delete DolOptimization.data.customdesc[saveId];
                                                 }
-                                                title.innerText = newText || originalDescText;   // 新描述为空则回退原始描述
-                                            } else {
-                                                title.innerText = originalText;                  // 放弃修改
+                                                DolOptimization.saveSettings();
+                                            } catch (err) {
+                                                asi.log("原版优化", "保存描述失败", "gold", "red");
                                             }
-
-                                            // 恢复 span
-                                            input.replaceWith(title);
-                                            title._editing = false;
-                                        };
-
-                                        // 创建并显示自定义对话框
-                                        SugarCube.Dialog.setup("修改存档描述");
-                                        SugarCube.Dialog.wiki(`
-                                            <div>你确定要修改存档描述吗？你正在修改 ID为<span class="gold">${V_.saveName}</span>[#${saveId}] 的存档自定义描述：</div>
-                                            <div class="black">${originalDescText}</div>
-                                            <div class="green">${newText || "删除自定义描述"}</div>
-                                            <ul class="buttons">
-                                                <li><button id="customdesc-ok" type="button" role="button" tabindex="0">确认</button></li>
-                                                <li><button id="customdesc-cancel" class="ui-close">取消</button></li>
-                                            </ul>
-                                            <div class="fromopt-inline">【原版优化】 提供此界面 | 【Optimization】 Provide this passage</div>
-                                        `);
-                                        SugarCube.Dialog.open();
-
-                                        // 绑定按钮事件
-                                        $('#customdesc-ok').one('click', () => {
-                                            resolveDialog(true);
-                                            SugarCube.Dialog.close();
-                                        });
-                                        $('#customdesc-cancel').one('click', () => {
-                                            resolveDialog(false);
-                                            SugarCube.Dialog.close();
-                                        });
-                                        // 点击 X 或按 ESC 关闭时，视为取消
-                                        $(document).one(':dialogclose', () => {
-                                            resolveDialog(false);
-                                        });
+                                        }
+                                        title.innerText = newText || originalDescText;   // 新描述为空则回退原始描述
                                     } else {
-                                        // 没有变化
-                                        title.innerText = originalText;
-                                        input.replaceWith(title);
-                                        title._editing = false;
+                                        title.innerText = originalText;                  // 放弃修改
                                     }
-                                }, { once: true });
-                            };
-                            const customdesc = DolOptimization.data.customdesc[saveId];
-                            if (customdesc && customdesc.timestamp == saveItem.data.delta[0].variables.timeStamp) {
-                                const customText = customdesc.desc;
-                                if (customText && title.innerText !== customText) {
-                                    DolOptimization.setTitleWithBlur(title, customText);
-                                }
+
+                                    // 恢复 span
+                                    input.replaceWith(title);
+                                    title._editing = false;
+                                };
+
+                                // 创建并显示自定义对话框
+                                SugarCube.Dialog.setup("修改存档描述");
+                                SugarCube.Dialog.wiki(`
+                                    <div>你确定要修改存档描述吗？你正在修改 ID为<span class="gold">${V_.saveName}</span>[#${saveId}] 的存档自定义描述：</div>
+                                    <div class="black">${originalDescText}</div>
+                                    <div class="green">${newText || "删除自定义描述"}</div>
+                                    <ul class="buttons">
+                                        <li><button id="customdesc-ok" type="button" role="button" tabindex="0">确认</button></li>
+                                        <li><button id="customdesc-cancel" class="ui-close">取消</button></li>
+                                    </ul>
+                                    <div class="fromopt-inline">【原版优化】 提供此界面 | 【Optimization】 Provide this passage</div>
+                                `);
+                                SugarCube.Dialog.open();
+
+                                // 绑定按钮事件
+                                $('#customdesc-ok').one('click', () => {
+                                    resolveDialog(true);
+                                    SugarCube.Dialog.close();
+                                });
+                                $('#customdesc-cancel').one('click', () => {
+                                    resolveDialog(false);
+                                    SugarCube.Dialog.close();
+                                });
+                                // 点击 X 或按 ESC 关闭时，视为取消
+                                $(document).one(':dialogclose', () => {
+                                    resolveDialog(false);
+                                });
                             } else {
-                                delete DolOptimization.data.customdesc[saveId];
-                                DolOptimization.saveSettings();
+                                // 没有变化
+                                title.innerText = originalText;
+                                input.replaceWith(title);
+                                title._editing = false;
                             }
-                        }
-                        const datestamp = group.querySelector(".datestamp");
-                        if (datestamp) {
-                            const V_ = saveItem.data.delta[0].variables
-                            const timestamp = V_.startDate + V_.timeStamp;
-                            const date = new DateTime(timestamp);
-                            datestamp.innerHTML = `${datestamp.innerHTML} <span class="pink">(${date.year}/${date.month}/${date.day} ${("0" + getTimeString(date.hour, date.minute)).slice(-5)} ${date.weekDayName})</span>`;
-                            if (datestamp._overflowObserver) {
-                                datestamp._overflowObserver.disconnect();
-                            }
-                            const toggleShadow = () => {
-                                const hasOverflow = datestamp.scrollWidth > datestamp.clientWidth;
-                                datestamp.classList.toggle('has-overflow', hasOverflow);
-                            };
-                            const observer = new ResizeObserver(() => toggleShadow());
-                            observer.observe(datestamp);
-                            datestamp._overflowObserver = observer;
-                            toggleShadow();
-                        }
+                        }, { once: true });
                     };
-                };
-            }
-            const pageButtons = document.getElementById("pageNum")?.parentElement?.querySelectorAll("button");
-            if (pageButtons && pageButtons.length >= 2) {
-                pageButtons[0].addEventListener("click", () => {
-                    setTimeout(() => window.DolOptimization?.initsave(), DolOptimization.initsavetime);
-                });
-                pageButtons[1].addEventListener("click", () => {
-                    setTimeout(() => window.DolOptimization?.initsave(), DolOptimization.initsavetime);
-                });
+
+                    const customdesc = DolOptimization.data.customdesc[saveId];
+                    if (customdesc && customdesc.timestamp == saveItem.data.delta[0].variables.timeStamp) {
+                        const customText = customdesc.desc;
+                        if (customText && title.innerText !== customText) {
+                            DolOptimization.setTitleWithBlur(title, customText);
+                        }
+                    } else {
+                        delete DolOptimization.data.customdesc[saveId];
+                        DolOptimization.saveSettings();
+                    }
+                }
+
+                const datestamp = group.querySelector(".datestamp");
+                if (datestamp) {
+                    const V_ = saveItem.data.delta[0].variables;
+                    const timestamp = V_.startDate + V_.timeStamp;
+                    const date = new DateTime(timestamp);
+                    datestamp.innerHTML = `${datestamp.innerHTML} <span class="pink">(${date.year}/${date.month}/${date.day} ${("0" + getTimeString(date.hour, date.minute)).slice(-5)} ${date.weekDayName})</span>`;
+                    if (datestamp._overflowObserver) {
+                        datestamp._overflowObserver.disconnect();
+                    }
+                    const toggleShadow = () => {
+                        const hasOverflow = datestamp.scrollWidth > datestamp.clientWidth;
+                        datestamp.classList.toggle('has-overflow', hasOverflow);
+                    };
+                    const observer = new ResizeObserver(() => toggleShadow());
+                    observer.observe(datestamp);
+                    datestamp._overflowObserver = observer;
+                    toggleShadow();
+                }
             };
+
+            // ===== 扫描当前所有未处理的 group =====
+            DolOptimization._scanSaveGroups = function() {
+                const list = document.getElementById("saveList");
+                if (!list) return;
+                list.querySelectorAll(".saveGroup").forEach(g => DolOptimization._initOneSaveGroup(g));
+            };
+
+            // ===== 防抖：idb 分批插入时合并成一次扫描 =====
+            DolOptimization._scheduleScanSaveGroups = function() {
+                clearTimeout(DolOptimization._scanSaveGroupsTimer);
+                DolOptimization._scanSaveGroupsTimer = setTimeout(() => DolOptimization._scanSaveGroups(), 0);
+            };
+
+            // ===== 用 MutationObserver 驱动，替代原来的 setTimeout =====
+            const saveList = document.getElementById("saveList");
+            if (saveList) {
+                if (!saveList._dolSaveObserver) {
+                    saveList._dolSaveObserver = new MutationObserver(() => {
+                        DolOptimization._scheduleScanSaveGroups();
+                    });
+                    saveList._dolSaveObserver.observe(saveList, { childList: true, subtree: true });
+                }
+                // 首次立即扫描（调用时列表可能已渲染，也可能没有；没有则由 observer 兜底）
+                DolOptimization._scanSaveGroups();
+
+                // 【快速存档】在自动存档 A 行下方插入"最近一次快速存档"行；
+                // 存档列表会被 idb/A Tools 反复重建，故用 MutationObserver 监听后补回（只在行缺失时才插入）
+                if (!saveList._dolQsObserver) {
+                    saveList._dolQsObserver = new MutationObserver(() => {
+                        if (!document.getElementById("dolQsListRow")) setTimeout(() => DolOptimization.insertQuickSaveRow());
+                    });
+                    saveList._dolQsObserver.observe(saveList, { childList: true, subtree: true });
+                }
+                DolOptimization.insertQuickSaveRow();
+            }
+
+            // ===== 翻页按钮 =====
+            const pageButtons = document.getElementById("pageNum")?.parentElement?.querySelectorAll("button");
+            if (pageButtons) {
+                pageButtons.forEach(btn => btn.addEventListener("click", () => {
+                    window.DolOptimization?.initsave();
+                }));
+            }
+        },
+        // 【快速存档】把最近一次快速存档作为一行插入存档列表（自动存档 A 行下方，ID 为 Q）
+        insertQuickSaveRow: async function() {
+            const list = document.getElementById("saveList");
+            if (!list) return;
+            if (!DolOptimization.quickSaveEnabled() || V.ironmanmode) return;
+            if (list._dolQsBusy) return;
+            list._dolQsBusy = true;
+            // 先移除旧行：此时 _dolQsBusy 为 true，可避免 MutationObserver 立刻重入
+            list.querySelector("#dolQsListRow")?.remove();
+            try {
+                const saves = await DolOptimization.quickSaveAll();
+                if (document.getElementById("saveList") !== list || !saves.length) return;
+                if (list.querySelector("#dolQsListRow")) return;
+                let anchor = null;
+                for (const row of list.querySelectorAll(".savesListRow")) {
+                    if (row.querySelector(".saveId")?.textContent.trim() === "A") {
+                        anchor = row;
+                        break;
+                    }
+                }
+                anchor = anchor || list.querySelector(".savesListRow");
+                if (!anchor) return;
+                const latest = saves.reduce((a, b) => ((a.date || 0) >= (b.date || 0) ? a : b));
+                // 按钮文案沿用原列表（含翻译），避免与原版/翻译不一致
+                const autoLoad = anchor.querySelector(".saveButton button, .saveButton input");
+                const autoDelete = anchor.querySelector(".deleteButton input, button.deleteButton");
+                const row = document.createElement("div");
+                row.className = "savesListRow";
+                row.id = "dolQsListRow";
+                const group = document.createElement("div");
+                group.className = "saveGroup";
+                const id = document.createElement("div");
+                id.className = "saveId";
+                id.textContent = "Q";
+                const buttonWrap = document.createElement("div");
+                buttonWrap.className = "saveButton";
+                const load = document.createElement("button");
+                load.className = "saveMenuButton";
+                load.textContent = autoLoad?.value || autoLoad?.textContent || "载入";
+                load.onclick = () => DolOptimization.quickSaveLoad(load);
+                buttonWrap.appendChild(load);
+                const name = document.createElement("div");
+                name.className = "saveName gold";
+                name.textContent = latest.id;
+                const details = document.createElement("div");
+                details.className = "saveDetails";
+                const desc = document.createElement("span");
+                desc.textContent = latest.meta?.preview;
+                const stamp = document.createElement("span");
+                stamp.className = "datestamp";
+                stamp.textContent = latest.meta?.time || new Date(latest.date).toLocaleString();
+                details.append(desc, stamp);
+                const del = document.createElement("button");
+                del.className = "saveMenuButton deleteButton right";
+                del.textContent = autoDelete?.value || autoDelete?.textContent || "删除";
+                del.onclick = async () => {
+                    try { await DolOptimization.quickSaveDelete(latest.slot); } catch (e) {}
+                    DolOptimization.insertQuickSaveRow();
+                };
+                group.append(id, buttonWrap, name, details);
+                row.append(group, del);
+                anchor.after(row);
+            } catch (e) {
+            } finally {
+                list._dolQsBusy = false;
+            }
         },
         setTitleWithBlur: function(title, newText) {
             // 如果正在动画中，先清理可能残留的监听器
