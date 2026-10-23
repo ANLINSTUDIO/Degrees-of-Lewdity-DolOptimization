@@ -1487,7 +1487,7 @@
                         const chip = document.createElement("span");
                         chip.className = "dolQsChip " + (good ? "good" : "bad");
                         if (m.key === "money") {
-                            chip.textContent = `${m.label} ${d > 0 ? "+" : ""}£${Math.round(d)/100}`;
+                            chip.textContent = `${m.label} ${d > 0 ? "+" : "-"}£${Math.abs(Math.round(d)/100)}`;
                         } else {
                             chip.textContent = `${m.label} ${d > 0 ? "+" : ""}${d}`;
                         }
